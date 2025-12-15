@@ -203,11 +203,36 @@
 
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
-function rangeIds(prefix,from,to){const arr=[];for(let i=from;i<=to;i++){arr.push(`${prefix}-${String(i).padStart(3,'0')}ol`);}return arr;}
-// BP02 はファイル名に "ol" サフィックスが無いため個別に生成
-const BP02_IDS=(()=>{const arr=[];for(let i=1;i<=80;i++){arr.push(`BP02-${String(i).padStart(3,'0')}`);}return arr;})();
-const IDS=[...rangeIds('SD01',1,15),...rangeIds('SD02',1,15),...rangeIds('BP01',1,80),...BP02_IDS,'PR-004'];
-const CARD_DB=IDS.map(id=>({id,name:id,deck:'main',srcGuess:`${CARD_FOLDER}/${id}.png`}));
+
+function rangeIds(prefix, from, to, opts = {}) {
+  const { pad = 3, suffix = '' } = opts;
+  const arr = [];
+  for (let i = from; i <= to; i++) {
+    const num = pad ? String(i).padStart(pad, '0') : String(i); // pad=0なら埋めない
+    arr.push(`${prefix}-${num}${suffix}`);
+  }
+  return arr;
+}
+
+const IDS = [
+  ...rangeIds('SD01', 1, 15, { suffix: 'ol' }),
+  ...rangeIds('SD02', 1, 15, { suffix: 'ol' }),
+  ...rangeIds('BP01', 1, 80, { suffix: 'ol' }),
+
+  // ol なし系
+  ...rangeIds('BP02', 1, 80, { suffix: '' }),
+  ...rangeIds('BP03', 1, 80, { suffix: '' }),
+  ...rangeIds('FC01', 1, 6, { suffix: '' }), 
+
+  'PR-004',
+];
+
+const CARD_DB = IDS.map(id => ({
+  id,
+  name: id,
+  deck: 'main',
+  srcGuess: `${CARD_FOLDER}/${id}.png`,
+}));
 
 const WHITE_BACK="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO3kqE0AAAAASUVORK5CYII=";
 const MAX_DUP_PER_NAME=4,MAX_SAVE_BYTES=4_500_000;const MAIN_LIMIT=50,MON_LIMIT=4;
