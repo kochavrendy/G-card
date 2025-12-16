@@ -219,12 +219,13 @@ const IDS = [
   ...rangeIds('SD02', 1, 15, { suffix: 'ol' }),
   ...rangeIds('BP01', 1, 80, { suffix: 'ol' }),
 
+  'PR-004',
+
   // ol なし系
   ...rangeIds('BP02', 1, 80, { suffix: '' }),
-  ...rangeIds('BP03', 1, 80, { suffix: '' }),
   ...rangeIds('FC01', 1, 6, { suffix: '' }), 
+  ...rangeIds('BP03', 1, 80, { suffix: '' }),
 
-  'PR-004',
 ];
 
 const CARD_DB = IDS.map(id => ({
