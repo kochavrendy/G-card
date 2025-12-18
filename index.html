@@ -71,8 +71,21 @@
   #countInfo{font-size:13px;}
   /* preview */
   #preview.hidden{display:none;}#preview{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;}
-  #previewPanel{position:relative;max-width:90vw;max-height:90vh;}
-  #previewImg{max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 0 20px #000;}
+  /* Space拡大表示：画像の実ファイル解像度に左右されない“標準サイズ”に統一（基準 460×642） */
+  #previewPanel{
+    position:relative;
+    width:min(90vw, calc(90vh * 460 / 642));
+    height:min(90vh, calc(90vw * 642 / 460));
+    display:flex;align-items:center;justify-content:center;
+  }
+  #previewImg{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    border-radius:12px;
+    box-shadow:0 0 20px #000;
+    background:transparent;
+  }
   #previewClose{position:absolute;top:-32px;right:-32px;background:#000c;color:#fff;border:1px solid #666;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px;}
   /* token selector */
   #token.hidden{display:none;}#token{position:fixed;inset:0;z-index:4700;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
@@ -677,7 +690,6 @@ const IDS = [
   ...rangeIds('FC01', 1, 6, { suffix: '' }), 
 
   'PR-004',
-  'PR-005',
 ];
 
 const CARD_DB = IDS.map(id => ({
@@ -721,6 +733,11 @@ if(IS_SPECTATOR) document.body.classList.add('spectator');
 
 let spectatorWin = null;
 let spectatorSyncTimer = null;
+
+// reveal sync cache (spectator): avoid flicker by skipping redundant rebuilds
+let spectatorRevealOpen=false;
+let spectatorRevealKey='';
+let spectatorRevealLastTs=0;
 
 function spectatorUrl(){
   const u = new URL(location.href);
@@ -898,11 +915,47 @@ if(IS_SPECTATOR){
     if(d.type==='GCARD_REVEAL'){
       try{
         // 公開は見えてOK（相手にも見せる想定）
-        if(Array.isArray(d.pool)) revealPool = d.pool.slice(); else revealPool = [];
-        revealOriginal = revealPool.slice();
-        if(revealSelection && revealSelection.clear) revealSelection.clear();
-        if(d.open && revealPool.length) showRevealModal();
-        else closeRevealModal();
+        const ts = (typeof d.ts==='number') ? d.ts : 0;
+        if(ts && ts<=spectatorRevealLastTs) return;
+        if(ts) spectatorRevealLastTs = ts;
+
+        const open = !!d.open;
+        const pool = Array.isArray(d.pool) ? d.pool.slice() : [];
+        const key = pool.join('|');
+
+        // close or empty
+        if(!open || pool.length===0){
+          if(spectatorRevealOpen){
+            spectatorRevealOpen=false;
+            spectatorRevealKey='';
+            if(revealSelection && revealSelection.clear) revealSelection.clear();
+            closeRevealModal();
+          }
+          revealPool=[];
+          revealOriginal=[];
+          return;
+        }
+
+        // open + has cards
+        if(!spectatorRevealOpen){
+          spectatorRevealOpen=true;
+          spectatorRevealKey=key;
+          revealPool=pool;
+          revealOriginal=pool.slice();
+          if(revealSelection && revealSelection.clear) revealSelection.clear();
+          // 共有画面は頻繁な再描画でチラつくので、最初だけ開く（フォーカスしない）
+          showRevealModal(true);
+          return;
+        }
+
+        // already open: rebuild only when order/content changed
+        if(key!==spectatorRevealKey){
+          spectatorRevealKey=key;
+          revealPool=pool;
+          revealOriginal=pool.slice();
+          if(revealSelection && revealSelection.clear) revealSelection.clear();
+          buildRevealList();
+        }
       }catch(e){}
     }
   });
@@ -1130,12 +1183,14 @@ function buildStackList(){
 // ===== reveal (deck top 공개) =====
 function revealIsOpen(){ return revealModal && !revealModal.classList.contains('hidden'); }
 
-function showRevealModal(){
+function showRevealModal(skipFocus=false){
   if(!revealModal) return;
   buildRevealList();
   revealModal.classList.remove('hidden');
-  revealModal.tabIndex = -1;
-  revealModal.focus();
+  if(!skipFocus){
+    revealModal.tabIndex = -1;
+    revealModal.focus();
+  }
 }
 function closeRevealModal(){
   if(!revealModal) return;
@@ -1895,7 +1950,48 @@ function undo(){
 function lightState(){const {cards,order}=state;return {cards,order,deckPool,discardPool,monsterPool,dupCountByName,backSrc,rageCount};}
 function saveLocal(){try{const json=JSON.stringify(lightState());const bytes=new Blob([json]).size;if(bytes>MAX_SAVE_BYTES){alert(`保存データが大きすぎます (約${(bytes/1024).toFixed(1)}KB)`);return;}localStorage.setItem('go_state',json);alert('保存しました');}catch(e){alert('保存中エラー:'+e.message);}}
 function loadLocal(){try{const json=localStorage.getItem('go_state');if(!json){alert('データがありません');return;}loadFromJSON(json,true);}catch(e){alert('読込中エラー:'+e.message);}}
-function loadFromJSON(json,push=true){Object.values(state.cards).forEach(c=>{const el=document.getElementById(c.id);if(el)el.remove();});const p=JSON.parse(json);state.cards=p.cards||{};state.order=p.order||Object.keys(state.cards);deckPool=p.deckPool||[];discardPool=p.discardPool||[];monsterPool=p.monsterPool||[];Object.assign(dupCountByName,p.dupCountByName||{});backSrc=p.backSrc||WHITE_BACK;rageCount=p.rageCount||0;revealPool=[];revealOriginal=[];revealSelection.clear();revealTxnSnap=null;revealUndoMark=null;closeRevealModal();idCounter=Object.keys(state.cards).length;state.order.forEach(id=>renderCard(state.cards[id]));updateCounters();updateRageDisplay();if(revealPool&&revealPool.length){showRevealModal();}else{closeRevealModal();}if(push)pushUndo();selection.clear();updateSelectionVisual();}
+function loadFromJSON(json,push=true){
+  // 既存DOMを削除
+  Object.values(state.cards).forEach(c=>{
+    const el=document.getElementById(c.id);
+    if(el) el.remove();
+  });
+
+  const p=JSON.parse(json);
+  state.cards=p.cards||{};
+  state.order=p.order||Object.keys(state.cards);
+  deckPool=p.deckPool||[];
+  discardPool=p.discardPool||[];
+  monsterPool=p.monsterPool||[];
+  Object.assign(dupCountByName,p.dupCountByName||{});
+  backSrc=p.backSrc||WHITE_BACK;
+  rageCount=p.rageCount||0;
+
+  // 観戦(spectator)側は公開モーダルを GCARD_REVEAL メッセージで制御するため、
+  // GCARD_SYNC のたびに勝手に閉じないようにする（ここが「一瞬で閉じる」原因）
+  if(!IS_SPECTATOR){
+    revealPool=[];
+    revealOriginal=[];
+    revealSelection.clear();
+    revealTxnSnap=null;
+    revealUndoMark=null;
+    closeRevealModal();
+  }
+
+  idCounter=Object.keys(state.cards).length;
+  state.order.forEach(id=>renderCard(state.cards[id]));
+  updateCounters();
+  updateRageDisplay();
+
+  if(!IS_SPECTATOR){
+    if(revealPool && revealPool.length){ showRevealModal(); }
+    else { closeRevealModal(); }
+  }
+
+  if(push) pushUndo();
+  selection.clear();
+  updateSelectionVisual();
+}
 
 // ===== start modal handlers =====
 btnStartBuild.onclick=()=>{startModal.style.display='none';openBuilder();};
