@@ -6,7 +6,7 @@
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#181818;font-family:sans-serif;}
-  :root{--ui-bg:#000a;--ui-fg:#eee;--zone-border:#00bfff88;--zone-fill:#00bfff14;--card-w:180px;}
+  :root{--ui-bg:#000a;--ui-fg:#eee;--zone-border:#00bfff88;--zone-fill:#00bfff14;--card-w:180px; --set-thumb-w:clamp(130px,18vw,220px); --set-thumb-aspect:21/11;}
   #board{position:relative;width:100vw;height:100vh;background:#222 url("playmat.png") center/cover no-repeat;overflow:hidden;}
   #toolbar{position:absolute;top:8px;left:8px;z-index:2000;background:var(--ui-bg);color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
   #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
@@ -54,49 +54,122 @@
   /* set / pack filter (deck builder) */
   #libSetBar{
     display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:center;
-    margin:0 0 8px 0;
+    gap:10px;
+    flex-wrap:nowrap;
+    align-items:stretch;
+    overflow-x:auto;
+    padding:2px 2px 10px;
+    margin:0 0 10px 0;
+    scroll-snap-type:x proximity;
   }
+  #libSetBar::-webkit-scrollbar{height:10px;}
+  #libSetBar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px;}
+  #libSetBar::-webkit-scrollbar-track{background:rgba(0,0,0,.25);border-radius:999px;}
+
+  /* collapsible wrapper for set bar */
+  .setSection{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(0,0,0,.18);
+    border-radius:12px;
+    padding:8px 10px;
+    margin:0 0 10px 0;
+  }
+  .setHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    cursor:pointer;
+    user-select:none;
+    padding:2px 2px;
+  }
+  .setHeader:focus{outline:2px solid rgba(0,191,255,.65);outline-offset:2px;border-radius:10px;}
+  .setHeaderLeft{display:flex;align-items:baseline;gap:8px;min-width:0;}
+  .setHeaderTitle{font-size:12px;opacity:.9;letter-spacing:.06em;white-space:nowrap;}
+  .setHeaderCurrent{
+    font-size:12px;
+    opacity:.95;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(0,0,0,.25);
+    max-width:220px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .setToggle{
+    width:30px;height:30px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.15);
+    color:#fff;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    padding:0;
+    transition:transform .15s ease;
+  }
+  #libSetBarWrap{
+    margin-top:8px;
+    overflow:hidden;
+    max-height:600px;
+    opacity:1;
+    transition:max-height .18s ease, opacity .18s ease, margin .18s ease;
+  }
+  .setSection.collapsed #libSetBarWrap{
+    max-height:0;
+    opacity:0;
+    margin-top:0;
+  }
+  .setSection.collapsed .setToggle{transform:rotate(-90deg);}
+
   #libSetBar .setBtn{
     cursor:pointer;
     border:1px solid rgba(255,255,255,.14);
     background: rgba(0,0,0,.35);
     color:#fff;
-    border-radius:14px;
-    padding:6px 10px;
+    border-radius:16px;
+    padding:10px 10px 8px;
     font-size:12px;
     display:flex;
+    flex-direction:column;
     align-items:center;
-    justify-content:center;
-    gap:6px;
-    min-height:42px;
-    min-width:72px;
-    box-shadow: 0 6px 16px rgba(0,0,0,.28);
+    justify-content:flex-start;
+    gap:8px;
+    min-width: calc(var(--set-thumb-w) + 20px);
+    box-shadow: 0 10px 22px rgba(0,0,0,.32);
+    scroll-snap-align:start;
+    transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
   }
-  #libSetBar .setBtn:hover{ filter:brightness(1.06); transform: translateY(-1px); }
-  #libSetBar .setBtn:active{ transform: translateY(0) scale(.98); }
+  #libSetBar .setBtn:hover{ filter:brightness(1.08); transform: translateY(-1px); }
+  #libSetBar .setBtn:active{ transform: translateY(0) scale(.99); }
   #libSetBar .setBtn.active{
-    outline:2px solid rgba(45,212,255,.65);
+    outline:3px solid rgba(45,212,255,.72);
     outline-offset:1px;
+    box-shadow: 0 0 0 1px rgba(45,212,255,.22), 0 14px 30px rgba(0,0,0,.38);
   }
   #libSetBar .setBtn img{
-    width:84px;
-    height:44px;
-    object-fit:cover;
-    border-radius:10px;
+    width: var(--set-thumb-w);
+    aspect-ratio: 21 / 11;
+    height: auto;
+    object-fit: cover;
+    border-radius: 12px;
     display:block;
+    border:1px solid rgba(255,255,255,.10);
   }
   #libSetBar .setBtn .setLabel{
-    font-weight:700;
+    font-weight:800;
     letter-spacing:.02em;
     user-select:none;
     white-space:nowrap;
+    line-height:1.05;
+    opacity:.92;
   }
   #libSetBar .setBtn.all{
-    min-width:auto;
-    padding:8px 12px;
+    min-width: 110px;
+    padding:10px 12px;
+    justify-content:center;
   }
 
 #libList{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px;background:#1113;border:1px solid #444;border-radius:4px;}
@@ -546,6 +619,36 @@ html,body{
   box-shadow: var(--shadowSoft) !important;
   backdrop-filter: blur(10px) saturate(140%);
 }
+
+/* =========================================================
+   Fullscreen Deck Builder
+   - 盤面が透けて見える/モーダルが小さい問題を解消
+   - 構築画面そのものを画面いっぱいに表示
+   ========================================================= */
+
+/* overlay 자체を不透明にして盤面を見せない */
+#builder{
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  padding: 0 !important;
+  /* 透過なし（背景が“うっすら盤面”にならない） */
+  background:
+    radial-gradient(900px 600px at 20% 10%, rgba(167,139,250,.18), transparent 60%),
+    radial-gradient(900px 600px at 80% 40%, rgba(45,212,255,.14), transparent 60%),
+    linear-gradient(180deg, #0f131b, #0b0d12) !important;
+}
+
+/* パネルをフルスクリーン化 */
+#builderPanel{
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
 #spectatorPickPanel{
   background: rgba(0,0,0,.40) !important;
   border: 1px solid rgba(255,255,255,.12);
@@ -625,7 +728,21 @@ html,body{
       <div id="builderMain">
         <div id="libPane">
           <h3>カード一覧</h3>
-          <div id="libSetBar"></div>
+
+          <!-- set / pack filter (collapsible) -->
+          <div id="libSetSection" class="setSection">
+            <div id="libSetHeader" class="setHeader" role="button" tabindex="0" aria-controls="libSetBarWrap" aria-expanded="true">
+              <div class="setHeaderLeft">
+                <span class="setHeaderTitle">弾フィルタ</span>
+                <span class="setHeaderCurrent" id="libSetCurrent">すべて</span>
+              </div>
+              <button id="btnLibSetToggle" type="button" class="setToggle" aria-label="弾フィルタを折りたたみ/展開">▾</button>
+            </div>
+            <div id="libSetBarWrap">
+              <div id="libSetBar"></div>
+            </div>
+          </div>
+
           <input id="libFilter" placeholder="名前で検索..." />
           <div id="libList"></div>
         </div>
@@ -1151,6 +1268,10 @@ const btnStartPlay=document.getElementById('btnStartPlay');
 const builder=document.getElementById('builder');
 const libFilter=document.getElementById('libFilter');
 const libSetBar=document.getElementById('libSetBar');
+const libSetSection=document.getElementById('libSetSection');
+const libSetHeader=document.getElementById('libSetHeader');
+const btnLibSetToggle=document.getElementById('btnLibSetToggle');
+const libSetCurrent=document.getElementById('libSetCurrent');
 const libList=document.getElementById('libList');
 const gridMonster=document.getElementById('gridMonster');
 const gridMain=document.getElementById('gridMain');
@@ -2474,7 +2595,7 @@ let libSetFilter='__ALL__'; // '__ALL__' = 全表示
 
 function getAvailableSets(){
   const s = new Set(CARD_DB.map(c=>c.set).filter(x=>x && x!=='OTHER'));
-  const baseOrder=['SD01','SD02','BP01','BP02','BP03','FC01'];
+  const baseOrder=['SD1','SD2','BP01','BP02','BP03','FC01'];
   const rest=[...s].filter(k=>!baseOrder.includes(k)).sort((a,b)=>a.localeCompare(b,'ja'));
   return [...baseOrder.filter(k=>s.has(k)), ...rest];
 }
@@ -2484,7 +2605,38 @@ function updateSetBarActive(){
   [...libSetBar.querySelectorAll('.setBtn')].forEach(btn=>{
     btn.classList.toggle('active', (btn.dataset.set||'')===libSetFilter);
   });
+  if(libSetCurrent){
+    libSetCurrent.textContent = (libSetFilter==='__ALL__') ? 'すべて' : (libSetFilter||'すべて');
+  }
 }
+
+
+// collapsible set bar (deck builder)
+function setSetBarCollapsed(collapsed){
+  if(!libSetSection) return;
+  libSetSection.classList.toggle('collapsed', !!collapsed);
+  if(libSetHeader) libSetHeader.setAttribute('aria-expanded', (!collapsed).toString());
+  try{ localStorage.setItem('libSetBarCollapsed', collapsed ? '1' : '0'); }catch(e){}
+}
+function loadSetBarCollapsed(){
+  let v=null;
+  try{ v = localStorage.getItem('libSetBarCollapsed'); }catch(e){}
+  if(v===null) return; // default: expanded
+  setSetBarCollapsed(v==='1');
+}
+if(btnLibSetToggle){
+  btnLibSetToggle.addEventListener('click', (e)=>{ e.stopPropagation(); setSetBarCollapsed(!libSetSection.classList.contains('collapsed')); });
+}
+if(libSetHeader){
+  libSetHeader.addEventListener('click', ()=>{ setSetBarCollapsed(!libSetSection.classList.contains('collapsed')); });
+  libSetHeader.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' || e.key===' '){
+      e.preventDefault();
+      setSetBarCollapsed(!libSetSection.classList.contains('collapsed'));
+    }
+  });
+}
+
 
 function renderSetBar(){
   if(!libSetBar) return;
@@ -2495,11 +2647,6 @@ function renderSetBar(){
     btn.type='button';
     btn.className=('setBtn '+(cls||'')).trim();
     btn.dataset.set=key;
-
-    const span=document.createElement('span');
-    span.className='setLabel';
-    span.textContent=label||key;
-    btn.appendChild(span);
 
     if(key!=='__ALL__'){
       const img=document.createElement('img');
@@ -2520,17 +2667,20 @@ function renderSetBar(){
       const tryNext=()=>{
         if(i>=tries.length){
           img.remove();
-          span.style.display='inline';
           return;
         }
         img.src=tries[i++];
       };
-      img.onload=()=>{span.style.display='none';};
       img.onerror=()=>{tryNext();};
 
       btn.appendChild(img);
       tryNext();
     }
+
+    const span=document.createElement('span');
+    span.className='setLabel';
+    span.textContent=label||key;
+    btn.appendChild(span);
 
     btn.addEventListener('click', ()=>{
       libSetFilter=key;
@@ -2550,7 +2700,7 @@ function renderSetBar(){
   updateSetBarActive();
 }
 
-function openBuilder(){builder.classList.remove('hidden');renderSetBar();renderLibrary();renderDeckThumbs();updateBuildCount();}
+function openBuilder(){builder.classList.remove('hidden');renderSetBar();loadSetBarCollapsed();renderLibrary();renderDeckThumbs();updateBuildCount();}
 function closeBuilder(){builder.classList.add('hidden');}
 
 function renderLibrary(){
