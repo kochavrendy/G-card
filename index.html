@@ -50,7 +50,56 @@
   #libPane{flex:1.2;display:flex;flex-direction:column;min-width:0;}
   #deckPane{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
   #libFilter{padding:4px 6px;width:100%;background:#111;color:#eee;border:1px solid #444;border-radius:4px;font-size:13px;margin-bottom:6px;}
-  #libList{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px;background:#1113;border:1px solid #444;border-radius:4px;}
+  
+  /* set / pack filter (deck builder) */
+  #libSetBar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin:0 0 8px 0;
+  }
+  #libSetBar .setBtn{
+    cursor:pointer;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.35);
+    color:#fff;
+    border-radius:14px;
+    padding:6px 10px;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:42px;
+    min-width:72px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.28);
+  }
+  #libSetBar .setBtn:hover{ filter:brightness(1.06); transform: translateY(-1px); }
+  #libSetBar .setBtn:active{ transform: translateY(0) scale(.98); }
+  #libSetBar .setBtn.active{
+    outline:2px solid rgba(45,212,255,.65);
+    outline-offset:1px;
+  }
+  #libSetBar .setBtn img{
+    width:84px;
+    height:44px;
+    object-fit:cover;
+    border-radius:10px;
+    display:block;
+  }
+  #libSetBar .setBtn .setLabel{
+    font-weight:700;
+    letter-spacing:.02em;
+    user-select:none;
+    white-space:nowrap;
+  }
+  #libSetBar .setBtn.all{
+    min-width:auto;
+    padding:8px 12px;
+  }
+
+#libList{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px;background:#1113;border:1px solid #444;border-radius:4px;}
   .libCard{width:120px;cursor:pointer;position:relative;}
   .libCard img{width:100%;border-radius:6px;box-shadow:0 2px 4px #000a;}
   .libBtns{position:absolute;bottom:4px;left:4px;display:flex;gap:4px;}
@@ -64,13 +113,14 @@
   .deckCnt{position:absolute;top:2px;left:2px;background:#000c;color:#fff;font-size:11px;padding:1px 4px;border-radius:3px;}
   .deckThumb .ctrl{position:absolute;bottom:2px;right:2px;display:flex;gap:2px;}
   .deckThumb .ctrl button{background:#000b;color:#fff;border:1px solid #666;font-size:10px;padding:0 4px;border-radius:3px;cursor:pointer;}
-  #builderFooter{margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
-  #builderFooter textarea{width:48%;height:54px;background:#000;color:#eee;border:1px solid #555;border-radius:4px;padding:4px;font-size:11px;}
+  #builderFooter{margin-top:10px;display:flex;justify-content:flex-start;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  #builderFooter textarea{flex:1 1 320px;width:auto;min-width:260px;height:54px;background:#000;color:#eee;border:1px solid #555;border-radius:4px;padding:4px;font-size:11px;}
   #builderFooter button{background:#444;border:1px solid #666;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;}
   #builderFooter button:hover{background:#666;}
 
-  .builderBtnCol{display:flex;flex-direction:column;gap:6px;min-width:190px;}
-  .builderSep{height:1px;background:rgba(255,255,255,.12);margin:4px 0;}
+  .builderBtnCol{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;min-width:240px;flex:1 1 340px;justify-content:flex-end;align-items:center;}
+  .builderBtnCol button,.builderBtnCol .btnLike{white-space:nowrap;}
+  .builderSep{flex-basis:100%;width:100%;height:1px;background:rgba(255,255,255,.12);margin:6px 0;}
   .btnLike{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#444;border:1px solid #666;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;user-select:none;}
   .btnLike:hover{background:#666;}
   .btnLike input{display:none;}
@@ -575,6 +625,7 @@ html,body{
       <div id="builderMain">
         <div id="libPane">
           <h3>カード一覧</h3>
+          <div id="libSetBar"></div>
           <input id="libFilter" placeholder="名前で検索..." />
           <div id="libList"></div>
         </div>
@@ -730,6 +781,31 @@ function rangeIds(prefix, from, to, opts = {}) {
   return arr;
 }
 
+
+function getSetKeyFromId(id){
+  const s = String(id||'');
+  // SD{種類(1/2)} は SD1 / SD2 に正規化（SD01/SD02 も吸収）
+  let m = s.match(/^SD0?([12])/);
+  if(m) return 'SD' + m[1];
+
+  // BP{段数} は 2桁に正規化（BP1 も BP01 へ）
+  m = s.match(/^BP(\d{1,2})/);
+  if(m){
+    const n = String(parseInt(m[1],10)).padStart(2,'0');
+    return 'BP' + n;
+  }
+
+  // FC は 2桁に正規化
+  m = s.match(/^FC(\d{1,2})/);
+  if(m){
+    const n = String(parseInt(m[1],10)).padStart(2,'0');
+    return 'FC' + n;
+  }
+
+  if(s.startsWith('PR')) return 'PR';
+  return 'OTHER';
+}
+
 const IDS = [
   ...rangeIds('SD01', 1, 15, { suffix: 'ol' }),
   ...rangeIds('SD02', 1, 15, { suffix: 'ol' }),
@@ -747,6 +823,7 @@ const IDS = [
 const CARD_DB = IDS.map(id => ({
   id,
   name: id,
+  set: getSetKeyFromId(id),
   deck: 'main',
   srcGuess: `${CARD_FOLDER}/${id}.png`,
 }));
@@ -1073,6 +1150,7 @@ const btnStartPlay=document.getElementById('btnStartPlay');
 // builder
 const builder=document.getElementById('builder');
 const libFilter=document.getElementById('libFilter');
+const libSetBar=document.getElementById('libSetBar');
 const libList=document.getElementById('libList');
 const gridMonster=document.getElementById('gridMonster');
 const gridMain=document.getElementById('gridMain');
@@ -2391,10 +2469,109 @@ if(deckUploadInput){
   });
 }
 
-function openBuilder(){builder.classList.remove('hidden');renderLibrary();renderDeckThumbs();updateBuildCount();}
+
+let libSetFilter='__ALL__'; // '__ALL__' = 全表示
+
+function getAvailableSets(){
+  const s = new Set(CARD_DB.map(c=>c.set).filter(x=>x && x!=='OTHER'));
+  const baseOrder=['SD1','SD2','BP01','BP02','BP03','FC01'];
+  const rest=[...s].filter(k=>!baseOrder.includes(k)).sort((a,b)=>a.localeCompare(b,'ja'));
+  return [...baseOrder.filter(k=>s.has(k)), ...rest];
+}
+
+function updateSetBarActive(){
+  if(!libSetBar) return;
+  [...libSetBar.querySelectorAll('.setBtn')].forEach(btn=>{
+    btn.classList.toggle('active', (btn.dataset.set||'')===libSetFilter);
+  });
+}
+
+function renderSetBar(){
+  if(!libSetBar) return;
+  libSetBar.innerHTML='';
+
+  const makeBtn=(key,label,cls='')=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className=('setBtn '+(cls||'')).trim();
+    btn.dataset.set=key;
+
+    const span=document.createElement('span');
+    span.className='setLabel';
+    span.textContent=label||key;
+    btn.appendChild(span);
+
+    if(key!=='__ALL__'){
+      const img=document.createElement('img');
+      img.alt=label||key;
+      img.loading='lazy';
+      img.decoding='async';
+
+      const tries=[];
+      // 期待する命名: BP{段数}.png / SD{種類(1or2)}.png / FC01.png（0埋め違いもフォールバック）
+      tries.push(`${CARD_FOLDER}/${key}.png`);
+      if(/^SD\d$/.test(key)) tries.push(`${CARD_FOLDER}/SD0${key.slice(2)}.png`);
+      if(/^SD0\d$/.test(key)) tries.push(`${CARD_FOLDER}/SD${key.slice(3)}.png`);
+      if(/^BP\d{2}$/.test(key)) tries.push(`${CARD_FOLDER}/BP${parseInt(key.slice(2),10)}.png`);
+      if(/^BP\d$/.test(key)) tries.push(`${CARD_FOLDER}/BP0${key.slice(2)}.png`);
+      if(/^FC\d{2}$/.test(key)) tries.push(`${CARD_FOLDER}/FC${parseInt(key.slice(2),10)}.png`);
+
+      let i=0;
+      const tryNext=()=>{
+        if(i>=tries.length){
+          img.remove();
+          span.style.display='inline';
+          return;
+        }
+        img.src=tries[i++];
+      };
+      img.onload=()=>{span.style.display='none';};
+      img.onerror=()=>{tryNext();};
+
+      btn.appendChild(img);
+      tryNext();
+    }
+
+    btn.addEventListener('click', ()=>{
+      libSetFilter=key;
+      updateSetBarActive();
+      libList.scrollTop=0;
+      renderLibrary();
+    });
+    return btn;
+  };
+
+  libSetBar.appendChild(makeBtn('__ALL__','すべて','all'));
+
+  const sets=getAvailableSets();
+  if(libSetFilter!=='__ALL__' && !sets.includes(libSetFilter)) libSetFilter='__ALL__';
+  sets.forEach(k=>libSetBar.appendChild(makeBtn(k,k,'')));
+
+  updateSetBarActive();
+}
+
+function openBuilder(){builder.classList.remove('hidden');renderSetBar();renderLibrary();renderDeckThumbs();updateBuildCount();}
 function closeBuilder(){builder.classList.add('hidden');}
-function renderLibrary(){libList.innerHTML='';const q=libFilter.value?libFilter.value.toLowerCase():'';CARD_DB.forEach(card=>{if(q&&!card.name.toLowerCase().includes(q))return;const div=document.createElement('div');div.className='libCard';div.dataset.id=card.id;const img=document.createElement('img');img.src=card.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};div.appendChild(img);const btns=document.createElement('div');btns.className='libBtns';const bM=document.createElement('button');bM.textContent='＋メ';bM.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'main',1);};const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};btns.append(bM,bK);div.appendChild(btns);div.onclick=()=>{previewImg.src=card.srcGuess;preview.classList.remove('hidden');};libList.appendChild(div);});}
+
+function renderLibrary(){
+  libList.innerHTML='';
+  const q=libFilter.value?libFilter.value.toLowerCase():'';
+  const setKey=libSetFilter||'__ALL__';
+  CARD_DB.forEach(card=>{
+    if(setKey!=='__ALL__' && card.set!==setKey) return;
+    if(q&&!card.name.toLowerCase().includes(q))return;
+    const div=document.createElement('div');div.className='libCard';div.dataset.id=card.id;
+    const img=document.createElement('img');img.src=card.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};div.appendChild(img);
+    const btns=document.createElement('div');btns.className='libBtns';
+    const bM=document.createElement('button');bM.textContent='＋メ';bM.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'main',1);};
+    const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
+    btns.append(bM,bK);div.appendChild(btns);
+    div.onclick=()=>{previewImg.src=card.srcGuess;preview.classList.remove('hidden');};
+    libList.appendChild(div);
+  });
+}
 libFilter.addEventListener('input',renderLibrary);
+
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
 function renderDeckThumbs(){gridMonster.innerHTML='';gridMain.innerHTML='';const buildSection=(obj,grid,which)=>{Object.entries(obj).forEach(([id,num])=>{const info=CARD_DB.find(c=>c.id===id)||{srcGuess:WHITE_BACK,name:id};const wrap=document.createElement('div');wrap.className='deckThumb';const img=document.createElement('img');img.src=info.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};wrap.appendChild(img);const cnt=document.createElement('div');cnt.className='deckCnt';cnt.textContent='x'+num;wrap.appendChild(cnt);const ctrl=document.createElement('div');ctrl.className='ctrl';const plus=document.createElement('button');plus.textContent='＋';plus.onclick=()=>{addToBuild(id,which,1);};const minus=document.createElement('button');minus.textContent='－';minus.onclick=()=>{decFromBuild(id,which);};ctrl.append(plus,minus);wrap.appendChild(ctrl);grid.appendChild(wrap);});};buildSection(buildMon,gridMonster,'monster');buildSection(buildMain,gridMain,'main');}
