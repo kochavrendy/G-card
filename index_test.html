@@ -12,7 +12,7 @@
   body.flipLayout #board::before{transform:rotate(180deg);}
   .zone,.card{z-index:2;}
 
-  #toolbar{position:absolute;top:8px;left:8px;z-index:2000;background:var(--ui-bg);color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
+  #toolbar{position:fixed;top:8px;left:8px;z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
   #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
   #toolbar select{background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;}
   #fileInput,#backInput{display:none;}
@@ -707,6 +707,27 @@ html,body{
   #soloScroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;}
   #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
 
+  /* --- Solo: toolbar pinned + overview (2面同時表示) --- */
+  #toolbar .soloOnly{display:none;}
+  body.soloActive #toolbar .soloOnly{display:inline-flex;}
+  body.soloActive #toolbar{right:8px;}
+  body.soloActive{padding-top:0;}
+  #soloTopBar{display:none;} /* ソロ中は既存ツールバーに集約 */
+  #soloScroll{position:relative;}
+  #soloFrames{display:flex;flex-direction:column;}
+  #soloFrames iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
+  /* 既存の指定をsoloFramesに寄せるため、soloScroll iframeは上書きで軽く残す */
+  #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;background:#000;}
+
+  #soloContainer.overview #soloScroll{overflow:hidden;scroll-snap-type:none;}
+  #soloContainer.overview #soloFrames{
+    position:relative;
+    left:50%;
+    transform:translateX(-50%) scale(var(--soloOverviewScale, .5));
+    transform-origin:top center;
+    width:calc(100vw / var(--soloOverviewScale, .5));
+  }
+
 </style>
 </head>
 <body>
@@ -733,7 +754,10 @@ html,body{
         <option value="bottom">下</option>
       </select>
     </label>
-    <button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
+    
+    <button id="btnSoloExitOuter" class="soloOnly" style="background:#444a;">⏹ 一人回し終了</button>
+    <button id="btnSoloOverview" class="soloOnly" title="2人の盤面を縮小して同時に表示">🧩 2面表示</button>
+<button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
     <span style="opacity:.6;">Alt+ホイール=拡大縮小 / R=左回転 / Shift=複数ドラッグ / Space=拡大</span>
   </div>
 
@@ -2831,42 +2855,39 @@ btnBuildStart.onclick=()=>{if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)
 let soloPickStep = 1; // 1: you(bottom) / 2: opp(top)
 let soloDeckYou = null;
 let soloDeckOpp = null;
+let __soloWired = false;
+
+function $solo(id){ return document.getElementById(id); }
 
 function soloDeckLabel(d){
   if(!d) return '(未選択)';
   return String(d.name||'(no name)');
 }
-function openSoloDeckModal(){
-  if(!soloDeckModal) return;
-  soloPickStep = 1;
-  soloDeckYou = null;
-  soloDeckOpp = null;
-  if(soloDeckSearch) soloDeckSearch.value='';
-  soloDeckModal.classList.remove('hidden');
-  updateSoloDeckUI();
-  renderSoloDeckList();
-  setTimeout(()=>{ try{ soloDeckSearch && soloDeckSearch.focus(); }catch(e){} }, 0);
-}
-function closeSoloDeckModal(){
-  if(!soloDeckModal) return;
-  soloDeckModal.classList.add('hidden');
-}
+
 function updateSoloDeckUI(){
+  const soloStepText = $solo('soloStepText');
+  const soloPickedInfo = $solo('soloPickedInfo');
+  const btnSoloBack = $solo('btnSoloBack');
+  const btnSoloStart = $solo('btnSoloStart');
   if(!soloStepText || !soloPickedInfo || !btnSoloBack || !btnSoloStart) return;
+
   if(soloPickStep===1){
     soloStepText.textContent = '1/2：下側（自分）のデッキを選択';
     btnSoloBack.disabled = true;
     btnSoloStart.disabled = true;
-    soloPickedInfo.textContent = `自分：${soloDeckLabel(soloDeckYou)} / 相手：${soloDeckLabel(soloDeckOpp)}`;
   }else{
     soloStepText.textContent = '2/2：上側（相手）のデッキを選択';
     btnSoloBack.disabled = false;
     btnSoloStart.disabled = !(!!soloDeckYou && !!soloDeckOpp);
-    soloPickedInfo.textContent = `自分：${soloDeckLabel(soloDeckYou)} / 相手：${soloDeckLabel(soloDeckOpp)}`;
   }
+  soloPickedInfo.textContent = `自分：${soloDeckLabel(soloDeckYou)} / 相手：${soloDeckLabel(soloDeckOpp)}`;
 }
+
 function renderSoloDeckList(){
+  const soloDeckList = $solo('soloDeckList');
+  const soloDeckSearch = $solo('soloDeckSearch');
   if(!soloDeckList) return;
+
   const q = (soloDeckSearch && soloDeckSearch.value ? soloDeckSearch.value.trim().toLowerCase() : '');
   const decks = getDeckSaves().slice().sort((a,b)=>{
     const ta = Date.parse(a.updatedAt||a.createdAt||0) || 0;
@@ -2899,9 +2920,81 @@ function renderSoloDeckList(){
   });
 }
 
+function ensureSoloWired(){
+  if(__soloWired) return;
+
+  const soloDeckModal = $solo('soloDeckModal');
+  if(!soloDeckModal) return; // DOMまだ
+
+  const btnSoloClose = $solo('btnSoloClose');
+  const btnSoloBack  = $solo('btnSoloBack');
+  const btnSoloStart = $solo('btnSoloStart');
+  const btnSoloExit  = $solo('btnSoloExit');
+  const btnSoloExitOuter = document.getElementById('btnSoloExitOuter');
+  const btnSoloOverview = document.getElementById('btnSoloOverview');
+  const soloDeckSearch = $solo('soloDeckSearch');
+  const soloDeckList = $solo('soloDeckList');
+
+  btnSoloClose && (btnSoloClose.onclick = ()=>closeSoloDeckModal());
+  soloDeckModal.addEventListener('mousedown',(e)=>{ if(e.target===soloDeckModal) closeSoloDeckModal(); });
+
+  soloDeckSearch && soloDeckSearch.addEventListener('input', renderSoloDeckList);
+
+  soloDeckList && soloDeckList.addEventListener('click',(e)=>{
+    const btn = e.target.closest('button[data-id]');
+    if(!btn) return;
+    pickSoloDeckById(btn.dataset.id);
+  });
+
+  btnSoloBack && (btnSoloBack.onclick = ()=>{
+    if(soloPickStep===2){
+      soloPickStep=1;
+      soloDeckOpp=null;
+      updateSoloDeckUI();
+      renderSoloDeckList();
+    }
+  });
+
+  btnSoloStart && (btnSoloStart.onclick = ()=>startSoloMode());
+  btnSoloExit && (btnSoloExit.onclick = ()=>exitSoloMode());
+
+  btnSoloExitOuter && (btnSoloExitOuter.onclick = ()=>exitSoloMode());
+  btnSoloOverview && (btnSoloOverview.onclick = ()=>toggleSoloOverview());
+
+
+  __soloWired = true;
+}
+
+function openSoloDeckModal(){
+  // クリック時にはDOMができてる想定。念のため配線。
+  ensureSoloWired();
+
+  const soloDeckModal = $solo('soloDeckModal');
+  const soloDeckSearch = $solo('soloDeckSearch');
+  if(!soloDeckModal) return;
+
+  soloPickStep = 1;
+  soloDeckYou = null;
+  soloDeckOpp = null;
+
+  if(soloDeckSearch) soloDeckSearch.value='';
+  soloDeckModal.classList.remove('hidden');
+  updateSoloDeckUI();
+  renderSoloDeckList();
+
+  setTimeout(()=>{ try{ soloDeckSearch && soloDeckSearch.focus(); }catch(e){} }, 0);
+}
+
+function closeSoloDeckModal(){
+  const soloDeckModal = $solo('soloDeckModal');
+  if(!soloDeckModal) return;
+  soloDeckModal.classList.add('hidden');
+}
+
 function pickSoloDeckById(id){
   const decks = getDeckSaves();
   let d = null;
+
   if(String(id)==='__CURRENT__'){
     d = { id:'__CURRENT__', name:'(いま構築中のデッキ)', deck: currentDeckObj() };
   }else{
@@ -2918,75 +3011,111 @@ function pickSoloDeckById(id){
   updateSoloDeckUI();
 }
 
+
+function applySoloOverviewScale(){
+  const soloContainer = $solo('soloContainer');
+  if(!soloContainer || !soloContainer.classList.contains('overview')) return;
+
+  const soloScroll = $solo('soloScroll');
+  if(!soloScroll) return;
+
+  // 盤面2枚(=200vh)を、ツールバーの高さを除いた表示領域に収める
+  const tb = document.getElementById('toolbar');
+  const tbH = tb ? tb.getBoundingClientRect().height + 16 : 0;
+  const availH = Math.max(200, window.innerHeight - tbH);
+  const scale = Math.max(0.2, Math.min(0.5, availH / (window.innerHeight * 2)));
+
+  soloContainer.style.setProperty('--soloOverviewScale', String(scale));
+
+  // 先頭(相手盤面側)から2面見えるように
+  try{ soloScroll.scrollTop = 0; }catch(e){}
+}
+
+function toggleSoloOverview(force){
+  const soloContainer = $solo('soloContainer');
+  if(!soloContainer || soloContainer.classList.contains('hidden')) return;
+
+  const on = (typeof force==='boolean') ? force : !soloContainer.classList.contains('overview');
+  soloContainer.classList.toggle('overview', on);
+
+  // ボタン表示
+  const b = document.getElementById('btnSoloOverview');
+  if(b) b.textContent = on ? '🧩 通常表示' : '🧩 2面表示';
+
+  if(on) applySoloOverviewScale();
+}
+
+window.addEventListener('resize', ()=>applySoloOverviewScale());
+
 function startSoloMode(){
   if(!(soloDeckYou && soloDeckOpp)){ alert('デッキを2つ選択してください'); return; }
   closeSoloDeckModal();
 
   // hide main UI and open solo container
   try{ builder.classList.add('hidden'); }catch(e){}
-  try{ toolbar.classList.add('hidden'); }catch(e){}
+  try{ toolbar.classList.remove('hidden'); }catch(e){}
+  try{ document.body.classList.add('soloActive'); }catch(e){}
   try{ viewer.classList.add('hidden'); }catch(e){}
   try{ preview.classList.add('hidden'); }catch(e){}
   try{ startModal.style.display='none'; }catch(e){}
+
+  const soloContainer = $solo('soloContainer');
+  const soloScroll = $solo('soloScroll');
+  const soloFrameOpp = $solo('soloFrameOpp');
+  const soloFrameYou = $solo('soloFrameYou');
+
   if(soloContainer) soloContainer.classList.remove('hidden');
+  try{ if(soloContainer) soloContainer.classList.remove('overview'); }catch(e){}
+  try{ const b=document.getElementById('btnSoloOverview'); if(b) b.textContent='🧩 2面表示'; }catch(e){}
 
-  // load iframes
   const baseUrl = location.href.split('#')[0].split('?')[0];
-  if(soloFrameOpp) soloFrameOpp.src = baseUrl + '?embed=1&flip=1';
-  if(soloFrameYou) soloFrameYou.src = baseUrl + '?embed=1';
-
   const deckOpp = soloDeckOpp.deck;
   const deckYou = soloDeckYou.deck;
 
-  // send deck when each iframe is ready
+  // send deck when each iframe is ready (set onload BEFORE src)
   if(soloFrameOpp){
     soloFrameOpp.onload = ()=>{
       try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckOpp}, '*'); }catch(e){}
     };
+    soloFrameOpp.src = baseUrl + '?embed=1&flip=1';
   }
   if(soloFrameYou){
     soloFrameYou.onload = ()=>{
       try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckYou}, '*'); }catch(e){}
     };
+    soloFrameYou.src = baseUrl + '?embed=1';
   }
 
   // start at "you" board (bottom)
   setTimeout(()=>{
     try{ if(soloScroll) soloScroll.scrollTop = window.innerHeight; }catch(e){}
-  }, 50);
+  }, 80);
 }
 
 function exitSoloMode(){
+  const soloContainer = $solo('soloContainer');
+  const soloFrameOpp = $solo('soloFrameOpp');
+  const soloFrameYou = $solo('soloFrameYou');
+
   if(!soloContainer) return;
   soloContainer.classList.add('hidden');
+  try{ document.body.classList.remove('soloActive'); }catch(e){}
+  try{ const sc=$solo('soloContainer'); if(sc) sc.classList.remove('overview'); }catch(e){}
+
   // cleanup iframes
   try{ if(soloFrameOpp) soloFrameOpp.src = 'about:blank'; }catch(e){}
   try{ if(soloFrameYou) soloFrameYou.src = 'about:blank'; }catch(e){}
+
   // back to builder (keeps current deck)
   try{ openBuilder(); }catch(e){}
 }
 
-// wiring
-btnBuildSolo && (btnBuildSolo.onclick = ()=>{
-  openSoloDeckModal();
-});
-btnSoloClose && (btnSoloClose.onclick = ()=>closeSoloDeckModal());
-soloDeckModal && soloDeckModal.addEventListener('mousedown',(e)=>{ if(e.target===soloDeckModal) closeSoloDeckModal(); });
-soloDeckSearch && soloDeckSearch.addEventListener('input', renderSoloDeckList);
-soloDeckList && soloDeckList.addEventListener('click',(e)=>{
-  const btn = e.target.closest('button[data-id]');
-  if(!btn) return;
-  pickSoloDeckById(btn.dataset.id);
-});
-btnSoloBack && (btnSoloBack.onclick = ()=>{
-  if(soloPickStep===2){
-    soloPickStep=1;
-    soloDeckOpp=null;
-    updateSoloDeckUI();
-  }
-});
-btnSoloStart && (btnSoloStart.onclick = ()=>startSoloMode());
-btnSoloExit && (btnSoloExit.onclick = ()=>exitSoloMode());
+// wiring (btnBuildSoloは元DOMにあるので即OK)
+btnBuildSolo && (btnBuildSolo.onclick = ()=>{ openSoloDeckModal(); });
+
+// DOM末尾にsolo UIがあるので、ロード後に念のため配線
+window.addEventListener('DOMContentLoaded', ensureSoloWired);
+
 function encodeDeck(obj){return 'v1:'+btoa(unescape(encodeURIComponent(JSON.stringify(obj))))}
 function decodeDeck(code){if(!code.startsWith('v1:'))throw new Error('ver');const json=decodeURIComponent(escape(atob(code.slice(3))));return JSON.parse(json);}
 function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
@@ -3371,8 +3500,10 @@ let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushU
       <button id="btnSoloExit" type="button">終了</button>
     </div>
     <div id="soloScroll">
-      <iframe id="soloFrameOpp" title="相手盤面"></iframe>
-      <iframe id="soloFrameYou" title="自分盤面"></iframe>
+      <div id="soloFrames">
+        <iframe id="soloFrameOpp" title="相手盤面"></iframe>
+        <iframe id="soloFrameYou" title="自分盤面"></iframe>
+      </div>
     </div>
   </div>
 
