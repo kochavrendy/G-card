@@ -7,8 +7,12 @@
   *{box-sizing:border-box;}
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#181818;font-family:sans-serif;}
   :root{--ui-bg:#000a;--ui-fg:#eee;--zone-border:#00bfff88;--zone-fill:#00bfff14;--card-w:180px; --set-thumb-w:clamp(130px,18vw,220px); --set-thumb-aspect:21/11;}
-  #board{position:relative;width:100vw;height:100vh;background:#222 url("playmat.png") center/cover no-repeat;overflow:hidden;}
-  #toolbar{position:absolute;top:8px;left:8px;z-index:2000;background:var(--ui-bg);color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
+  #board{position:relative;width:100vw;height:100vh;background:#222;overflow:hidden;}
+  #board::before{content:"";position:absolute;inset:0;background:url("playmat.png") center/cover no-repeat;z-index:0;transform:rotate(0deg);transform-origin:center;pointer-events:none;}
+  body.flipLayout #board::before{transform:rotate(180deg);}
+  .zone,.card{z-index:2;}
+
+  #toolbar{position:fixed;top:8px;left:8px;z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
   #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
   #toolbar select{background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;}
   #fileInput,#backInput{display:none;}
@@ -18,6 +22,15 @@
   .zoneUI button{background:#000c;color:#fff;border:1px solid #555;font-size:11px;padding:2px 6px;border-radius:4px;cursor:pointer;}
   .areaUI{position:absolute;top:-20px;left:50%;transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto;}
   .areaUI button{background:#000c;color:#fff;border:1px solid #555;font-size:10px;padding:1px 4px;border-radius:4px;cursor:pointer;}
+  /* flipLayout(上側盤面)では slot1~5 のエリアボタンが手札に被るため、下側へ移動 */
+  body.flipLayout .zone[data-zone-id="slot1"] .areaUI,
+  body.flipLayout .zone[data-zone-id="slot2"] .areaUI,
+  body.flipLayout .zone[data-zone-id="slot3"] .areaUI,
+  body.flipLayout .zone[data-zone-id="slot4"] .areaUI,
+  body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
+    top: calc(100% + 6px);
+    bottom: auto;
+  }
   .rageUI{position:absolute;inset:0;pointer-events:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;}
   #rageCounter{background:#000c;color:#fff;border:2px solid #555;font-size:42px;font-weight:700;padding:6px 14px;border-radius:10px;min-width:72px;text-align:center;text-shadow:0 0 6px #000;}
   .rageBtns{display:flex;gap:6px;}
@@ -308,6 +321,7 @@
     position:fixed; top:8px; right:8px; z-index:9999;
     background:#000c; color:#fff; padding:6px 10px; border-radius:10px;
     font-size:13px; display:none; user-select:none;
+    white-space:pre-line;
   }
   body.spectator #spectatorBadge{ display:block; }
   body.spectator #toolbar{ display:none !important; }
@@ -515,6 +529,17 @@ html,body{
   gap:6px !important;
 }
 
+/* solo: flipLayout(上側盤面)のslot1~5は手札と被るので、エリアボタンをゾーン下へ */
+body.flipLayout .zone[data-zone-id="slot1"] .areaUI,
+body.flipLayout .zone[data-zone-id="slot2"] .areaUI,
+body.flipLayout .zone[data-zone-id="slot3"] .areaUI,
+body.flipLayout .zone[data-zone-id="slot4"] .areaUI,
+body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
+  top: calc(100% + 8px) !important;
+  bottom: auto !important;
+}
+
+
 /* counters */
 #deckCounter,#discardCounter,#monsterCounter{
   border-radius: var(--pill) !important;
@@ -666,6 +691,92 @@ html,body{
   *{ transition: none !important; animation: none !important; }
 }
 
+
+  /* ===== Solo (一人回し) ===== */
+  #soloContainer.hidden, #soloDeckModal.hidden{display:none !important;}
+  #soloDeckModal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);z-index:10000;}
+  #soloDeckPanel{width:min(760px,92vw);max-height:min(82vh,760px);background:rgba(18,22,32,.96);border:1px solid rgba(90,120,180,.35);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;}
+  #soloDeckHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(90,120,180,.25);}
+  #soloDeckHeader h2{margin:0;font-size:18px;letter-spacing:.02em;}
+  #btnSoloClose{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:6px 10px;cursor:pointer;}
+  #btnSoloClose:hover{background:rgba(255,255,255,.06);}
+  #soloStepText{padding:10px 14px;color:#cfe6ff;font-size:13px;}
+  #soloDeckSearch{margin:0 14px 10px 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(90,120,180,.25);background:rgba(0,0,0,.25);color:#fff;outline:none;}
+  #soloDeckSearch:focus{border-color:rgba(120,170,255,.55);box-shadow:0 0 0 3px rgba(120,170,255,.18);}
+  #soloDeckList{padding:12px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,.18);}
+  .soloDeckItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid rgba(90,120,180,.25);border-radius:14px;background:rgba(255,255,255,.03);}
+  .soloDeckMeta{min-width:0;}
+  .soloDeckName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .soloDeckInfo{opacity:.8;font-size:12px;margin-top:2px;}
+  .soloDeckActions{display:flex;gap:8px;flex:0 0 auto;}
+  .soloDeckActions button{background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
+  .soloDeckActions button:hover{background:rgba(255,255,255,.06);}
+  .soloDeckActions button.primary{background:rgba(0,160,255,.22);border-color:rgba(0,160,255,.45);}
+  .soloDeckActions button.primary:hover{background:rgba(0,160,255,.30);}
+  #soloDeckFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid rgba(90,120,180,.25);background:rgba(10,12,18,.75);}
+  #soloPickedInfo{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #soloDeckFooter .btnRow{display:flex;gap:8px;}
+  #soloDeckFooter button{background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
+  #soloDeckFooter button:disabled{opacity:.45;cursor:not-allowed;}
+  #soloDeckFooter button.primary{background:rgba(0,160,255,.22);border-color:rgba(0,160,255,.45);}
+  #soloDeckFooter button.primary:hover{background:rgba(0,160,255,.30);}
+  #soloContainer{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;}
+  #soloTopBar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.10);}
+  #soloTopBar .soloTitle{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #btnSoloExit{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
+  #btnSoloExit:hover{background:rgba(255,255,255,.10);}
+  #soloScroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;}
+  #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
+
+  /* --- Solo: toolbar pinned + overview (2面同時表示) --- */
+  #toolbar .soloOnly{display:none;}
+  body.soloActive #toolbar .soloOnly{display:inline-flex;}
+  body.soloActive #toolbar{right:8px;}
+  body.soloActive{padding-top:0;}
+  #soloTopBar{display:none;} /* ソロ中は既存ツールバーに集約 */
+  #soloScroll{position:relative;}
+  #soloFrames{display:flex;flex-direction:column;}
+  #soloFrames iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
+  /* 既存の指定をsoloFramesに寄せるため、soloScroll iframeは上書きで軽く残す */
+  #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;background:#000;}
+
+  /* toolbar overlap避け（ソロ中は上に余白を作る） */
+  body.soloActive #soloContainer{ padding-top: var(--soloToolbarH, 56px); }
+  body.soloActive #soloScroll{ height: calc(100vh - var(--soloToolbarH, 56px)); }
+  body.soloActive #soloFrames iframe{ height: calc(100vh - var(--soloToolbarH, 56px)); }
+
+  #soloContainer.overview #soloScroll{
+    overflow:hidden;
+    scroll-snap-type:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+  }
+  #soloContainer.overview #soloFrames{
+    position:relative;
+    left:auto;
+    width:auto;
+    transform:scale(var(--soloOverviewScale, .5));
+    transform-origin:center center;
+  }
+
+
+  /* ===== Deck QR ===== */
+  #qrModal,#qrScanModal{position:fixed;inset:0;z-index:5350;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
+  #qrPanel,#qrScanPanel{width:min(520px,92vw);max-height:86vh;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;}
+  #qrScanPanel{width:min(720px,94vw);}
+  .qrHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
+  .qrHeader h2{margin:0;font-size:18px;}
+  .qrHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
+  .qrBody{padding:12px 14px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+  #qrCanvas{width:min(340px,80vw);height:auto;background:#fff;border-radius:12px;padding:10px;}
+  #qrText{width:100%;height:84px;resize:none;background:#000;border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:12px;padding:8px 10px;font-size:12px;}
+  .qrHint{font-size:12px;opacity:.8;text-align:center;}
+  .qrBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .qrBtns button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;}
+  #qrVideo{width:100%;max-height:60vh;background:#000;border-radius:12px;}
+
 </style>
 </head>
 <body>
@@ -692,7 +803,8 @@ html,body{
         <option value="bottom">下</option>
       </select>
     </label>
-    <button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
+<button id="btnSoloOverview" class="soloOnly" title="2人の盤面を縮小して同時に表示">🧩 2面表示</button>
+<button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
     <span style="opacity:.6;">Alt+ホイール=拡大縮小 / R=左回転 / Shift=複数ドラッグ / Space=拡大</span>
   </div>
 
@@ -760,7 +872,12 @@ html,body{
         <div class="builderBtnCol">
           <button id="btnCodeLoad">コード読込</button>
           <button id="btnCodeGen">コード生成</button>
+          <button id="btnQrGen" title="現在のデッキをQRで共有">QR生成</button>
+          <button id="btnQrScan" title="QRを読み込んでデッキを取り込む">QR読込</button>
+          <button id="btnQrFile" title="QR画像（スクショ等）からデッキを取り込む">画像QR読込</button>
+          <input id="qrFileInput" type="file" accept="image/*" class="hidden" />
           <button id="btnBuildStart">このデッキで開始</button>
+          <button id="btnBuildSolo" title="一人回し（2デッキ選択）">一人回し</button>
           <button id="btnBuildCancel">キャンセル</button>
           <div class="builderSep"></div>
           <button id="btnDeckSave" title="構築中のデッキを保存して一覧に登録">💾デッキセーブ</button>
@@ -771,6 +888,41 @@ html,body{
       </div>
     </div>
   </div>
+
+  <!-- deck QR -->
+  <div id="qrModal" class="hidden">
+    <div id="qrPanel" role="dialog" aria-modal="true" aria-label="デッキQR">
+      <div class="qrHeader">
+        <h2>デッキQR</h2>
+        <button id="btnQrClose" type="button">閉じる</button>
+      </div>
+      <div class="qrBody">
+        <canvas id="qrCanvas" width="320" height="320"></canvas>
+        <img id="qrImg" width="320" height="320" alt="QR" style="display:none;" />
+        <div class="qrHint">スマホで読み取ってデッキを取り込めます</div>
+        <textarea id="qrText" readonly></textarea>
+        <div class="qrBtns">
+          <button id="btnQrCopy" type="button">コードをコピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- deck QR scanner -->
+  <div id="qrScanModal" class="hidden">
+    <div id="qrScanPanel" role="dialog" aria-modal="true" aria-label="QR読込">
+      <div class="qrHeader">
+        <h2>QR読込</h2>
+        <button id="btnQrScanClose" type="button">閉じる</button>
+      </div>
+      <div class="qrBody">
+        <video id="qrVideo" playsinline></video>
+        <canvas id="qrScanCanvas" class="hidden"></canvas>
+        <div class="qrHint">カメラ許可 → QRを写してください（画像から読み込む場合は「画像QR読込」を使用）</div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- deck manager -->
   <div id="deckMgr" class="hidden">
@@ -876,6 +1028,9 @@ html,body{
     </div>
   </div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 /***********************************************
  * v1.33a 変更点
@@ -885,6 +1040,10 @@ html,body{
  * - [patch] 盤面→山札へ戻す位置を「上/下」から選択できるUIを追加
  ***********************************************/
 
+const URL_PARAMS = new URLSearchParams(location.search);
+const IS_EMBED = URL_PARAMS.get('embed') === '1';
+const FLIP_LAYOUT = URL_PARAMS.get('flip') === '1';
+const IS_SOLO_ROOT = URL_PARAMS.get('solo_root') === '1';
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
 
@@ -982,8 +1141,22 @@ const PHASES = ['スタートフェイズ','メインフェイズ','撃退フェ
 let phaseIndex = 0;
 let lastCoin = null;
 
+function updateSpectatorBadge(){
+  // 観戦(共有)ウィンドウでは #toolbar を非表示にしているため、
+  // コイントス/フェーズの結果はバッジに出して見える化する。
+  try{
+    if(!IS_SPECTATOR) return;
+    const b=document.getElementById('spectatorBadge');
+    if(!b) return;
+    const phase = PHASES[phaseIndex] || '';
+    const coin  = lastCoin ? `🪙コイントス：${lastCoin}` : '🪙コイントス：-';
+    b.textContent = `共有用（手札 / サーチ非表示）\nフェーズ：${phase}\n${coin}`;
+  }catch(e){}
+}
+
 function updatePhaseUI(){
   try{ if(btnPhase) btnPhase.textContent = `フェーズ：${PHASES[phaseIndex]}`; }catch(e){}
+  updateSpectatorBadge();
 }
 function updateCoinUI(){
   try{
@@ -991,6 +1164,7 @@ function updateCoinUI(){
       btnCoin.textContent = lastCoin ? `🪙コイントス：${lastCoin}` : '🪙コイントス';
     }
   }catch(e){}
+  updateSpectatorBadge();
 }
 function doCoinToss(){
   if(IS_SPECTATOR) return;
@@ -1264,6 +1438,10 @@ const startModal=document.getElementById('startModal');
 const btnStartBuild=document.getElementById('btnStartBuild');
 const btnStartPlay=document.getElementById('btnStartPlay');
 
+// apply flip layout class (for embed opponent board etc.)
+try{ if(FLIP_LAYOUT) document.body.classList.add('flipLayout'); }catch(e){}
+
+
 // builder
 const builder=document.getElementById('builder');
 const libFilter=document.getElementById('libFilter');
@@ -1280,7 +1458,29 @@ const deckCodeBox=document.getElementById('deckCodeBox');
 const btnCodeLoad=document.getElementById('btnCodeLoad');
 const btnCodeGen=document.getElementById('btnCodeGen');
 const btnBuildStart=document.getElementById('btnBuildStart');
+const btnBuildSolo=document.getElementById('btnBuildSolo');
 const btnBuildCancel=document.getElementById('btnBuildCancel');
+
+const btnQrGen=document.getElementById('btnQrGen');
+const btnQrScan=document.getElementById('btnQrScan');
+const btnQrFile=document.getElementById('btnQrFile');
+const qrFileInput=document.getElementById('qrFileInput');
+const qrModal=document.getElementById('qrModal');
+const qrPanel=document.getElementById('qrPanel');
+const qrCanvas=document.getElementById('qrCanvas');
+const qrText=document.getElementById('qrText');
+const btnQrClose=document.getElementById('btnQrClose');
+const btnQrCopy=document.getElementById('btnQrCopy');
+
+const qrScanModal=document.getElementById('qrScanModal');
+const qrScanPanel=document.getElementById('qrScanPanel');
+const qrVideo=document.getElementById('qrVideo');
+const qrScanCanvas=document.getElementById('qrScanCanvas');
+const btnQrScanClose=document.getElementById('btnQrScanClose');
+
+let __qrStream=null;
+let __qrScanActive=false;
+
 
 // deck saves (builder)
 const btnDeckSave=document.getElementById('btnDeckSave');
@@ -1288,6 +1488,22 @@ const btnDeckLoad=document.getElementById('btnDeckLoad');
 const btnDeckDownload=document.getElementById('btnDeckDownload');
 const deckUploadInput=document.getElementById('deckUploadInput');
 const deckMgr=document.getElementById('deckMgr');
+
+// solo modal & container
+const soloDeckModal=document.getElementById('soloDeckModal');
+const soloDeckList=document.getElementById('soloDeckList');
+const soloDeckSearch=document.getElementById('soloDeckSearch');
+const soloStepText=document.getElementById('soloStepText');
+const soloPickedInfo=document.getElementById('soloPickedInfo');
+const btnSoloClose=document.getElementById('btnSoloClose');
+const btnSoloBack=document.getElementById('btnSoloBack');
+const btnSoloStart=document.getElementById('btnSoloStart');
+const soloContainer=document.getElementById('soloContainer');
+const soloScroll=document.getElementById('soloScroll');
+const soloFrameOpp=document.getElementById('soloFrameOpp');
+const soloFrameYou=document.getElementById('soloFrameYou');
+const btnSoloExit=document.getElementById('btnSoloExit');
+
 const deckMgrSearch=document.getElementById('deckMgrSearch');
 const deckMgrList=document.getElementById('deckMgrList');
 const deckMgrCount=document.getElementById('deckMgrCount');
@@ -1743,7 +1959,7 @@ const btnTokenCreate=document.getElementById('btnTokenCreate');
 
 // ===== ZONES =====
 const SLOT_W=0.11,SLOT_H=0.24;const X1=0.24,X2=0.37,X3=0.50,X4=0.63,X5=0.76;const Y_BOTTOM=0.58,Y_TOP=0.12;
-const zones=[
+const BASE_ZONES=[
   { id:'strategy1',name:'戦略カード置き場①',x:0.04,y:0.08,w:0.18,h:0.18 },
   { id:'strategy2',name:'戦略カード置き場②',x:0.04,y:0.31,w:0.18,h:0.18 },
   { id:'monster',name:'怪獣デッキ置き場',x:0.043,y:0.55,w:0.18,h:0.26 },
@@ -1760,6 +1976,9 @@ const zones=[
   { id:'discard',name:'捨て札',x:0.885,y:0.56,w:0.095,h:0.26 },
   { id:'hand',name:'手札',x:0.18,y:0.84,w:0.64,h:0.14 }
 ];
+
+function flipZone(z){return Object.assign({}, z, {x:1 - z.x - z.w, y:1 - z.y - z.h});}
+const zones = (FLIP_LAYOUT ? BASE_ZONES.map(flipZone) : BASE_ZONES);
 const zoneDom={};
 
 function createZones(){
@@ -1998,7 +2217,7 @@ function removeCardById(id){
 btnToFront.onclick=()=>{if(!selection.size){alert('カードを選択してください');return;}selection.forEach(id=>bringToFront(id));pushUndo();};
 btnToBack.onclick=()=>{if(!selection.size){alert('カードを選択してください');return;}selection.forEach(id=>bringToBack(id));pushUndo();};
 btnUndo.onclick=undo;btnSave.onclick=saveLocal;btnLoad.onclick=loadLocal;
-if(btnOpenSpectator) btnOpenSpectator.onclick=openSpectatorWindow;btnTurnStart.onclick=()=>{turnStart();};btnPreview.onclick=openPreview;btnBackToMode.onclick=()=>{goBackToMode();};
+if(btnOpenSpectator) btnOpenSpectator.onclick=openSpectatorWindow;btnTurnStart.onclick=()=>{turnStart();};btnPreview.onclick=openPreview;btnBackToMode.onclick=()=>{ if(document.body.classList.contains('soloActive')){ exitSoloMode('start'); } else { goBackToMode(); } };
 btnToken.onclick=()=>{openTokenSelector();};
 if(btnCoin) btnCoin.onclick=doCoinToss;
 if(btnPhase) btnPhase.onclick=nextPhase;
@@ -2185,13 +2404,21 @@ function layoutHand(){
 
   const bw = board.clientWidth, bh = board.clientHeight;
   const startX = z.x*bw + 20;
-  const y      = z.y*bh - 10;
+  let y      = z.y*bh - 10;
   const endX   = z.x*bw + z.w*bw - 20;
   const avail  = Math.max(0, endX - startX);
 
   const baseW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--card-w'));
   const handCards = Object.values(state.cards).filter(c => c.zone === 'hand');
   if(!handCards.length) return;
+
+  // 反転レイアウト(上側手札)は、カードが盤面にかぶらないように上端へ“はみ出し”表示にする
+  if(FLIP_LAYOUT){
+    const maxH = Math.max(...handCards.map(c => baseW * 1.333 * ((c.scale==null)?1:c.scale)));
+    const visible = Math.max(90, Math.min(maxH, z.h*bh + 30));
+    y = y - (maxH - visible);
+  }
+
 
   // 既存の順番があればそれを活かす（保存/読込後も崩れにくい）
   handOrderCounter = Math.max(handOrderCounter, ...handCards.map(c=>c._handOrder||0));
@@ -2304,6 +2531,46 @@ function loadFromJSON(json,push=true){
 btnStartBuild.onclick=()=>{startModal.style.display='none';openBuilder();};
 btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');phaseIndex=0;lastCoin=null;updatePhaseUI();updateCoinUI();autoLoadBackImage();};
 function goBackToMode(){if(revealIsOpen()) cancelReveal(); toolbar.classList.add('hidden');viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
+
+
+// ===== embed instance (used by solo mode iframes) =====
+if(IS_EMBED){
+  try{ startModal.style.display='none'; }catch(e){}
+  try{ builder.classList.add('hidden'); }catch(e){}
+  try{ toolbar.classList.add('hidden'); }catch(e){}
+  try{ if(btnBackToMode) btnBackToMode.style.display='none'; }catch(e){}
+  try{ if(btnStartBuild) btnStartBuild.style.display='none'; }catch(e){}
+  // keep toolbars in embedded instances, but hide spectator button (not needed)
+  try{ if(btnOpenSpectator) btnOpenSpectator.style.display='none'; }catch(e){}
+  // reset meta UI
+  try{ phaseIndex=0; lastCoin=null; updatePhaseUI(); updateCoinUI(); }catch(e){}
+  try{ autoLoadBackImage(); }catch(e){}
+  // deck init from parent
+  window.addEventListener('message',(ev)=>{
+    const d=ev.data;
+    if(!d || typeof d!=='object') return;
+    if(d.type==='SOLO_INIT_DECK' && d.deck){
+      try{ applyDeckAndStart(d.deck); }catch(e){ console.error(e); }
+      return;
+    }
+    if(d.type==='SOLO_SET_META'){
+      try{
+        if(typeof d.phaseIndex==='number' && Array.isArray(PHASES) && PHASES.length){
+          const n = ((d.phaseIndex % PHASES.length) + PHASES.length) % PHASES.length;
+          phaseIndex = n;
+          updatePhaseUI();
+        }
+        if('coin' in d){
+          lastCoin = d.coin ? String(d.coin) : null;
+          updateCoinUI();
+        }
+      }catch(e){ console.error(e); }
+      return;
+    }
+  });
+  try{ window.parent && window.parent.postMessage({type:'SOLO_READY', flip:!!FLIP_LAYOUT}, '*'); }catch(e){}
+}
+
 
 // ===== 自動裏面読み込み =====
 // undoで「裏面が白に戻る」を防ぐため、auto読み込み成功時は undo履歴内の backSrc を同期する
@@ -2729,8 +2996,791 @@ function updateBuildCount(){const m=sumObj(buildMain),k=sumObj(buildMon);countIn
 function sumObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:buildMon});};
 btnCodeLoad.onclick=()=>{try{const obj=decodeDeck(deckCodeBox.value.trim());buildMain=obj.main||{};buildMon=obj.monster||{};renderDeckThumbs();updateBuildCount();alert('読込完了');}catch(e){alert('コードが不正です');}};
+
+// ===== Deck QR =====
+function normalizeDeckCodeFromText(t){
+  if(!t) return '';
+  const s=String(t).trim();
+  if(s.startsWith('v1:')) return s;
+  const i=s.indexOf('v1:');
+  if(i>=0) return s.slice(i).trim();
+  return s;
+}
+
+let __qrCodeLibPromise = null;
+function __loadScriptOnce(src){
+  return new Promise((resolve,reject)=>{
+    // already loaded?
+    const exists = Array.from(document.scripts||[]).some(s=>s.src===src);
+    if(exists) return resolve(true);
+    const s=document.createElement('script');
+    s.src=src;
+    s.async=true;
+    s.onload=()=>resolve(true);
+    s.onerror=()=>reject(new Error('load failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+async function __ensureQRCodeLib(){
+  if(window.QRCode && QRCode.toCanvas) return true;
+  if(__qrCodeLibPromise) return __qrCodeLibPromise;
+  const urls=[
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js',
+    'https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js'
+  ];
+  __qrCodeLibPromise=(async ()=>{
+    for(const u of urls){
+      try{
+        await __loadScriptOnce(u);
+        if(window.QRCode && QRCode.toCanvas) return true;
+      }catch(e){ /* try next */ }
+    }
+    return false;
+  })();
+  return __qrCodeLibPromise;
+}
+
+function __showQrFallbackImage(code){
+  if(!qrCanvas) return;
+  const img = document.getElementById('qrImg');
+  // Hide canvas, show img
+  qrCanvas.style.display='none';
+  if(img){
+    img.style.display='block';
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&ecc=M&margin=1&data=' + encodeURIComponent(code);
+    img.onerror = ()=>{
+      // If even this fails, show a clear message on canvas
+      try{
+        qrCanvas.style.display='block';
+        img.style.display='none';
+        const ctx=qrCanvas.getContext('2d');
+        ctx.clearRect(0,0,qrCanvas.width,qrCanvas.height);
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,qrCanvas.width,qrCanvas.height);
+        ctx.fillStyle='#000';ctx.font='14px sans-serif';
+        ctx.fillText('QR生成に失敗しました',10,30);
+        ctx.fillText('通信環境を確認してください',10,55);
+      }catch(e){}
+    };
+  }
+}
+
+async function openQrModalWithCode(code){
+  if(!qrModal||!qrCanvas||!qrText) return;
+  const c=normalizeDeckCodeFromText(code);
+  qrText.value=c;
+
+  qrModal.classList.remove('hidden');
+
+  // render QR (prefer local lib; fallback to external image)
+  try{
+    const ok = await __ensureQRCodeLib();
+    const img = document.getElementById('qrImg');
+    if(ok && window.QRCode && QRCode.toCanvas){
+      // show canvas, hide img
+      qrCanvas.style.display='block';
+      if(img) img.style.display='none';
+      QRCode.toCanvas(qrCanvas, c, {errorCorrectionLevel:'M', margin:1, width:320}, (err)=>{
+        if(err) console.warn(err);
+      });
+      return;
+    }
+    // fallback image service
+    __showQrFallbackImage(c);
+  }catch(e){
+    console.warn(e);
+    __showQrFallbackImage(c);
+  }
+}
+
+function closeQrModal(){ qrModal && qrModal.classList.add('hidden'); }
+btnQrClose && (btnQrClose.onclick=closeQrModal);
+qrModal && qrModal.addEventListener('click', e=>{ if(e.target===qrModal) closeQrModal(); });
+
+btnQrCopy && (btnQrCopy.onclick=async ()=>{
+  try{
+    await navigator.clipboard.writeText(qrText.value||'');
+    alert('コピーしました');
+  }catch(e){
+    // fallback
+    try{
+      qrText.focus(); qrText.select();
+      document.execCommand('copy');
+      alert('コピーしました');
+    }catch(e2){ alert('コピーに失敗しました'); }
+  }
+});
+
+function stopQrStream(){
+  try{
+    if(__qrStream){
+      __qrStream.getTracks().forEach(t=>t.stop());
+    }
+  }catch(e){}
+  __qrStream=null;
+}
+
+function closeQrScan(){
+  __qrScanActive=false;
+  stopQrStream();
+  if(qrVideo) qrVideo.srcObject=null;
+  qrScanModal && qrScanModal.classList.add('hidden');
+}
+btnQrScanClose && (btnQrScanClose.onclick=closeQrScan);
+qrScanModal && qrScanModal.addEventListener('click', e=>{ if(e.target===qrScanModal) closeQrScan(); });
+
+async function openQrScanner(onResult){
+  if(!qrScanModal || !qrVideo || !qrScanCanvas) return;
+
+  // camera requires https (or localhost)
+  if(location.protocol!=='https:' && location.hostname!=='localhost'){
+    alert('QR読込はHTTPSが必要です（GitHub PagesはOK）');
+    return;
+  }
+  if(typeof jsQR==='undefined'){
+    alert('QR読込ライブラリの読み込みに失敗しました（通信環境を確認してください）');
+    return;
+  }
+
+  qrScanModal.classList.remove('hidden');
+  __qrScanActive=true;
+
+  try{
+    __qrStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'} , audio:false});
+  }catch(e){
+    __qrScanActive=false;
+    alert('カメラを起動できませんでした');
+    return;
+  }
+
+  qrVideo.srcObject=__qrStream;
+  try{ await qrVideo.play(); }catch(e){}
+
+  const cvs=qrScanCanvas;
+  const ctx=cvs.getContext('2d', {willReadFrequently:true});
+
+  const tick=()=>{
+    if(!__qrScanActive) return;
+    try{
+      if(qrVideo.readyState>=2){
+        cvs.width = qrVideo.videoWidth||640;
+        cvs.height = qrVideo.videoHeight||480;
+        ctx.drawImage(qrVideo,0,0,cvs.width,cvs.height);
+        const img=ctx.getImageData(0,0,cvs.width,cvs.height);
+        const res=jsQR(img.data,img.width,img.height);
+        if(res && res.data){
+          const code=normalizeDeckCodeFromText(res.data);
+          closeQrScan();
+          onResult && onResult(code);
+          return;
+        }
+      }
+    }catch(e){}
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+async function decodeQrFromImageFile(file){
+  if(!file) return null;
+  if(typeof jsQR==='undefined') return null;
+
+  const MAX_SIDE = 1400; // 大きすぎる画像は縮小して高速化
+  let source = null;
+  let objectUrl = null;
+
+  // createImageBitmapが使えるならEXIF向きも反映されやすい
+  try{
+    if('createImageBitmap' in window){
+      source = await createImageBitmap(file, { imageOrientation:'from-image' });
+    }
+  }catch(e){ /* fallback below */ }
+
+  if(!source){
+    objectUrl = URL.createObjectURL(file);
+    source = await new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = ()=> resolve(img);
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+  }
+
+  const w0 = source.width || source.videoWidth || source.naturalWidth;
+  const h0 = source.height || source.videoHeight || source.naturalHeight;
+  if(!w0 || !h0) return null;
+
+  const scale = Math.min(1, MAX_SIDE / Math.max(w0, h0));
+  const w = Math.max(1, Math.round(w0 * scale));
+  const h = Math.max(1, Math.round(h0 * scale));
+
+  const cvs = document.createElement('canvas');
+  cvs.width = w; cvs.height = h;
+  const ctx = cvs.getContext('2d', { willReadFrequently:true });
+  ctx.drawImage(source, 0, 0, w, h);
+
+  // object URL cleanup
+  if(objectUrl) URL.revokeObjectURL(objectUrl);
+
+  const imgData = ctx.getImageData(0,0,w,h);
+  const res = jsQR(imgData.data, w, h, { inversionAttempts:'attemptBoth' });
+  return res ? res.data : null;
+}
+
+function applyImportedDeckCode(raw){
+  try{
+    const code = normalizeDeckCodeFromText(raw);
+    deckCodeBox.value = code;
+    const obj = decodeDeck(code);
+    buildMain = obj.main || {};
+    buildMon  = obj.monster || {};
+    renderDeckThumbs();
+    updateBuildCount();
+    alert('読込完了');
+  }catch(e){
+    alert('QRが不正です');
+  }
+}
+
+// Buttons: generate / scan
+btnQrGen && (btnQrGen.onclick=()=>{
+  const code=encodeDeck({main:buildMain,monster:buildMon});
+  deckCodeBox.value=code;
+  openQrModalWithCode(code);
+});
+
+btnQrScan && (btnQrScan.onclick=()=>{
+  openQrScanner((code)=>{
+    applyImportedDeckCode(code);
+  });
+});
+
+btnQrFile && (btnQrFile.onclick=()=>{
+  if(!qrFileInput){ alert('画像読込が利用できません'); return; }
+  qrFileInput.value='';
+  qrFileInput.click();
+});
+
+qrFileInput && (qrFileInput.onchange=async ()=>{
+  const file = qrFileInput.files && qrFileInput.files[0];
+  if(!file) return;
+  const data = await decodeQrFromImageFile(file);
+  if(!data){
+    alert('画像からQRを読み取れませんでした（解像度/ピント/余白を確認）');
+    return;
+  }
+  applyImportedDeckCode(data);
+});
 btnBuildCancel.onclick=()=>{closeBuilder();startModal.style.display='flex';};
 btnBuildStart.onclick=()=>{if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)===MON_LIMIT)){alert('枚数が足りません');return;}closeBuilder();toolbar.classList.remove('hidden');applyDeckAndStart({main:buildMain,monster:buildMon});autoLoadBackImage();};
+
+// ===== Solo (一人回し) =====
+let soloPickStep = 1; // 1: you(bottom) / 2: opp(top)
+let soloDeckYou = null;
+let soloDeckOpp = null;
+let __soloWired = false;
+let __soloActiveFrame = null;
+let __soloForwardWired = false;
+let __soloFrameBound = false;
+
+function $solo(id){ return document.getElementById(id); }
+
+function getActiveSoloFrame(){
+  const fOpp = $solo('soloFrameOpp');
+  const fYou = $solo('soloFrameYou');
+  const sc = $solo('soloScroll');
+
+  if(__soloActiveFrame && __soloActiveFrame.contentWindow) return __soloActiveFrame;
+
+  // fallback: いま見えている側（スクロール位置）で推定
+  try{
+    const frameH = (typeof getSoloFrameViewportHeight === 'function') ? getSoloFrameViewportHeight() : window.innerHeight;
+    if(sc && fOpp && fYou){
+      return (sc.scrollTop < frameH * 0.5) ? fOpp : fYou;
+    }
+  }catch(e){}
+  return fYou || fOpp || null;
+}
+
+// 親ツールバーの「フェーズ / コイントス」表示を、アクティブ盤面(iframe)の状態に追従させる
+function mirrorMetaFromIframe(win){
+  try{
+    if(!win || !win.document) return;
+    const pCoin = document.getElementById('btnCoin');
+    const pPhase = document.getElementById('btnPhase');
+    const iCoin = win.document.getElementById('btnCoin');
+    const iPhase = win.document.getElementById('btnPhase');
+    if(pCoin && iCoin) pCoin.textContent = iCoin.textContent;
+    if(pPhase && iPhase) pPhase.textContent = iPhase.textContent;
+  }catch(e){}
+}
+
+// ===== ソロ用メタ（フェーズ/コイン）を両盤面へ同期 =====
+function soloPostMetaToFrame(fr){
+  try{
+    if(!fr || !fr.contentWindow) return;
+    fr.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*');
+  }catch(e){}
+}
+function soloBroadcastMeta(){
+  try{
+    const fOpp = $solo('soloFrameOpp');
+    const fYou = $solo('soloFrameYou');
+    soloPostMetaToFrame(fOpp);
+    soloPostMetaToFrame(fYou);
+  }catch(e){}
+}
+function soloCoinTossBroadcast(){
+  if(IS_SPECTATOR) return;
+  lastCoin = (Math.random()<0.5) ? '表' : '裏';
+  updateCoinUI();
+  try{ window.logAction && window.logAction(`コイントス：${lastCoin}`); }catch(e){}
+  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
+  soloBroadcastMeta();
+}
+function soloNextPhaseBroadcast(){
+  if(IS_SPECTATOR) return;
+  phaseIndex = (phaseIndex + 1) % PHASES.length;
+  updatePhaseUI();
+  try{ window.logAction && window.logAction(`フェーズ：${PHASES[phaseIndex]}`); }catch(e){}
+  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
+  soloBroadcastMeta();
+}
+
+
+function forwardToActiveIframe(targetId){
+  const fr = getActiveSoloFrame();
+  if(!fr) return;
+  try{
+    const win = fr.contentWindow;
+    if(!win || !win.document) return;
+
+    if(targetId === 'deckReturnPos'){
+      const src = document.getElementById('deckReturnPos');
+      const dst = win.document.getElementById('deckReturnPos');
+      if(src && dst){
+        dst.value = src.value;
+        dst.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+      return;
+    }
+
+    const el = win.document.getElementById(targetId);
+    if(el && typeof el.click === 'function'){
+      el.click();
+      // coin/phase は iframe 内の表示が変わるので、親ツールバーにも反映
+      if(targetId==='btnCoin' || targetId==='btnPhase'){
+        try{ requestAnimationFrame(()=>mirrorMetaFromIframe(win)); }
+        catch(e){ try{ setTimeout(()=>mirrorMetaFromIframe(win), 0); }catch(e2){} }
+      }
+    }
+  }catch(e){
+    console.warn(e);
+  }
+}
+
+function wireSoloForwarding(){
+  if(IS_EMBED) return;
+  if(__soloForwardWired) return;
+  __soloForwardWired = true;
+
+  const tb = document.getElementById('toolbar');
+  if(!tb) return;
+
+  const forwardIds = new Set([
+    'btnFlip','btnRemove','btnToFront','btnToBack','btnUndo',
+    'btnSave','btnLoad','btnLog','btnTurnStart','btnPreview',
+    'btnToken','btnCoin','btnPhase'
+  ]);
+
+  // クリックを、アクティブ盤面(iframe)に転送
+  tb.addEventListener('click', (ev)=>{
+    if(!document.body.classList.contains('soloActive')) return;
+
+    const t = ev.target;
+    if(!(t instanceof HTMLElement)) return;
+
+    const id = t.id;
+    if(!id) return;
+
+    // ソロ専用ボタンは親側で処理
+    if(id==='btnSoloOverview' || id==='btnBackToMode') return;
+
+    if(!forwardIds.has(id)) return;
+
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    // コイントス/フェーズは「対戦全体の状態」なので、両方の盤面へ同時に反映
+    if(id==='btnCoin'){ soloCoinTossBroadcast(); return; }
+    if(id==='btnPhase'){ soloNextPhaseBroadcast(); return; }
+
+    forwardToActiveIframe(id);
+  }, true);
+
+  // select も転送
+  tb.addEventListener('change', (ev)=>{
+    if(!document.body.classList.contains('soloActive')) return;
+
+    const t = ev.target;
+    if(!(t instanceof HTMLElement)) return;
+
+    if(t.id === 'deckReturnPos'){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      forwardToActiveIframe('deckReturnPos');
+    }
+  }, true);
+
+  // キーショートカットも転送（F / Del）
+  document.addEventListener('keydown', (ev)=>{
+    if(!document.body.classList.contains('soloActive')) return;
+
+    const tag = (ev.target && ev.target.tagName) ? ev.target.tagName.toLowerCase() : '';
+    if(tag==='input' || tag==='textarea') return;
+
+    if(ev.key==='f' || ev.key==='F'){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      forwardToActiveIframe('btnFlip');
+    }else if(ev.key==='Delete'){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      forwardToActiveIframe('btnRemove');
+    }
+  }, true);
+
+  // 念のため：ソロ中は親側のonclickを無効化（誤って「カードを選択してください」が出るのを防ぐ）
+  try{
+    Array.from(forwardIds).forEach((id)=>{
+      const btn = document.getElementById(id);
+      if(!btn || btn.__soloGated) return;
+      const orig = btn.onclick;
+      btn.__soloGated = true;
+      btn.__soloOrigOnclick = orig;
+      btn.onclick = function(ev){
+        if(document.body.classList.contains('soloActive')) return;
+        if(typeof orig === 'function') return orig.call(this, ev);
+      };
+    });
+  }catch(e){}
+}
+
+function bindSoloFrameFocus(){
+  if(__soloFrameBound) return;
+
+  const fOpp = $solo('soloFrameOpp');
+  const fYou = $solo('soloFrameYou');
+  if(!fOpp && !fYou) return;
+
+  __soloFrameBound = true;
+
+  const mark = (fr)=>{
+    __soloActiveFrame = fr;
+    try{ mirrorMetaFromIframe(fr && fr.contentWindow); }catch(e){}
+  };
+
+  [fOpp, fYou].forEach(fr=>{
+    if(!fr) return;
+    fr.addEventListener('focus', ()=>mark(fr));
+    fr.addEventListener('pointerdown', ()=>mark(fr));
+    fr.addEventListener('mouseenter', ()=>mark(fr));
+  });
+}
+
+
+function soloDeckLabel(d){
+  if(!d) return '(未選択)';
+  return String(d.name||'(no name)');
+}
+
+function updateSoloDeckUI(){
+  const soloStepText = $solo('soloStepText');
+  const soloPickedInfo = $solo('soloPickedInfo');
+  const btnSoloBack = $solo('btnSoloBack');
+  const btnSoloStart = $solo('btnSoloStart');
+  if(!soloStepText || !soloPickedInfo || !btnSoloBack || !btnSoloStart) return;
+
+  if(soloPickStep===1){
+    soloStepText.textContent = '1/2：下側（自分）のデッキを選択';
+    btnSoloBack.disabled = true;
+    btnSoloStart.disabled = true;
+  }else{
+    soloStepText.textContent = '2/2：上側（相手）のデッキを選択';
+    btnSoloBack.disabled = false;
+    btnSoloStart.disabled = !(!!soloDeckYou && !!soloDeckOpp);
+  }
+  soloPickedInfo.textContent = `自分：${soloDeckLabel(soloDeckYou)} / 相手：${soloDeckLabel(soloDeckOpp)}`;
+}
+
+function renderSoloDeckList(){
+  const soloDeckList = $solo('soloDeckList');
+  const soloDeckSearch = $solo('soloDeckSearch');
+  if(!soloDeckList) return;
+
+  const q = (soloDeckSearch && soloDeckSearch.value ? soloDeckSearch.value.trim().toLowerCase() : '');
+  const decks = getDeckSaves().slice().sort((a,b)=>{
+    const ta = Date.parse(a.updatedAt||a.createdAt||0) || 0;
+    const tb = Date.parse(b.updatedAt||b.createdAt||0) || 0;
+    return tb-ta;
+  });
+  const filtered = q ? decks.filter(d=>String(d.name||'').toLowerCase().includes(q)) : decks;
+
+  // allow selecting current (unsaved) deck too
+  const curEntry = { id:'__CURRENT__', name:'(いま構築中のデッキ)', deck: currentDeckObj(), createdAt:'', updatedAt:'' };
+
+  soloDeckList.innerHTML = '';
+  const list = [curEntry, ...filtered];
+
+  list.forEach(d=>{
+    const mCnt = sumObj(d.deck?.main||{});
+    const kCnt = sumObj(d.deck?.monster||{});
+    const div = document.createElement('div');
+    div.className = 'soloDeckItem';
+    div.innerHTML = `
+      <div class="soloDeckMeta">
+        <div class="soloDeckName">${escapeHtml(d.name||'(no name)')}</div>
+        <div class="soloDeckInfo">メイン ${mCnt}/${MAIN_LIMIT} ・ 怪獣 ${kCnt}/${MON_LIMIT}</div>
+      </div>
+      <div class="soloDeckActions">
+        <button type="button" class="primary" data-id="${escapeHtml(d.id)}">選ぶ</button>
+      </div>
+    `;
+    soloDeckList.appendChild(div);
+  });
+}
+
+function ensureSoloWired(){
+  if(__soloWired) return;
+
+  const soloDeckModal = $solo('soloDeckModal');
+  if(!soloDeckModal) return; // DOMまだ
+
+  const btnSoloClose = $solo('btnSoloClose');
+  const btnSoloBack  = $solo('btnSoloBack');
+  const btnSoloStart = $solo('btnSoloStart');
+  const btnSoloExit  = $solo('btnSoloExit');
+const btnSoloOverview = document.getElementById('btnSoloOverview');
+  const soloDeckSearch = $solo('soloDeckSearch');
+  const soloDeckList = $solo('soloDeckList');
+
+  btnSoloClose && (btnSoloClose.onclick = ()=>closeSoloDeckModal());
+  soloDeckModal.addEventListener('mousedown',(e)=>{ if(e.target===soloDeckModal) closeSoloDeckModal(); });
+
+  soloDeckSearch && soloDeckSearch.addEventListener('input', renderSoloDeckList);
+
+  soloDeckList && soloDeckList.addEventListener('click',(e)=>{
+    const btn = e.target.closest('button[data-id]');
+    if(!btn) return;
+    pickSoloDeckById(btn.dataset.id);
+  });
+
+  btnSoloBack && (btnSoloBack.onclick = ()=>{
+    if(soloPickStep===2){
+      soloPickStep=1;
+      soloDeckOpp=null;
+      updateSoloDeckUI();
+      renderSoloDeckList();
+    }
+  });
+
+  btnSoloStart && (btnSoloStart.onclick = ()=>startSoloMode());
+  btnSoloExit && (btnSoloExit.onclick = ()=>exitSoloMode());
+btnSoloOverview && (btnSoloOverview.onclick = ()=>toggleSoloOverview());
+
+  try{ wireSoloForwarding(); }catch(e){}
+  try{ bindSoloFrameFocus(); }catch(e){}
+
+  __soloWired = true;
+}
+
+function openSoloDeckModal(){
+  // クリック時にはDOMができてる想定。念のため配線。
+  ensureSoloWired();
+
+  const soloDeckModal = $solo('soloDeckModal');
+  const soloDeckSearch = $solo('soloDeckSearch');
+  if(!soloDeckModal) return;
+
+  soloPickStep = 1;
+  soloDeckYou = null;
+  soloDeckOpp = null;
+
+  if(soloDeckSearch) soloDeckSearch.value='';
+  soloDeckModal.classList.remove('hidden');
+  updateSoloDeckUI();
+  renderSoloDeckList();
+
+  setTimeout(()=>{ try{ soloDeckSearch && soloDeckSearch.focus(); }catch(e){} }, 0);
+}
+
+function closeSoloDeckModal(){
+  const soloDeckModal = $solo('soloDeckModal');
+  if(!soloDeckModal) return;
+  soloDeckModal.classList.add('hidden');
+}
+
+function pickSoloDeckById(id){
+  const decks = getDeckSaves();
+  let d = null;
+
+  if(String(id)==='__CURRENT__'){
+    d = { id:'__CURRENT__', name:'(いま構築中のデッキ)', deck: currentDeckObj() };
+  }else{
+    d = decks.find(x=>String(x.id)===String(id));
+  }
+  if(!d || !d.deck){ alert('デッキが見つかりません'); renderSoloDeckList(); return; }
+
+  if(soloPickStep===1){
+    soloDeckYou = {name:d.name, deck: cloneDeckObj(d.deck)};
+    soloPickStep = 2;
+  }else{
+    soloDeckOpp = {name:d.name, deck: cloneDeckObj(d.deck)};
+  }
+  updateSoloDeckUI();
+}
+
+
+function updateSoloToolbarHeightVar(){
+  try{
+    const tb = document.getElementById('toolbar');
+    const h = tb ? (tb.getBoundingClientRect().height + 16) : 0;
+    document.documentElement.style.setProperty('--soloToolbarH', String(Math.ceil(h)) + 'px');
+    return h;
+  }catch(e){
+    return 0;
+  }
+}
+
+function getSoloFrameViewportHeight(){
+  const tbH = updateSoloToolbarHeightVar();
+  return Math.max(220, window.innerHeight - tbH);
+}
+
+function applySoloOverviewScale(){
+  const soloContainer = $solo('soloContainer');
+  if(!soloContainer || !soloContainer.classList.contains('overview')) return;
+
+  const soloScroll = $solo('soloScroll');
+  if(!soloScroll) return;
+
+  const tbH = updateSoloToolbarHeightVar();
+  const pad = 24; // overview padding
+  const availW = Math.max(240, window.innerWidth - pad);
+  const availH = Math.max(240, window.innerHeight - tbH - pad);
+
+  const frameH = Math.max(220, window.innerHeight - tbH);
+  const contentW = window.innerWidth;
+  const contentH = frameH * 2;
+
+  const scale = Math.max(0.2, Math.min(0.8, Math.min(availW / contentW, availH / contentH)));
+
+  soloContainer.style.setProperty('--soloOverviewScale', String(scale));
+
+  // 先頭(相手盤面側)から2面見えるように
+  try{ soloScroll.scrollTop = 0; }catch(e){}
+}
+
+function toggleSoloOverview(force){
+  const soloContainer = $solo('soloContainer');
+  if(!soloContainer || soloContainer.classList.contains('hidden')) return;
+
+  const on = (typeof force==='boolean') ? force : !soloContainer.classList.contains('overview');
+  soloContainer.classList.toggle('overview', on);
+
+  // ボタン表示
+  const b = document.getElementById('btnSoloOverview');
+  if(b) b.textContent = on ? '🧩 通常表示' : '🧩 2面表示';
+
+  if(on) applySoloOverviewScale();
+}
+
+window.addEventListener('resize', ()=>{ try{ if(document.body.classList.contains('soloActive')) updateSoloToolbarHeightVar(); }catch(e){}; applySoloOverviewScale(); });
+
+function startSoloMode(){
+  if(!(soloDeckYou && soloDeckOpp)){ alert('デッキを2つ選択してください'); return; }
+  closeSoloDeckModal();
+
+  // hide main UI and open solo container
+  try{ builder.classList.add('hidden'); }catch(e){}
+  try{ toolbar.classList.remove('hidden'); }catch(e){}
+  try{ document.body.classList.add('soloActive'); }catch(e){}
+  // ソロ開始時はメタ（コイン/フェーズ）を初期化して親・両盤面で揃える
+  try{ phaseIndex=0; lastCoin=null; updatePhaseUI(); updateCoinUI(); }catch(e){}
+  try{ updateSoloToolbarHeightVar(); }catch(e){}
+  try{ viewer.classList.add('hidden'); }catch(e){}
+  try{ preview.classList.add('hidden'); }catch(e){}
+  try{ startModal.style.display='none'; }catch(e){}
+
+  const soloContainer = $solo('soloContainer');
+  const soloScroll = $solo('soloScroll');
+  const soloFrameOpp = $solo('soloFrameOpp');
+  const soloFrameYou = $solo('soloFrameYou');
+
+  if(soloContainer) soloContainer.classList.remove('hidden');
+  try{ if(soloContainer) soloContainer.classList.remove('overview'); }catch(e){}
+  try{ const b=document.getElementById('btnSoloOverview'); if(b) b.textContent='🧩 2面表示'; }catch(e){}
+
+  const baseUrl = location.href.split('#')[0].split('?')[0];
+  const deckOpp = soloDeckOpp.deck;
+  const deckYou = soloDeckYou.deck;
+
+  // send deck when each iframe is ready (set onload BEFORE src)
+  if(soloFrameOpp){
+    soloFrameOpp.onload = ()=>{
+      try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckOpp}, '*'); }catch(e){}
+      // ソロのメタ（フェーズ/コイン）も初期同期
+      try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
+    };
+    soloFrameOpp.src = baseUrl + '?embed=1&flip=1';
+  }
+  if(soloFrameYou){
+    soloFrameYou.onload = ()=>{
+      try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckYou}, '*'); }catch(e){}
+      // ソロのメタ（フェーズ/コイン）も初期同期
+      try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
+    };
+    soloFrameYou.src = baseUrl + '?embed=1';
+  }
+
+  try{ wireSoloForwarding(); }catch(e){}
+  try{ bindSoloFrameFocus(); }catch(e){}
+  try{ __soloActiveFrame = soloFrameYou || soloFrameOpp; }catch(e){}
+
+  // start at "you" board (bottom)
+  setTimeout(()=>{
+    try{ if(soloScroll) soloScroll.scrollTop = getSoloFrameViewportHeight(); }catch(e){}
+  }, 80);
+}
+
+function exitSoloMode(destination='builder'){
+  // destination: 'builder' or 'start'
+  const soloContainer = $solo('soloContainer');
+  const soloFrameOpp = $solo('soloFrameOpp');
+  const soloFrameYou = $solo('soloFrameYou');
+
+  if(!soloContainer) return;
+  soloContainer.classList.add('hidden');
+  try{ document.body.classList.remove('soloActive'); }catch(e){}
+  try{ __soloActiveFrame = null; }catch(e){}
+  try{ const sc=$solo('soloContainer'); if(sc) sc.classList.remove('overview'); }catch(e){}
+
+  // cleanup iframes
+  try{ if(soloFrameOpp) soloFrameOpp.src = 'about:blank'; }catch(e){}
+  try{ if(soloFrameYou) soloFrameYou.src = 'about:blank'; }catch(e){}
+
+  // where to go after solo
+  try{
+    if(destination==='start'){ goBackToMode(); }
+    else { openBuilder(); }
+  }catch(e){}
+}
+
+// wiring (btnBuildSoloは元DOMにあるので即OK)
+btnBuildSolo && (btnBuildSolo.onclick = ()=>{ openSoloDeckModal(); });
+
+// DOM末尾にsolo UIがあるので、ロード後に念のため配線
+window.addEventListener('DOMContentLoaded', ensureSoloWired);
+
 function encodeDeck(obj){return 'v1:'+btoa(unescape(encodeURIComponent(JSON.stringify(obj))))}
 function decodeDeck(code){if(!code.startsWith('v1:'))throw new Error('ver');const json=decodeURIComponent(escape(atob(code.slice(3))));return JSON.parse(json);}
 function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
@@ -3087,5 +4137,40 @@ let __wrapLoadFromJSON=false;try{if(!__wrapLoadFromJSON){const __loadFromJSON=lo
 // [spectator-sync] Undo積み後も同期
 let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushUndo=()=>{__pushUndo();sendStateToSpectator();};__wrapPushUndo=true;}}catch(e){}
 </script>
+
+  <!-- solo deck select modal -->
+  <div id="soloDeckModal" class="hidden">
+    <div id="soloDeckPanel" role="dialog" aria-modal="true" aria-label="一人回し デッキ選択">
+      <div id="soloDeckHeader">
+        <h2>一人回し：デッキ選択</h2>
+        <button id="btnSoloClose" type="button" aria-label="閉じる">✕</button>
+      </div>
+      <div id="soloStepText">1/2：下側（自分）のデッキを選択</div>
+      <input id="soloDeckSearch" type="text" placeholder="デッキ名で検索..." />
+      <div id="soloDeckList"></div>
+      <div id="soloDeckFooter">
+        <div id="soloPickedInfo">未選択</div>
+        <div class="btnRow">
+          <button id="btnSoloBack" type="button" disabled>戻る</button>
+          <button id="btnSoloStart" type="button" class="primary" disabled>開始</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- solo container -->
+  <div id="soloContainer" class="hidden" aria-label="一人回しモード">
+    <div id="soloTopBar">
+      <div class="soloTitle">一人回しモード（▲上に相手盤面 / ▼下に自分盤面）</div>
+      <button id="btnSoloExit" type="button">終了</button>
+    </div>
+    <div id="soloScroll">
+      <div id="soloFrames">
+        <iframe id="soloFrameOpp" title="相手盤面"></iframe>
+        <iframe id="soloFrameYou" title="自分盤面"></iframe>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
