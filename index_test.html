@@ -763,19 +763,61 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 
 
   /* ===== Deck QR ===== */
-  #qrModal,#qrScanModal{position:fixed;inset:0;z-index:5350;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
-  #qrPanel,#qrScanPanel{width:min(520px,92vw);max-height:86vh;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;}
-  #qrScanPanel{width:min(720px,94vw);}
+  #qrModal{position:fixed;inset:0;z-index:5350;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
+  #qrPanel{width:min(900px,96vw);max-height:92vh;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;}
   .qrHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
   .qrHeader h2{margin:0;font-size:18px;}
   .qrHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
   .qrBody{padding:12px 14px;display:flex;flex-direction:column;gap:10px;align-items:center;}
-  #qrCanvas{width:min(340px,80vw);height:auto;background:#fff;border-radius:12px;padding:10px;}
+  #qrCanvas{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
+  #qrImg{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
   #qrText{width:100%;height:84px;resize:none;background:#000;border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:12px;padding:8px 10px;font-size:12px;}
   .qrHint{font-size:12px;opacity:.8;text-align:center;}
   .qrBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
   .qrBtns button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;}
-  #qrVideo{width:100%;max-height:60vh;background:#000;border-radius:12px;}
+
+/* ===== Fixed UI size + auto scale (2025-12-26) =====
+   目的：端末差で盤面/ボタンがギチギチにならないよう、
+   「基準解像度で固定して描画 → 画面が小さい時だけ全体を等倍縮小」します。
+*/
+:root{
+  --base-w: 2048px;   /* 添付スクショ基準 */
+  --base-h: 1015px;    /* 添付スクショ基準 */
+  --ui-scale: 1;
+}
+
+/* 盤面は基準サイズで描画し、画面が小さいときだけ縮小して収める */
+#stageWrap{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  background:#181818;
+  z-index:0;
+}
+#stage{
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--base-w);
+  height:var(--base-h);
+  transform:scale(var(--ui-scale));
+  transform-origin:0 0;
+}
+
+/* boardはstageに追従（既存の 100vw/100vh を上書き） */
+#board{
+  width:100% !important;
+  height:100% !important;
+}
+
+/* toolbarも同じ倍率で縮小（折り返しを起こしにくい固定幅へ） */
+#toolbar{
+  max-width:none !important;
+  width:calc(var(--base-w) - 16px);
+  transform:scale(var(--ui-scale));
+  transform-origin:0 0;
+}
+body.soloActive #toolbar{ right:auto !important; }
 
 </style>
 </head>
@@ -805,7 +847,6 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
     </label>
 <button id="btnSoloOverview" class="soloOnly" title="2人の盤面を縮小して同時に表示">🧩 2面表示</button>
 <button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
-    <span style="opacity:.6;">Alt+ホイール=拡大縮小 / R=左回転 / Shift=複数ドラッグ / Space=拡大</span>
   </div>
 
   <div id="spectatorBadge">共有用（手札 / サーチ非表示）</div>
@@ -817,14 +858,14 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
     </div>
   </div>
 
+  <div id="stageWrap"><div id="stage">
+    <div id="board"></div>
+    <div id="deckCounter"></div>
+    <div id="discardCounter"></div>
+    <div id="monsterCounter"></div>
+  </div></div>
 
-
-  <div id="board"></div>
-  <div id="deckCounter"></div>
-  <div id="discardCounter"></div>
-  <div id="monsterCounter"></div>
-
-  <!-- start modal -->
+<!-- start modal -->
   <div id="startModal">
     <div id="startBox">
       <h1>G-CARD Director</h1>
@@ -873,7 +914,6 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
           <button id="btnCodeLoad">コード読込</button>
           <button id="btnCodeGen">コード生成</button>
           <button id="btnQrGen" title="現在のデッキをQRで共有">QR生成</button>
-          <button id="btnQrScan" title="QRを読み込んでデッキを取り込む">QR読込</button>
           <button id="btnQrFile" title="QR画像（スクショ等）からデッキを取り込む">画像QR読込</button>
           <input id="qrFileInput" type="file" accept="image/*" class="hidden" />
           <button id="btnBuildStart">このデッキで開始</button>
@@ -898,6 +938,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
       </div>
       <div class="qrBody">
         <canvas id="qrCanvas" width="320" height="320"></canvas>
+        <img id="qrImg" width="320" height="320" alt="QR" style="display:none;" />
         <div class="qrHint">スマホで読み取ってデッキを取り込めます</div>
         <textarea id="qrText" readonly></textarea>
         <div class="qrBtns">
@@ -907,21 +948,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
     </div>
   </div>
 
-  <!-- deck QR scanner -->
-  <div id="qrScanModal" class="hidden">
-    <div id="qrScanPanel" role="dialog" aria-modal="true" aria-label="QR読込">
-      <div class="qrHeader">
-        <h2>QR読込</h2>
-        <button id="btnQrScanClose" type="button">閉じる</button>
-      </div>
-      <div class="qrBody">
-        <video id="qrVideo" playsinline></video>
-        <canvas id="qrScanCanvas" class="hidden"></canvas>
-        <div class="qrHint">カメラ許可 → QRを写してください（画像から読み込む場合は「画像QR読込」を使用）</div>
-      </div>
-    </div>
-  </div>
-
+  
 
   <!-- deck manager -->
   <div id="deckMgr" class="hidden">
@@ -957,7 +984,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
     </div>
   </div>
 
-  <!-- preview -->
+<!-- preview -->
   <div id="preview" class="hidden">
     <div id="previewPanel">
       <img id="previewImg" src="" alt="preview">
@@ -1115,6 +1142,30 @@ const deckCounterEl=document.getElementById('deckCounter');
 const discardCounterEl=document.getElementById('discardCounter');
 const monsterCounterEl=document.getElementById('monsterCounter');
 const toolbar=document.getElementById('toolbar');
+// ===== Fixed UI size + auto scale =====
+let __uiScale = 1;
+function applyUIScale(){
+  const rs = getComputedStyle(document.documentElement);
+  const baseW = parseFloat(rs.getPropertyValue('--base-w')) || 2048;
+  const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 974;
+  const w = window.innerWidth || document.documentElement.clientWidth || baseW;
+  const h = window.innerHeight || document.documentElement.clientHeight || baseH;
+  let s = Math.min(w/baseW, h/baseH);
+  if(!isFinite(s) || s<=0) s = 1;
+  // 画面が大きいときは等倍（固定サイズ）
+  __uiScale = s;
+  document.documentElement.style.setProperty('--ui-scale', String(s));
+}
+// transform:scale() 下でもドラッグ座標がズレないよう、盤面座標に変換
+function getPointerBoardPos(ev){
+  const r = board.getBoundingClientRect();
+  const sx = (r.width / board.clientWidth) || 1;
+  const sy = (r.height / board.clientHeight) || 1;
+  return { x: (ev.clientX - r.left) / sx, y: (ev.clientY - r.top) / sy };
+}
+applyUIScale();
+window.addEventListener('resize', applyUIScale);
+
 const btnFlip=document.getElementById('btnFlip');
 const btnRemove=document.getElementById('btnRemove'); // [patch]
 const btnToFront=document.getElementById('btnToFront');
@@ -1461,7 +1512,6 @@ const btnBuildSolo=document.getElementById('btnBuildSolo');
 const btnBuildCancel=document.getElementById('btnBuildCancel');
 
 const btnQrGen=document.getElementById('btnQrGen');
-const btnQrScan=document.getElementById('btnQrScan');
 const btnQrFile=document.getElementById('btnQrFile');
 const qrFileInput=document.getElementById('qrFileInput');
 const qrModal=document.getElementById('qrModal');
@@ -1470,17 +1520,6 @@ const qrCanvas=document.getElementById('qrCanvas');
 const qrText=document.getElementById('qrText');
 const btnQrClose=document.getElementById('btnQrClose');
 const btnQrCopy=document.getElementById('btnQrCopy');
-
-const qrScanModal=document.getElementById('qrScanModal');
-const qrScanPanel=document.getElementById('qrScanPanel');
-const qrVideo=document.getElementById('qrVideo');
-const qrScanCanvas=document.getElementById('qrScanCanvas');
-const btnQrScanClose=document.getElementById('btnQrScanClose');
-
-let __qrStream=null;
-let __qrScanActive=false;
-
-
 // deck saves (builder)
 const btnDeckSave=document.getElementById('btnDeckSave');
 const btnDeckLoad=document.getElementById('btnDeckLoad');
@@ -2030,7 +2069,7 @@ let state={cards:{},order:[],undoStack:[]};
 let deckPool=[],discardPool=[],monsterPool=[];let idCounter=0;let selection=new Set();const dupCountByName={};
 
 createZones();
-window.addEventListener('resize',()=>{
+window.addEventListener('resize',()=>{applyUIScale();
   Object.values(zoneDom).forEach(d=>d.remove());
   createZones();
   updateCounters();
@@ -2071,8 +2110,10 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
       selection.clear(); zIds.forEach(id=>selection.add(id));
       updateSelectionVisual();
     }
-  }const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:ev.clientX-c.x,dy:ev.clientY-c.y};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
-function onDragMove(ev){if(!dragInfo)return;dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=ev.clientX-r.dx;c.y=ev.clientY-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
+  }
+  const p=getPointerBoardPos(ev);
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
+function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
 function onDragEnd(ev){
   if(!dragInfo) return;
   dragInfo.rects.forEach(r=>{
@@ -2550,6 +2591,21 @@ if(IS_EMBED){
     if(!d || typeof d!=='object') return;
     if(d.type==='SOLO_INIT_DECK' && d.deck){
       try{ applyDeckAndStart(d.deck); }catch(e){ console.error(e); }
+      return;
+    }
+    if(d.type==='SOLO_SET_META'){
+      try{
+        if(typeof d.phaseIndex==='number' && Array.isArray(PHASES) && PHASES.length){
+          const n = ((d.phaseIndex % PHASES.length) + PHASES.length) % PHASES.length;
+          phaseIndex = n;
+          updatePhaseUI();
+        }
+        if('coin' in d){
+          lastCoin = d.coin ? String(d.coin) : null;
+          updateCoinUI();
+        }
+      }catch(e){ console.error(e); }
+      return;
     }
   });
   try{ window.parent && window.parent.postMessage({type:'SOLO_READY', flip:!!FLIP_LAYOUT}, '*'); }catch(e){}
@@ -2984,35 +3040,125 @@ btnCodeLoad.onclick=()=>{try{const obj=decodeDeck(deckCodeBox.value.trim());buil
 // ===== Deck QR =====
 function normalizeDeckCodeFromText(t){
   if(!t) return '';
-  const s=String(t).trim();
-  if(s.startsWith('v1:')) return s;
-  const i=s.indexOf('v1:');
+  const s = String(t).trim();
+  // accept v1 / v2 directly, or extract from longer text (e.g. pasted logs)
+  if(s.startsWith('v1:') || s.startsWith('v2:')) return s;
+  const i1 = s.indexOf('v1:');
+  const i2 = s.indexOf('v2:');
+  let i = -1;
+  if(i1>=0 && i2>=0) i = Math.min(i1,i2);
+  else i = (i1>=0 ? i1 : i2);
   if(i>=0) return s.slice(i).trim();
   return s;
 }
 
-function openQrModalWithCode(code){
+let __qrCodeLibPromise = null;
+function __loadScriptOnce(src){
+  return new Promise((resolve,reject)=>{
+    // already loaded?
+    const exists = Array.from(document.scripts||[]).some(s=>s.src===src);
+    if(exists) return resolve(true);
+    const s=document.createElement('script');
+    s.src=src;
+    s.async=true;
+    s.onload=()=>resolve(true);
+    s.onerror=()=>reject(new Error('load failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+async function __ensureQRCodeLib(){
+  if(window.QRCode && QRCode.toCanvas) return true;
+  if(__qrCodeLibPromise) return __qrCodeLibPromise;
+  const urls=[
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js',
+    'https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js'
+  ];
+  __qrCodeLibPromise=(async ()=>{
+    for(const u of urls){
+      try{
+        await __loadScriptOnce(u);
+        if(window.QRCode && QRCode.toCanvas) return true;
+      }catch(e){ /* try next */ }
+    }
+    return false;
+  })();
+  return __qrCodeLibPromise;
+}
+
+function __showQrFallbackImage(code){
+  if(!qrCanvas) return;
+  const img = document.getElementById('qrImg');
+  // Hide canvas, show img
+  qrCanvas.style.display='none';
+  if(img){
+    img.style.display='block';
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&ecc=M&margin=1&data=' + encodeURIComponent(code);
+    img.onerror = ()=>{
+      // If even this fails, show a clear message on canvas
+      try{
+        qrCanvas.style.display='block';
+        img.style.display='none';
+        const ctx=qrCanvas.getContext('2d');
+        ctx.clearRect(0,0,qrCanvas.width,qrCanvas.height);
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,qrCanvas.width,qrCanvas.height);
+        ctx.fillStyle='#000';ctx.font='14px sans-serif';
+        ctx.fillText('QR生成に失敗しました',10,30);
+        ctx.fillText('通信環境を確認してください',10,55);
+      }catch(e){}
+    };
+  }
+}
+
+
+function __qrRenderCssSize(){
+  // Big enough for dense deck codes; keep within viewport
+  const vw = Math.max(320, Math.floor(window.innerWidth * 0.86));
+  const vh = Math.max(320, Math.floor(window.innerHeight * 0.70));
+  // Aim for a square that fits comfortably in the modal
+  return Math.max(360, Math.min(760, vw, vh));
+}
+function __qrRenderWidthPx(){
+  const css = __qrRenderCssSize();
+  const dpr = window.devicePixelRatio || 1;
+  return Math.max(360, Math.floor(css * dpr));
+}
+function __prepQrCanvasSize(){
+  if(!qrCanvas) return;
+  const css = __qrRenderCssSize();
+  const px  = __qrRenderWidthPx();
+  qrCanvas.width = px;
+  qrCanvas.height = px;
+  qrCanvas.style.width = css + 'px';
+  qrCanvas.style.height = css + 'px';
+}
+
+async function openQrModalWithCode(code){
   if(!qrModal||!qrCanvas||!qrText) return;
   const c=normalizeDeckCodeFromText(code);
   qrText.value=c;
 
   qrModal.classList.remove('hidden');
+  __prepQrCanvasSize();
 
-  // render QR
+  // render QR (prefer local lib; fallback to external image)
   try{
-    if(typeof QRCode==='undefined' || !QRCode.toCanvas){
-      // fallback: show text only
-      const ctx=qrCanvas.getContext('2d');
-      ctx.clearRect(0,0,qrCanvas.width,qrCanvas.height);
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,qrCanvas.width,qrCanvas.height);
-      ctx.fillStyle='#000';ctx.font='14px sans-serif';
-      ctx.fillText('QRライブラリ読込失敗',10,30);
+    const ok = await __ensureQRCodeLib();
+    const img = document.getElementById('qrImg');
+    if(ok && window.QRCode && QRCode.toCanvas){
+      // show canvas, hide img
+      qrCanvas.style.display='block';
+      if(img) img.style.display='none';
+      QRCode.toCanvas(qrCanvas, c, {errorCorrectionLevel:'L', margin:4, width:__qrRenderWidthPx()}, (err)=>{
+        if(err) console.warn(err);
+      });
       return;
     }
-    QRCode.toCanvas(qrCanvas, c, {errorCorrectionLevel:'M', margin:1, width:320}, (err)=>{
-      if(err) console.warn(err);
-    });
-  }catch(e){ console.warn(e); }
+    // fallback image service
+    __showQrFallbackImage(c);
+  }catch(e){
+    console.warn(e);
+    __showQrFallbackImage(c);
+  }
 }
 
 function closeQrModal(){ qrModal && qrModal.classList.add('hidden'); }
@@ -3032,76 +3178,6 @@ btnQrCopy && (btnQrCopy.onclick=async ()=>{
     }catch(e2){ alert('コピーに失敗しました'); }
   }
 });
-
-function stopQrStream(){
-  try{
-    if(__qrStream){
-      __qrStream.getTracks().forEach(t=>t.stop());
-    }
-  }catch(e){}
-  __qrStream=null;
-}
-
-function closeQrScan(){
-  __qrScanActive=false;
-  stopQrStream();
-  if(qrVideo) qrVideo.srcObject=null;
-  qrScanModal && qrScanModal.classList.add('hidden');
-}
-btnQrScanClose && (btnQrScanClose.onclick=closeQrScan);
-qrScanModal && qrScanModal.addEventListener('click', e=>{ if(e.target===qrScanModal) closeQrScan(); });
-
-async function openQrScanner(onResult){
-  if(!qrScanModal || !qrVideo || !qrScanCanvas) return;
-
-  // camera requires https (or localhost)
-  if(location.protocol!=='https:' && location.hostname!=='localhost'){
-    alert('QR読込はHTTPSが必要です（GitHub PagesはOK）');
-    return;
-  }
-  if(typeof jsQR==='undefined'){
-    alert('QR読込ライブラリの読み込みに失敗しました（通信環境を確認してください）');
-    return;
-  }
-
-  qrScanModal.classList.remove('hidden');
-  __qrScanActive=true;
-
-  try{
-    __qrStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'} , audio:false});
-  }catch(e){
-    __qrScanActive=false;
-    alert('カメラを起動できませんでした');
-    return;
-  }
-
-  qrVideo.srcObject=__qrStream;
-  try{ await qrVideo.play(); }catch(e){}
-
-  const cvs=qrScanCanvas;
-  const ctx=cvs.getContext('2d', {willReadFrequently:true});
-
-  const tick=()=>{
-    if(!__qrScanActive) return;
-    try{
-      if(qrVideo.readyState>=2){
-        cvs.width = qrVideo.videoWidth||640;
-        cvs.height = qrVideo.videoHeight||480;
-        ctx.drawImage(qrVideo,0,0,cvs.width,cvs.height);
-        const img=ctx.getImageData(0,0,cvs.width,cvs.height);
-        const res=jsQR(img.data,img.width,img.height);
-        if(res && res.data){
-          const code=normalizeDeckCodeFromText(res.data);
-          closeQrScan();
-          onResult && onResult(code);
-          return;
-        }
-      }
-    }catch(e){}
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
 
 async function decodeQrFromImageFile(file){
   if(!file) return null;
@@ -3164,18 +3240,13 @@ function applyImportedDeckCode(raw){
   }
 }
 
-// Buttons: generate / scan
+// Buttons: generate / file
 btnQrGen && (btnQrGen.onclick=()=>{
   const code=encodeDeck({main:buildMain,monster:buildMon});
   deckCodeBox.value=code;
   openQrModalWithCode(code);
 });
 
-btnQrScan && (btnQrScan.onclick=()=>{
-  openQrScanner((code)=>{
-    applyImportedDeckCode(code);
-  });
-});
 
 btnQrFile && (btnQrFile.onclick=()=>{
   if(!qrFileInput){ alert('画像読込が利用できません'); return; }
@@ -3236,6 +3307,39 @@ function mirrorMetaFromIframe(win){
     if(pPhase && iPhase) pPhase.textContent = iPhase.textContent;
   }catch(e){}
 }
+
+// ===== ソロ用メタ（フェーズ/コイン）を両盤面へ同期 =====
+function soloPostMetaToFrame(fr){
+  try{
+    if(!fr || !fr.contentWindow) return;
+    fr.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*');
+  }catch(e){}
+}
+function soloBroadcastMeta(){
+  try{
+    const fOpp = $solo('soloFrameOpp');
+    const fYou = $solo('soloFrameYou');
+    soloPostMetaToFrame(fOpp);
+    soloPostMetaToFrame(fYou);
+  }catch(e){}
+}
+function soloCoinTossBroadcast(){
+  if(IS_SPECTATOR) return;
+  lastCoin = (Math.random()<0.5) ? '表' : '裏';
+  updateCoinUI();
+  try{ window.logAction && window.logAction(`コイントス：${lastCoin}`); }catch(e){}
+  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
+  soloBroadcastMeta();
+}
+function soloNextPhaseBroadcast(){
+  if(IS_SPECTATOR) return;
+  phaseIndex = (phaseIndex + 1) % PHASES.length;
+  updatePhaseUI();
+  try{ window.logAction && window.logAction(`フェーズ：${PHASES[phaseIndex]}`); }catch(e){}
+  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
+  soloBroadcastMeta();
+}
+
 
 function forwardToActiveIframe(targetId){
   const fr = getActiveSoloFrame();
@@ -3299,6 +3403,11 @@ function wireSoloForwarding(){
 
     ev.preventDefault();
     ev.stopImmediatePropagation();
+
+    // コイントス/フェーズは「対戦全体の状態」なので、両方の盤面へ同時に反映
+    if(id==='btnCoin'){ soloCoinTossBroadcast(); return; }
+    if(id==='btnPhase'){ soloNextPhaseBroadcast(); return; }
+
     forwardToActiveIframe(id);
   }, true);
 
@@ -3589,6 +3698,8 @@ function startSoloMode(){
   try{ builder.classList.add('hidden'); }catch(e){}
   try{ toolbar.classList.remove('hidden'); }catch(e){}
   try{ document.body.classList.add('soloActive'); }catch(e){}
+  // ソロ開始時はメタ（コイン/フェーズ）を初期化して親・両盤面で揃える
+  try{ phaseIndex=0; lastCoin=null; updatePhaseUI(); updateCoinUI(); }catch(e){}
   try{ updateSoloToolbarHeightVar(); }catch(e){}
   try{ viewer.classList.add('hidden'); }catch(e){}
   try{ preview.classList.add('hidden'); }catch(e){}
@@ -3611,12 +3722,16 @@ function startSoloMode(){
   if(soloFrameOpp){
     soloFrameOpp.onload = ()=>{
       try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckOpp}, '*'); }catch(e){}
+      // ソロのメタ（フェーズ/コイン）も初期同期
+      try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
     };
     soloFrameOpp.src = baseUrl + '?embed=1&flip=1';
   }
   if(soloFrameYou){
     soloFrameYou.onload = ()=>{
       try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckYou}, '*'); }catch(e){}
+      // ソロのメタ（フェーズ/コイン）も初期同期
+      try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
     };
     soloFrameYou.src = baseUrl + '?embed=1';
   }
@@ -3660,8 +3775,57 @@ btnBuildSolo && (btnBuildSolo.onclick = ()=>{ openSoloDeckModal(); });
 // DOM末尾にsolo UIがあるので、ロード後に念のため配線
 window.addEventListener('DOMContentLoaded', ensureSoloWired);
 
-function encodeDeck(obj){return 'v1:'+btoa(unescape(encodeURIComponent(JSON.stringify(obj))))}
-function decodeDeck(code){if(!code.startsWith('v1:'))throw new Error('ver');const json=decodeURIComponent(escape(atob(code.slice(3))));return JSON.parse(json);}
+function encodeDeck(obj){
+  // v2: compact (index+count), much shorter than v1(JSON->base64)
+  try{
+    const main = obj?.main || {};
+    const monster = obj?.monster || {};
+    const encMap = (mp)=>{
+      const pairs=[];
+      for(const [id,c] of Object.entries(mp)){
+        const n = Number(c)||0;
+        if(n<=0) continue;
+        const idx = IDS.indexOf(id);
+        if(idx<0) continue;
+        pairs.push([idx, n]);
+      }
+      pairs.sort((a,b)=>a[0]-b[0]);
+      return pairs.map(([i,n])=> i.toString(36)+'.'+n.toString(36)).join(',');
+    };
+    return 'v2:'+encMap(main)+'|'+encMap(monster);
+  }catch(e){
+    // fallback: legacy v1
+    return 'v1:'+btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  }
+}
+function decodeDeck(code){
+  if(!code) throw new Error('empty');
+  if(code.startsWith('v2:')){
+    const body = code.slice(3);
+    const [mStr='', monStr=''] = body.split('|');
+    const decMap = (s)=>{
+      const mp={};
+      if(!s) return mp;
+      const parts = s.split(',');
+      for(const p of parts){
+        if(!p) continue;
+        const [i36,c36] = p.split('.');
+        const idx = parseInt(i36,36);
+        const n = parseInt(c36,36);
+        const id = IDS[idx];
+        if(!id || !isFinite(n) || n<=0) continue;
+        mp[id]=n;
+      }
+      return mp;
+    };
+    return { main: decMap(mStr), monster: decMap(monStr) };
+  }
+  if(code.startsWith('v1:')){
+    const json = decodeURIComponent(escape(atob(code.slice(3))));
+    return JSON.parse(json);
+  }
+  throw new Error('ver');
+}
 function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
   Object.values(state.cards).forEach(c=>{const el=document.getElementById(c.id);if(el)el.remove();});
   state.cards={};state.order=[];deckPool=[];discardPool=[];monsterPool=[];selection.clear();Object.keys(dupCountByName).forEach(k=>delete dupCountByName[k]);idCounter=0;rageCount=0;updateRageDisplay();
