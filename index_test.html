@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>G-CARD Directeor_v2.1</title>
 <style>
   *{box-sizing:border-box;}
@@ -12,7 +13,7 @@
   body.flipLayout #board::before{transform:rotate(180deg);}
   .zone,.card{z-index:2;}
 
-  #toolbar{position:fixed;top:8px;left:8px;z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
+  #toolbar{position:fixed;top:calc(8px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
   #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
   #toolbar select{background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;}
   #fileInput,#backInput{display:none;}
@@ -318,7 +319,7 @@
 
   /* ===== Spectator (Discord共有) ===== */
   #spectatorBadge{
-    position:fixed; top:8px; right:8px; z-index:9999;
+    position:fixed; top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); z-index:9999;
     background:#000c; color:#fff; padding:6px 10px; border-radius:10px;
     font-size:13px; display:none; user-select:none;
     white-space:pre-line;
@@ -331,7 +332,7 @@
   body.spectator.showDiscardViewer #viewerBtns{ display:none !important; }
 
   #spectatorPickPanel{
-    position:fixed; top:8px; left:8px; z-index:9999;
+    position:fixed; top:calc(8px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); z-index:9999;
     background:#000c; color:#fff; padding:8px 10px; border-radius:12px;
     display:flex; align-items:center; gap:10px; user-select:none;
     max-width:420px;
@@ -784,6 +785,8 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
   --base-w: 2048px;   /* 添付スクショ基準 */
   --base-h: 1015px;    /* 添付スクショ基準 */
   --ui-scale: 1;
+  --vv-x: 0px;
+  --vv-y: 0px;
 }
 
 /* 盤面は基準サイズで描画し、画面が小さいときだけ縮小して収める */
@@ -793,6 +796,9 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
   overflow:hidden;
   background:#181818;
   z-index:0;
+  transform:translate(var(--vv-x), var(--vv-y));
+  transform-origin:0 0;
+  will-change:transform;
 }
 #stage{
   position:absolute;
@@ -814,7 +820,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 #toolbar{
   max-width:none !important;
   width:calc(var(--base-w) - 16px);
-  transform:scale(var(--ui-scale));
+  transform:translate(var(--vv-x), var(--vv-y)) scale(var(--ui-scale));
   transform-origin:0 0;
 }
 body.soloActive #toolbar{ right:auto !important; }
@@ -1147,12 +1153,32 @@ let __uiScale = 1;
 function applyUIScale(){
   const rs = getComputedStyle(document.documentElement);
   const baseW = parseFloat(rs.getPropertyValue('--base-w')) || 2048;
-  const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 974;
-  const w = window.innerWidth || document.documentElement.clientWidth || baseW;
-  const h = window.innerHeight || document.documentElement.clientHeight || baseH;
-  let s = Math.min(w/baseW, h/baseH);
+  const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 1015;
+
+  // ピンチズームで innerWidth/innerHeight が変わる端末でも崩れないように、
+  // visualViewport がある場合は width/height * scale を使って “レイアウトviewport相当” を作る
+  const vv = window.visualViewport;
+  let w = window.innerWidth || document.documentElement.clientWidth || baseW;
+  let h = window.innerHeight || document.documentElement.clientHeight || baseH;
+
+  if(vv && isFinite(vv.width) && isFinite(vv.height) && isFinite(vv.scale)){
+    w = vv.width  * vv.scale;
+    h = vv.height * vv.scale;
+
+    // ズーム中に画面がズレる（iOS Safari など）対策：必要時だけ追従
+    const z  = vv.scale || 1;
+    const ox = (z !== 1) ? (vv.offsetLeft || 0) : 0;
+    const oy = (z !== 1) ? (vv.offsetTop  || 0) : 0;
+    document.documentElement.style.setProperty('--vv-x', `${ox}px`);
+    document.documentElement.style.setProperty('--vv-y', `${oy}px`);
+  }else{
+    document.documentElement.style.setProperty('--vv-x', '0px');
+    document.documentElement.style.setProperty('--vv-y', '0px');
+  }
+
+  // 画面が大きいときは等倍（固定サイズ）、小さい時だけ縮小
+  let s = Math.min(1, w/baseW, h/baseH);
   if(!isFinite(s) || s<=0) s = 1;
-  // 画面が大きいときは等倍（固定サイズ）
   __uiScale = s;
   document.documentElement.style.setProperty('--ui-scale', String(s));
 }
@@ -1164,7 +1190,16 @@ function getPointerBoardPos(ev){
   return { x: (ev.clientX - r.left) / sx, y: (ev.clientY - r.top) / sy };
 }
 applyUIScale();
-window.addEventListener('resize', applyUIScale);
+(function(){
+  // resize + pinch zoom (visualViewport) 対応
+  window.addEventListener('resize', applyUIScale, {passive:true});
+  window.addEventListener('orientationchange', applyUIScale, {passive:true});
+  const vv = window.visualViewport;
+  if(vv){
+    vv.addEventListener('resize', applyUIScale, {passive:true});
+    vv.addEventListener('scroll', applyUIScale, {passive:true});
+  }
+})();
 
 const btnFlip=document.getElementById('btnFlip');
 const btnRemove=document.getElementById('btnRemove'); // [patch]
