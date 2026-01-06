@@ -3031,7 +3031,49 @@ libFilter.addEventListener('input',renderLibrary);
 
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
-function renderDeckThumbs(){gridMonster.innerHTML='';gridMain.innerHTML='';const buildSection=(obj,grid,which)=>{Object.entries(obj).forEach(([id,num])=>{const info=CARD_DB.find(c=>c.id===id)||{srcGuess:WHITE_BACK,name:id};const wrap=document.createElement('div');wrap.className='deckThumb';const img=document.createElement('img');img.src=info.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};wrap.appendChild(img);const cnt=document.createElement('div');cnt.className='deckCnt';cnt.textContent='x'+num;wrap.appendChild(cnt);const ctrl=document.createElement('div');ctrl.className='ctrl';const plus=document.createElement('button');plus.textContent='＋';plus.onclick=()=>{addToBuild(id,which,1);};const minus=document.createElement('button');minus.textContent='－';minus.onclick=()=>{decFromBuild(id,which);};ctrl.append(plus,minus);wrap.appendChild(ctrl);grid.appendChild(wrap);});};buildSection(buildMon,gridMonster,'monster');buildSection(buildMain,gridMain,'main');}
+function renderDeckThumbs(){
+  gridMonster.innerHTML='';
+  gridMain.innerHTML='';
+  const buildSection=(obj,grid,which)=>{
+    Object.entries(obj).forEach(([id,num])=>{
+      const info = CARD_DB.find(c=>c.id===id) || {srcGuess:WHITE_BACK,name:id,id};
+      const wrap=document.createElement('div');
+      wrap.className='deckThumb';
+      wrap.dataset.id=id;
+
+      const img=document.createElement('img');
+      img.src=info.srcGuess;
+      img.onerror=()=>{img.src=WHITE_BACK;};
+      wrap.appendChild(img);
+
+      const cnt=document.createElement('div');
+      cnt.className='deckCnt';
+      cnt.textContent='x'+num;
+      wrap.appendChild(cnt);
+
+      const ctrl=document.createElement('div');
+      ctrl.className='ctrl';
+      const plus=document.createElement('button');
+      plus.textContent='＋';
+      plus.addEventListener('click',(e)=>{e.stopPropagation(); addToBuild(id,which,1);});
+      const minus=document.createElement('button');
+      minus.textContent='－';
+      minus.addEventListener('click',(e)=>{e.stopPropagation(); decFromBuild(id,which);});
+      ctrl.append(plus,minus);
+      wrap.appendChild(ctrl);
+
+      // 右側（構築中デッキ）カードをクリック → 拡大表示
+      wrap.addEventListener('click',()=>{
+        previewImg.src=info.srcGuess;
+        preview.classList.remove('hidden');
+      });
+
+      grid.appendChild(wrap);
+    });
+  };
+  buildSection(buildMon,gridMonster,'monster');
+  buildSection(buildMain,gridMain,'main');
+}
 function updateBuildCount(){const m=sumObj(buildMain),k=sumObj(buildMon);countInfo.textContent=`メイン ${m}/${MAIN_LIMIT}　怪獣 ${k}/${MON_LIMIT}`;btnBuildStart.disabled=!(m===MAIN_LIMIT&&k===MON_LIMIT);}
 function sumObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:buildMon});};
