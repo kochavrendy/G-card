@@ -62,7 +62,23 @@
   #builderMain{flex:1;display:flex;gap:12px;overflow:hidden;}
   #libPane{flex:1.2;display:flex;flex-direction:column;min-width:0;}
   #deckPane{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
-  #libFilter{padding:4px 6px;width:100%;background:#111;color:#eee;border:1px solid #444;border-radius:4px;font-size:13px;margin-bottom:6px;}
+  #libFilter{padding:10px 12px;width:100%;background:#111;color:#eee;border:1px solid rgba(255,255,255,18);border-radius:14px;font-size:13px;margin-bottom:8px;}
+
+  #libMetaBar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:0 0 8px 0;
+  }
+  #libMetaBar select{
+    background:#111;
+    color:#eee;
+    border:1px solid rgba(255,255,255,18);
+    border-radius:12px;
+    padding:8px 10px;
+    font-size:12px;
+    cursor:pointer;
+  }
   
   /* set / pack filter (deck builder) */
   #libSetBar{
@@ -230,25 +246,60 @@
   #deckMgrFooter{padding:10px 14px;border-top:1px solid rgba(255,255,255,.10);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;}
   #deckMgrFooter .hint{margin-right:auto;opacity:.75;font-size:12px;}
   #countInfo{font-size:13px;}
-  /* preview */
-  #preview.hidden{display:none;}#preview{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;}
-  /* Space拡大表示：画像の実ファイル解像度に左右されない“標準サイズ”に統一（基準 460×642） */
+    /* preview */
+  #preview.hidden{display:none;}
+  #preview{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.90);display:flex;align-items:center;justify-content:center;padding:16px;}
   #previewPanel{
     position:relative;
-    width:min(90vw, calc(90vh * 460 / 642));
-    height:min(90vh, calc(90vw * 642 / 460));
-    display:flex;align-items:center;justify-content:center;
+    width:min(96vw, 1200px);
+    height:min(92vh, 760px);
+    display:flex;
+    gap:14px;
+    align-items:stretch;
+    justify-content:center;
+  }
+  #previewLeft{
+    height:100%;
+    aspect-ratio:460/642;
+    max-width:62%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
   #previewImg{
     width:100%;
     height:100%;
     object-fit:contain;
-    border-radius:12px;
+    border-radius:16px;
     box-shadow:0 0 20px #000;
     background:transparent;
   }
-  #previewClose{position:absolute;top:-32px;right:-32px;background:#000c;color:#fff;border:1px solid #666;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px;}
-  /* token selector */
+  #previewInfo{
+    flex:1;
+    min-width:280px;
+    height:100%;
+    overflow:auto;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,12);
+    background:rgba(0,0,0,0.25);
+    padding:12px 14px;
+    color:#eee;
+  }
+  #previewInfo .pvTitle{font-size:18px;font-weight:800;margin:0 0 6px 0;}
+  #previewInfo .pvSub{font-size:12px;opacity:.85;margin:0 0 12px 0;line-height:1.4;}
+  #previewInfo .pvRow{margin:6px 0;font-size:13px;line-height:1.5;}
+  #previewInfo .pvKey{opacity:.75;margin-right:6px;}
+  #previewInfo .pvTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  #previewInfo .pvTag{font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,14);background:rgba(255,255,255,06);}
+  #previewInfo .pvText{white-space:pre-wrap;font-size:13px;line-height:1.55;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,14);}
+  #previewClose{
+    position:absolute;
+    top:10px;right:10px;
+    background:#000c;color:#fff;border:1px solid rgba(255,255,255,24);
+    border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:18px;
+    display:grid;place-items:center;
+  }
+/* token selector */
   #token.hidden{display:none;}#token{position:fixed;inset:0;z-index:4700;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
   #tokenPanel{position:relative;width:820px;max-width:95vw;max-height:90vh;background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
   #tokenPanel h2{margin:0 0 8px;font-size:20px;}
@@ -847,6 +898,127 @@ body.soloActive #toolbar{ right:auto !important; }
   .calcHistItem:hover{background:rgba(255,255,255,.08);}
   .calcErr{color:#ffb3b3;font-size:12px;}
 
+
+
+/* ===== Play HUD (monster + total repel) ===== */
+#playHud{
+  position:absolute;
+  right:10px;
+  top:10px;
+  left:auto;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  pointer-events:none;
+  user-select:none;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+}
+.playHudPanel{
+  background:rgba(0,0,0,0.72);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  overflow:hidden;
+}
+#monsterHud{
+  width:260px;
+}
+#monsterHud .mhTop{
+  display:flex;
+  gap:10px;
+  padding:10px;
+  align-items:flex-start;
+}
+#monsterHud .mhCard{
+  width:120px;
+  aspect-ratio: 63 / 88;
+  border-radius:8px;
+  overflow:hidden;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.14);
+  flex:0 0 auto;
+}
+#monsterHud .mhCard img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+#monsterHud .mhMeta{
+  flex:1 1 auto;
+  min-width:0;
+  color:#fff;
+}
+#monsterHud .mhName{
+  font-weight:800;
+  font-size:14px;
+  line-height:1.15;
+  margin:0 0 6px 0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#monsterHud .mhSub{
+  font-size:12px;
+  opacity:0.9;
+  line-height:1.4;
+}
+#monsterHud .mhSub .badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.14);
+  margin-right:6px;
+}
+#monsterHud .mhStats{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap:0;
+  border-top:1px solid rgba(255,255,255,0.14);
+}
+#monsterHud .mhStat{
+  padding:10px 10px 8px;
+  border-right:1px solid rgba(255,255,255,0.14);
+  color:#fff;
+  text-align:center;
+}
+#monsterHud .mhStat:last-child{ border-right:none; }
+#monsterHud .mhLabel{
+  font-size:11px;
+  letter-spacing:0.06em;
+  opacity:0.9;
+}
+#monsterHud .mhValue{
+  font-size:22px;
+  font-weight:900;
+  line-height:1.05;
+  margin-top:4px;
+}
+#repelHud{
+  width:260px;
+  padding:10px 12px;
+  color:#fff;
+}
+#repelHud .rhLabel{
+  font-size:12px;
+  letter-spacing:0.06em;
+  opacity:0.9;
+}
+#repelHud .rhRow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+#repelHud .rhValue{
+  font-size:28px;
+  font-weight:900;
+  line-height:1.1;
+  margin-top:6px;
+}
+#repelHud .rhNote{
+  margin-top:4px;
+  font-size:11px;
+  opacity:0.75;
+}
+
 </style>
 </head>
 <body>
@@ -925,7 +1097,12 @@ body.soloActive #toolbar{ right:auto !important; }
             </div>
           </div>
 
-          <input id="libFilter" placeholder="名前で検索..." />
+          <input id="libFilter" placeholder="名前 / 特徴 / テキストで検索…" />
+           <div id="libMetaBar">
+             <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="白">白</option></select>
+             <select id="libType"><option value="">種別:すべて</option><option value="怪獣">怪獣</option><option value="交戦">交戦</option><option value="戦略">戦略</option></select>
+             <select id="libGrade"><option value="">等級:すべて</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+           </div>
           <div id="libList"></div>
         </div>
         <div id="deckPane">
@@ -1016,9 +1193,10 @@ body.soloActive #toolbar{ right:auto !important; }
 <!-- preview -->
   <div id="preview" class="hidden">
     <div id="previewPanel">
-      <img id="previewImg" src="" alt="preview">
-      <button id="previewClose">×</button>
-    </div>
+       <div id="previewLeft"><img id="previewImg" src="" alt="preview"></div>
+       <div id="previewInfo" aria-label="カード情報"></div>
+       <button id="previewClose">×</button>
+     </div>
   </div>
 
   <!-- token selector -->
@@ -1119,6 +1297,7 @@ body.soloActive #toolbar{ right:auto !important; }
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="card_meta.js"></script>
 <script>
 /***********************************************
  * v1.33a 変更点
@@ -1191,6 +1370,33 @@ const CARD_DB = IDS.map(id => ({
   deck: 'main',
   srcGuess: `${CARD_FOLDER}/${id}.png`,
 }));
+
+// ===== Card Meta (from card_meta.js) =====
+const CARD_META = (typeof window!=='undefined' && window.CARD_META) ? window.CARD_META : {};
+function normalizeIdVariants(id){
+  const s=String(id||'');
+  const v=[s];
+  if(s.endsWith('ol')) v.push(s.replace(/ol$/,''));
+  else v.push(s+'ol');
+  // SD01/SD02 を SD1/SD2 で来るケースなどがあればここで追加できる
+  return [...new Set(v)];
+}
+function getMetaById(id){
+  const vars=normalizeIdVariants(id);
+  for(const k of vars){ if(CARD_META && CARD_META[k]) return CARD_META[k]; }
+  return null;
+}
+function hydrateCardsFromMeta(){
+  try{
+    CARD_DB.forEach(c=>{
+      const m=getMetaById(c.id);
+      if(!m) return;
+      if(m.name) c.name = m.name; // 検索用 name を日本語名へ
+      c.meta = m;
+    });
+  }catch(e){}
+}
+hydrateCardsFromMeta();
 
 const WHITE_BACK="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO3kqE0AAAAASUVORK5CYII=";
 const MAX_DUP_PER_NAME=4,MAX_SAVE_BYTES=4_500_000;const MAIN_LIMIT=50,MON_LIMIT=4;
@@ -1545,6 +1751,9 @@ try{ if(FLIP_LAYOUT) document.body.classList.add('flipLayout'); }catch(e){}
 // builder
 const builder=document.getElementById('builder');
 const libFilter=document.getElementById('libFilter');
+const libColor=document.getElementById('libColor');
+const libType=document.getElementById('libType');
+const libGrade=document.getElementById('libGrade');
 const libSetBar=document.getElementById('libSetBar');
 const libSetSection=document.getElementById('libSetSection');
 const libSetHeader=document.getElementById('libSetHeader');
@@ -2061,7 +2270,7 @@ const BASE_ZONES=[
   { id:'slot4',name:'4',x:X4,y:Y_BOTTOM,w:SLOT_W,h:SLOT_H },
   { id:'slot5',name:'5',x:X5,y:Y_BOTTOM,w:SLOT_W,h:SLOT_H },
   { id:'deckMain',name:'山札',x:0.885,y:0.12,w:0.095,h:0.26 },
-  { id:'discard',name:'捨て札',x:0.885,y:0.56,w:0.095,h:0.26 },
+  { id:'discard',name:'捨て札',x:0.885,y:0.40,w:0.095,h:0.18 },
   { id:'hand',name:'手札',x:0.18,y:0.84,w:0.64,h:0.14 }
 ];
 
@@ -2162,6 +2371,179 @@ function moveZoneCards(fromId,toId){
 
 function updateRageDisplay(){const el=document.getElementById('rageCounter');if(el)el.textContent=rageCount;}
 
+// ===== Play HUD (monster + total repel) =====
+let __playHud=null,__mhImg=null,__mhName=null,__mhArea=null,__mhGrade=null,__mhRage=null,__mhThreat=null,__rhValue=null;
+let __playHudTimer=null;
+
+function __roman(n){
+  const r=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+  n=Number(n)||0;
+  return (n>=0 && n<r.length) ? r[n] : String(n||'-');
+}
+function __fmt(n){
+  n=Number(n)||0;
+  try{return n.toLocaleString('ja-JP');}catch(e){return String(n);}
+}
+
+function initPlayHud(){
+  if(IS_SPECTATOR) return;
+  if(document.getElementById('playHud')) return;
+
+  __playHud=document.createElement('div');
+  __playHud.id='playHud';
+
+  const monster=document.createElement('div');
+  monster.id='monsterHud';
+  monster.className='playHudPanel';
+  monster.innerHTML = `
+    <div class="mhTop">
+      <div class="mhCard"><img id="mhImg" alt="monster"></div>
+      <div class="mhMeta">
+        <div class="mhName" id="mhName">怪獣：未配置</div>
+        <div class="mhSub">
+          <span class="badge" id="mhArea">エリア -</span>
+        </div>
+      </div>
+    </div>
+    <div class="mhStats">
+      <div class="mhStat"><div class="mhLabel">等級</div><div class="mhValue" id="mhGrade">-</div></div>
+      <div class="mhStat"><div class="mhLabel">怒り</div><div class="mhValue" id="mhRage">0</div></div>
+      <div class="mhStat"><div class="mhLabel">脅威度</div><div class="mhValue" id="mhThreat">0</div></div>
+    </div>
+  `;
+
+  const repel=document.createElement('div');
+  repel.id='repelHud';
+  repel.className='playHudPanel';
+  repel.innerHTML = `
+    <div class="rhRow">
+      <div class="rhLabel">⚔ 撃退力合計</div>
+      <div class="rhValue" id="rhTotal">0</div>
+    </div>
+    <div class="rhNote">（表向きの交戦カード / 素の撃退力）</div>
+  `;
+
+  __playHud.appendChild(monster);
+  __playHud.appendChild(repel);
+  board.appendChild(__playHud);
+  // 初期配置
+  positionPlayHud();
+
+  __mhImg=monster.querySelector('#mhImg');
+  __mhName=monster.querySelector('#mhName');
+  __mhArea=monster.querySelector('#mhArea');
+  __mhGrade=monster.querySelector('#mhGrade');
+  __mhRage=monster.querySelector('#mhRage');
+  __mhThreat=monster.querySelector('#mhThreat');
+  __rhValue=repel.querySelector('#rhTotal');
+
+  updatePlayHud();
+  if(!__playHudTimer) __playHudTimer=setInterval(updatePlayHud, 250);
+}
+
+
+function positionPlayHud(){
+  if(!__playHud) return;
+  const bw=board.clientWidth, bh=board.clientHeight;
+
+  const dz = zones.find(z=>z.id==='discard');
+  if(!dz) return;
+
+  // 捨て札ゾーンの「すぐ下」にHUDを配置（右端揃え）
+  const topWanted = (dz.y + dz.h) * bh + 140;
+  const rightWanted = (1 - (dz.x + dz.w)) * bw + -70;
+
+  // 手札ゾーンに被らないようにクランプ
+  const hz = zones.find(z=>z.id==='hand');
+  const hudH = __playHud.offsetHeight || 0;
+  let maxTop = topWanted;
+  if(hz && hudH){
+    maxTop = hz.y * bh - hudH + 100;
+  }
+  const top = Math.max(0, Math.min(topWanted, maxTop));
+
+  __playHud.style.left = 'auto';
+  __playHud.style.right = Math.round(Math.max(8, rightWanted)) + 'px';
+  __playHud.style.top = Math.round(top) + 'px';
+}
+
+function __findTopMonsterOnBoard(){
+  const slotZones=zones.filter(z=>/^slot\d+$/.test(z.id));
+  for(const z of slotZones){
+    const ids=getZoneCardIds(z.id);
+    if(!ids.length) continue;
+    const topId=ids[ids.length-1];
+    const c=state.cards[topId];
+    if(!c) continue;
+    const meta=getMetaById(String((c.metaId||c.origName||'')).replace(/\.png$/i,''));
+    if(meta && meta.type==='怪獣'){
+      return {card:c,meta,zone:z};
+    }
+  }
+  return null;
+}
+
+function __calcTotalRepel(){
+  let total=0;
+  const slotZones=zones.filter(z=>/^slot\d+$/.test(z.id));
+  for(const z of slotZones){
+    const ids=getZoneCardIds(z.id);
+    for(const id of ids){
+      const c=state.cards[id];
+      if(!c) continue;
+      const meta=getMetaById(String((c.metaId||c.origName||'')).replace(/\.png$/i,''));
+      if(meta && meta.type==='交戦'){
+        // 表裏状態に関わらず合計（効果による変動は今は未対応）
+        const v=Number(meta.power||0);
+        if(Number.isFinite(v)) total+=v;
+      }
+    }
+  }
+  return total;
+}
+
+function updatePlayHud(){
+  if(IS_SPECTATOR) return;
+  if(!__playHud) return;
+
+  // ビルダー（デッキ構築UI）が開いている時はHUDを隠す
+  try{
+    if(typeof builder!=='undefined' && builder && !builder.classList.contains('hidden')){
+      __playHud.style.display='none';
+      return;
+    }
+  }catch(e){}
+  __playHud.style.display='flex';
+
+  const found=__findTopMonsterOnBoard();
+  const rage=Number(rageCount)||0;
+
+  if(found){
+    const {card,meta,zone}=found;
+    __mhImg.src=currentSrc(card);
+    __mhName.textContent = meta.name || card.origName || '怪獣カード';
+    __mhArea.textContent = zone ? `エリア ${zone.name}` : 'エリア -';
+    __mhGrade.textContent = meta.grade ? __roman(meta.grade) : '-';
+    __mhRage.textContent = String(rage);
+
+    // スプシの「脅威度/撃退力」列は、怪獣の場合は脅威度として扱う（素の数値）
+    const baseThreat = Number(meta.power||0);
+    const threat = (Number.isFinite(baseThreat)?baseThreat:0) + (rage*5000);
+    __mhThreat.textContent = __fmt(threat);
+  }else{
+    __mhImg.src = WHITE_BACK;
+    __mhName.textContent = '怪獣：未配置';
+    __mhArea.textContent = 'エリア -';
+    __mhGrade.textContent = '-';
+    __mhRage.textContent = String(rage);
+    __mhThreat.textContent = __fmt(rage*5000);
+  }
+
+  __rhValue.textContent = __fmt(__calcTotalRepel());
+  positionPlayHud();
+}
+
+
 // ===== STATE =====
 let state={cards:{},order:[],undoStack:[]};
 let deckPool=[],discardPool=[],monsterPool=[];let idCounter=0;let selection=new Set();const dupCountByName={};
@@ -2170,6 +2552,7 @@ createZones();
 window.addEventListener('resize',()=>{applyUIScale();
   Object.values(zoneDom).forEach(d=>d.remove());
   createZones();
+  try{ positionPlayHud(); }catch(e){}
   updateCounters();
   updateRageDisplay();
   layoutHand(); // ← 追加
@@ -2248,7 +2631,7 @@ function updateBackImages(){Object.values(state.cards).forEach(c=>{if(c.faceDown
 
 function addToDeck(frontSrc,nameKey){dupCountByName[nameKey]=dupCountByName[nameKey]||0;if(dupCountByName[nameKey]>=MAX_DUP_PER_NAME){alert(`${nameKey} は上限${MAX_DUP_PER_NAME}枚です`);return;}dupCountByName[nameKey]++;const card=spawnCard(frontSrc,{zone:'deckMain',faceDown:true,origName:nameKey});hideIfPooled(card);deckPool.push(card.id);updateCounters();}
 
-function spawnCard(frontSrc,preset){const id='c'+(idCounter++);const bw=board.clientWidth,bh=board.clientHeight;const card={id,front:frontSrc,x:bw/2-60+Math.random()*120-60,y:bh/2-80+Math.random()*120-80,scale:1,rot:0,zone:null,faceDown:false,origName:''};if(preset)Object.assign(card,preset);if(card.zone){const z=zones.find(z=>z.id===card.zone);if(z){card.x=z.x*bw+6+Math.random()*20;card.y=z.y*bh+6+Math.random()*20;}}state.cards[id]=card;state.order.push(id);renderCard(card);return card;}
+function spawnCard(frontSrc,preset){const id='c'+(idCounter++);const bw=board.clientWidth,bh=board.clientHeight;const card={id,front:frontSrc,x:bw/2-60+Math.random()*120-60,y:bh/2-80+Math.random()*120-80,scale:1,rot:0,zone:null,faceDown:false,origName:'',metaId:''};if(preset)Object.assign(card,preset);if(card.zone){const z=zones.find(z=>z.id===card.zone);if(z){card.x=z.x*bw+6+Math.random()*20;card.y=z.y*bh+6+Math.random()*20;}}state.cards[id]=card;state.order.push(id);renderCard(card);return card;}
 
 function currentSrc(card){if(IS_SPECTATOR && card.zone==='hand') return backSrc;return card.faceDown?backSrc:card.front;}
 function renderCard(card){let el=document.getElementById(card.id);if(!el){el=document.createElement('img');el.id=card.id;el.className='card';el.addEventListener('pointerdown',ev=>startDrag(ev,card));el.addEventListener('wheel',ev=>onWheel(ev,card));el.addEventListener('click',ev=>onClickCard(ev,card));el.onerror=()=>{el.src=WHITE_BACK;};board.appendChild(el);}el.src=currentSrc(card);el.style.left=card.x+'px';el.style.top=card.y+'px';el.style.transform=`scale(${card.scale}) rotate(${card.rot}deg)`;hideIfPooled(card);}
@@ -2458,7 +2841,59 @@ function bringToFront(id){state.order=state.order.filter(x=>x!==id);state.order.
 function bringToBack(id){state.order=state.order.filter(x=>x!==id);state.order.unshift(id);const el=document.getElementById(id);if(el){const first=board.querySelector('.card');if(first)board.insertBefore(el,first);else board.appendChild(el);}}
 
 // preview
-function openPreview(){if(!selection.size){alert('カードを選択してください');return;}const id=[...selection][selection.size-1];const c=state.cards[id];previewImg.src=c.front;preview.classList.remove('hidden');}
+function escHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, (ch)=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+function buildPreviewInfoHtml(card, meta){
+  const id = escHtml(card && card.id ? card.id : '');
+  const set = escHtml(card && card.set ? card.set : '');
+  const name = escHtml(meta && meta.name ? meta.name : (card && card.name ? card.name : id));
+  const color = escHtml(meta && meta.color ? meta.color : '—');
+  const type  = escHtml(meta && meta.type  ? meta.type  : '—');
+  const grade = escHtml(meta && meta.grade != null ? meta.grade : '—');
+  const adv   = escHtml(meta && meta.advance != null ? meta.advance : '—');
+  const power = escHtml(meta && meta.power != null ? meta.power : '—');
+  const feats = (meta && Array.isArray(meta.features)) ? meta.features : [];
+  const txt   = meta && meta.text ? meta.text : '';
+
+  let html = `<div class="pvTitle">${name}</div>`;
+  html += `<div class="pvSub">${id}${set ? ` / ${set}` : ''}${meta ? '' : ' / （メタ未登録）'}</div>`;
+  html += `<div class="pvRow"><span class="pvKey">色</span>${color}　<span class="pvKey">種別</span>${type}</div>`;
+  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進行</span>${adv}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
+
+  if(feats.length){
+    html += `<div class="pvTags">` + feats.map(t=>`<span class="pvTag">${escHtml(t)}</span>`).join('') + `</div>`;
+  }
+  if(txt){
+    html += `<div class="pvText">${escHtml(txt)}</div>`;
+  }else{
+    html += `<div class="pvText">（テキスト未登録）</div>`;
+  }
+  return html;
+}
+
+const previewInfo=document.getElementById('previewInfo');
+
+function openPreviewByCardId(cardId){
+  const card = CARD_DB.find(c=>c.id===cardId) || {id:cardId,name:cardId,set:getSetKeyFromId(cardId),srcGuess:WHITE_BACK};
+  const meta = getMetaById(cardId);
+  previewImg.src = card.srcGuess || WHITE_BACK;
+  if(previewInfo) previewInfo.innerHTML = buildPreviewInfoHtml(card, meta);
+  preview.classList.remove('hidden');
+}
+function openPreview(){
+  if(!selection.size){alert('カードを選択してください');return;}
+  const id=[...selection][selection.size-1];
+  const c=state.cards[id];
+  previewImg.src=c.front;
+  const metaKey = String((c.metaId||c.origName||'')).replace(/\.png$/i,'');
+  const meta = getMetaById(metaKey);
+  const fakeCard = {id: metaKey, name: (meta && meta.name) ? meta.name : metaKey, set:getSetKeyFromId(metaKey)};
+  if(previewInfo) previewInfo.innerHTML = buildPreviewInfoHtml(fakeCard, meta);
+  preview.classList.remove('hidden');
+}
 function closePreview(){preview.classList.add('hidden');}
 previewClose.onclick=closePreview;preview.addEventListener('click',e=>{if(e.target===preview)closePreview();});
 // [fix] preview open中は Esc で閉じる
@@ -2507,7 +2942,7 @@ function spawnTokens(src,origName,count){
   const baseX=z.x*bw-120; // さらに左へオフセット
   const baseY=z.y*bh+10;
   for(let i=0;i<count;i++){
-    const c=spawnCard(src,{zone:null,faceDown:false,origName});
+    const c=spawnCard(src,{zone:null,faceDown:false,origName,metaId:origName});
     c.x=baseX- (i*2);
     c.y=baseY+ (i*2);
     renderCard(c);bringToFront(c.id);
@@ -3187,20 +3622,46 @@ function renderLibrary(){
   libList.innerHTML='';
   const q=libFilter.value?libFilter.value.toLowerCase():'';
   const setKey=libSetFilter||'__ALL__';
+  const colorF = libColor && libColor.value ? String(libColor.value) : '';
+  const typeF  = libType && libType.value ? String(libType.value) : '';
+  const gradeF = libGrade && libGrade.value ? String(libGrade.value) : '';
+
   CARD_DB.forEach(card=>{
     if(setKey!=='__ALL__' && card.set!==setKey) return;
-    if(q&&!card.name.toLowerCase().includes(q))return;
+
+    const meta = getMetaById(card.id) || null;
+    if(colorF && (!meta || String(meta.color||'')!==colorF)) return;
+    if(typeF  && (!meta || String(meta.type||'')!==typeF)) return;
+    if(gradeF && (!meta || String(meta.grade??'')!==gradeF)) return;
+
+    const hay = (function(){
+      const parts=[
+        card.id,
+        card.name,
+        meta && meta.name,
+        meta && meta.color,
+        meta && meta.type,
+        meta && meta.features_raw,
+        meta && meta.text
+      ].filter(Boolean).map(x=>String(x));
+      return parts.join(' ').toLowerCase();
+    })();
+    if(q && !hay.includes(q)) return;
+
     const div=document.createElement('div');div.className='libCard';div.dataset.id=card.id;
     const img=document.createElement('img');img.src=card.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};div.appendChild(img);
     const btns=document.createElement('div');btns.className='libBtns';
     const bM=document.createElement('button');bM.textContent='＋メ';bM.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'main',1);};
     const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
     btns.append(bM,bK);div.appendChild(btns);
-    div.onclick=()=>{previewImg.src=card.srcGuess;preview.classList.remove('hidden');};
+    div.onclick=()=>{openPreviewByCardId(card.id);};
     libList.appendChild(div);
   });
 }
 libFilter.addEventListener('input',renderLibrary);
+if(libColor) libColor.addEventListener('change',renderLibrary);
+if(libType) libType.addEventListener('change',renderLibrary);
+if(libGrade) libGrade.addEventListener('change',renderLibrary);
 
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
@@ -3237,8 +3698,7 @@ function renderDeckThumbs(){
 
       // 右側（構築中デッキ）カードをクリック → 拡大表示
       wrap.addEventListener('click',()=>{
-        previewImg.src=info.srcGuess;
-        preview.classList.remove('hidden');
+        openPreviewByCardId(id);
       });
 
       grid.appendChild(wrap);
@@ -4069,7 +4529,7 @@ function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
   Object.entries(obj.main).forEach(([id,count])=>{
     const info=CARD_DB.find(c=>c.id===id)||{name:id,srcGuess:WHITE_BACK};
     for(let i=0;i<count;i++){
-      const c=spawnCard(info.srcGuess,{zone:'deckMain',faceDown:true,origName:info.name});
+      const c=spawnCard(info.srcGuess,{zone:'deckMain',faceDown:true,origName:info.name,metaId:id});
       deckPool.push(c.id);hideIfPooled(c);
     }
   });
@@ -4077,7 +4537,7 @@ function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
   Object.entries(obj.monster).reverse().forEach(([id,count])=>{
     const info=CARD_DB.find(c=>c.id===id)||{name:id,srcGuess:WHITE_BACK};
     for(let i=0;i<count;i++){
-      const c=spawnCard(info.srcGuess,{zone:'monster',faceDown:true,origName:info.name});
+      const c=spawnCard(info.srcGuess,{zone:'monster',faceDown:true,origName:info.name,metaId:id});
       monsterPool.push(c.id);hideIfPooled(c);
     }
   });
@@ -4088,6 +4548,7 @@ function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
 (function(){try{console.assert(typeof bringToBack==='function');console.assert(typeof encodeDeck==='function');console.log('%cSmoke OK','color:#0f0');}catch(e){console.error(e);}})();
 
 pushUndo();updateCounters();updateRageDisplay();
+initPlayHud();
 
 // [spectator-sync] 状態読み込み後も同期
 let __wrapLoadFromJSON=false;try{if(!__wrapLoadFromJSON){const __loadFromJSON=loadFromJSON;loadFromJSON=(json,push=true)=>{__loadFromJSON(json,push);sendStateToSpectator();};__wrapLoadFromJSON=true;}}catch(e){}
