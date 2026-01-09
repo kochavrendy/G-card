@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>G-CARD Directeor_v2.1</title>
 <style>
   *{box-sizing:border-box;}
@@ -13,7 +12,7 @@
   body.flipLayout #board::before{transform:rotate(180deg);}
   .zone,.card{z-index:2;}
 
-  #toolbar{position:fixed;top:calc(8px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
+  #toolbar{position:fixed;top:8px;left:8px;z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
   #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
   #toolbar select{background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;}
   #fileInput,#backInput{display:none;}
@@ -305,21 +304,9 @@
 
 
   /* ===== Action Log ===== */
-  #log.hidden{display:none;}
-  #log{position:fixed;inset:0;z-index:4600;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;}
-  #logPanel{position:relative;width:80vw;height:80vh;background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:12px 16px;display:flex;flex-direction:column;}
-  #logHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
-  #logHeader h2{margin:0;font-size:18px;}
-  #logSearch{flex:1;min-width:160px;background:#111;color:#eee;border:1px solid #444;border-radius:6px;padding:6px 8px;font-size:13px;}
-  #logList{flex:1;overflow:auto;background:#111;border:1px solid #444;border-radius:8px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre-wrap;line-height:1.45;}
-  #logBtns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;}
-  #logBtns button{border:none;background:#555;color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
-  #logBtns button:hover{background:#666;}
-
-
   /* ===== Spectator (Discord共有) ===== */
   #spectatorBadge{
-    position:fixed; top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); z-index:9999;
+    position:fixed; top:8px; right:8px; z-index:9999;
     background:#000c; color:#fff; padding:6px 10px; border-radius:10px;
     font-size:13px; display:none; user-select:none;
     white-space:pre-line;
@@ -332,7 +319,7 @@
   body.spectator.showDiscardViewer #viewerBtns{ display:none !important; }
 
   #spectatorPickPanel{
-    position:fixed; top:calc(8px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); z-index:9999;
+    position:fixed; top:8px; left:8px; z-index:9999;
     background:#000c; color:#fff; padding:8px 10px; border-radius:12px;
     display:flex; align-items:center; gap:10px; user-select:none;
     max-width:420px;
@@ -343,7 +330,8 @@
 
   body.spectator #builder{ display:none !important; }
   body.spectator #startModal{ display:none !important; }
-  body.spectator #board{ pointer-events:none; } /* 誤操作防止 */
+  body.spectator #board{ pointer-events:auto; } /* 共有用でもエリアUI(重なり)は押せるように */
+  body.spectator .card{ pointer-events:none; } /* カード自体の誤操作防止 */
 
 
 
@@ -428,7 +416,6 @@ html,body{
 .stackCtrl button,
 .revealCtrl button,
 #revealFooter button,
-#logBtns button,
 #startBox button{
   border-radius: var(--pill);
   border:1px solid rgba(255,255,255,.14);
@@ -568,7 +555,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 }
 
 /* modals: overlay */
-#viewer,#builder,#token,#stack,#reveal,#log,#startModal{
+#viewer,#builder,#token,#stack,#reveal,#startModal{
   background:
     radial-gradient(900px 600px at 20% 10%, rgba(167,139,250,.18), transparent 60%),
     radial-gradient(900px 600px at 80% 40%, rgba(45,212,255,.14), transparent 60%),
@@ -576,7 +563,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 }
 
 /* modals: panels */
-#viewerPanel,#builderPanel,#tokenPanel,#stackPanel,#revealPanel,#logPanel,#startBox{
+#viewerPanel,#builderPanel,#tokenPanel,#stackPanel,#revealPanel,#startBox{
   background: linear-gradient(180deg, rgba(18,22,30,.94), rgba(10,12,16,.90)) !important;
   border:1px solid rgba(255,255,255,.10) !important;
   border-radius: 20px !important;
@@ -589,7 +576,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 #tokenPanel h2,
 #stackPanel h2,
 #revealPanel h2,
-#logHeader h2,
+
 #startBox h1{
   letter-spacing:.02em;
 }
@@ -597,7 +584,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 /* inputs */
 #viewerSearch,
 #libFilter,
-#logSearch,
+
 #tokenCount,
 #builderFooter textarea{
   border-radius: 14px !important;
@@ -610,7 +597,7 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 #builderFooter textarea{ padding:10px 12px !important; }
 
 /* list containers */
-#viewerGrid,#libList,#deckScroll,#logList{
+#viewerGrid,#libList,#deckScroll{
   border-radius: 16px !important;
   border:1px solid rgba(255,255,255,.10) !important;
   background: rgba(0,0,0,.22) !important;
@@ -785,8 +772,6 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
   --base-w: 2048px;   /* 添付スクショ基準 */
   --base-h: 1015px;    /* 添付スクショ基準 */
   --ui-scale: 1;
-  --vv-x: 0px;
-  --vv-y: 0px;
 }
 
 /* 盤面は基準サイズで描画し、画面が小さいときだけ縮小して収める */
@@ -796,9 +781,6 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
   overflow:hidden;
   background:#181818;
   z-index:0;
-  transform:translate(var(--vv-x), var(--vv-y));
-  transform-origin:0 0;
-  will-change:transform;
 }
 #stage{
   position:absolute;
@@ -820,10 +802,50 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
 #toolbar{
   max-width:none !important;
   width:calc(var(--base-w) - 16px);
-  transform:translate(var(--vv-x), var(--vv-y)) scale(var(--ui-scale));
+  transform:scale(var(--ui-scale));
   transform-origin:0 0;
 }
 body.soloActive #toolbar{ right:auto !important; }
+
+
+  /* ===== Shortcuts modal ===== */
+  #shortcuts.hidden{display:none !important;}
+  #shortcuts{position:fixed;inset:0;z-index:13000;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;}
+  #shortcutsPanel{width:min(720px,92vw);max-height:88vh;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;}
+  #shortcutsHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
+  #shortcutsHeader h2{margin:0;font-size:18px;}
+  #shortcutsHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
+  #shortcutsHeader button:hover{background:#666;}
+  #shortcutsBody{padding:12px 14px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
+  .scSection{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:14px;padding:10px 12px;}
+  .scSection h3{margin:0 0 8px;font-size:14px;opacity:.92;}
+  .scTable{width:100%;border-collapse:collapse;font-size:13px;}
+  .scTable td{padding:7px 8px;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;}
+  .scKey{white-space:nowrap;font-weight:800;}
+  .scNote{opacity:.85;font-size:12px;line-height:1.35;}
+  kbd{display:inline-block;padding:2px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);box-shadow:0 1px 0 rgba(0,0,0,.35);font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px;}
+
+  /* ===== Calculator (Play mode) ===== */
+  #calcWidget.hidden{display:none !important;}
+  #calcWidget{position:fixed;right:8px;top:56px;z-index:12050;width:290px;max-width:calc(100vw - 16px);background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.16);border-radius:16px;backdrop-filter:blur(6px);color:#fff;box-shadow:0 14px 40px rgba(0,0,0,.45);overflow:hidden;}
+  #calcHeader{cursor:move;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.10);user-select:none;}
+  #calcHeader .title{font-weight:900;letter-spacing:.03em;}
+  #calcHeader .btns{display:flex;gap:6px;align-items:center;}
+  #calcHeader button{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:10px;padding:4px 8px;cursor:pointer;font-size:12px;}
+  #calcHeader button:hover{background:rgba(255,255,255,.10);}
+  #calcBody{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  #calcInput{width:100%;padding:9px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;}
+  #calcInput:focus{border-color:rgba(45,212,255,.75);box-shadow:0 0 0 2px rgba(45,212,255,.18);}
+  #calcRow{display:flex;gap:6px;flex-wrap:wrap;}
+  #calcRow button{flex:1 1 auto;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:12px;padding:7px 10px;cursor:pointer;font-size:12px;}
+  #calcRow button:hover{background:rgba(255,255,255,.10);}
+  #calcResult{font-size:20px;font-weight:900;padding:10px 10px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  #calcResult .val{word-break:break-all;}
+  #calcResult .hint{opacity:.7;font-size:11px;font-weight:600;}
+  #calcHistory{max-height:170px;overflow:auto;border-top:1px solid rgba(255,255,255,.10);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:6px;}
+  .calcHistItem{cursor:pointer;padding:7px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:12px;line-height:1.2;}
+  .calcHistItem:hover{background:rgba(255,255,255,.08);}
+  .calcErr{color:#ffb3b3;font-size:12px;}
 
 </style>
 </head>
@@ -839,12 +861,13 @@ body.soloActive #toolbar{ right:auto !important; }
     <button id="btnSave">💾保存</button>
     <button id="btnLoad">📥読込</button>
     <button id="btnOpenSpectator" style="background:#2a8;">📺共有用(手札非表示)</button>
-    <button id="btnLog">📜ログ</button>
-    <button id="btnTurnStart" style="background:#0057b7;">ターンスタート</button>
+<button id="btnTurnStart" style="background:#0057b7;">ターンスタート</button>
     <button id="btnPreview">拡大表示</button>
     <button id="btnToken">トークン</button>
     <button id="btnCoin" title="コイントス（表/裏ランダム）">🪙コイントス</button>
-    <button id="btnPhase" title="クリックでフェーズ進行" style="background:#553;">フェーズ：スタートフェイズ</button>
+<button id="btnCalc" title="簡単な計算機を開く/閉じる">🧮計算機</button>
+    <button id="btnShortcuts" title="ショートカット一覧を表示">⌨️ショートカット</button>
+
     <label>戻す位置
       <select id="deckReturnPos">
         <option value="top">上</option>
@@ -1025,25 +1048,6 @@ body.soloActive #toolbar{ right:auto !important; }
     </div>
   </div>
 
-
-
-
-  <!-- action log -->
-  <div id="log" class="hidden">
-    <div id="logPanel" role="dialog" aria-modal="true" aria-label="行動ログ">
-      <div id="logHeader">
-        <h2>行動ログ</h2>
-        <input id="logSearch" placeholder="フィルタ（例: ドロー / 公開 / 移動）" />
-      </div>
-      <div id="logList"></div>
-      <div id="logBtns">
-        <button id="btnLogCopy">コピー</button>
-        <button id="btnLogClear" style="background:#8b0000;">クリア</button>
-        <button id="btnLogClose">閉じる</button>
-      </div>
-    </div>
-  </div>
-
   <!-- reveal / deck top 공개 -->
   <div id="reveal" class="hidden">
     <div id="revealPanel">
@@ -1057,6 +1061,58 @@ body.soloActive #toolbar{ right:auto !important; }
         <button id="btnRevealReturn">この順で山札上へ戻す</button>
         <button id="btnRevealCancel">キャンセル</button>
       </div>
+    </div>
+  </div>
+
+
+
+  <!-- shortcuts list -->
+  <div id="shortcuts" class="hidden">
+    <div id="shortcutsPanel" role="dialog" aria-modal="true" aria-label="ショートカット一覧">
+      <div id="shortcutsHeader">
+        <h2>ショートカット一覧</h2>
+        <button id="btnShortcutsClose" type="button">閉じる</button>
+      </div>
+      <div id="shortcutsBody">
+        <div class="scSection">
+          <h3>盤面操作（プレイモード）</h3>
+          <table class="scTable">
+            <tr><td class="scKey"><kbd>Shift</kbd> + クリック</td><td>複数選択 / 解除（トグル）</td></tr>
+            <tr><td class="scKey">ドラッグ</td><td>選択カードを移動（複数選択中はまとめて移動）</td></tr>
+            <tr><td class="scKey"><kbd>Alt</kbd> + ドラッグ</td><td>同じエリアに重なっている束をまとめて移動（手札/山札/捨て札以外）</td></tr>
+            <tr><td class="scKey"><kbd>Alt</kbd> + ホイール</td><td>カードの拡大 / 縮小</td></tr>
+            <tr><td class="scKey"><kbd>F</kbd></td><td>選択カードを表裏反転</td></tr>
+            <tr><td class="scKey"><kbd>Delete</kbd></td><td>選択カードを消滅（完全削除）</td></tr>
+            <tr><td class="scKey"><kbd>Space</kbd></td><td>拡大表示（選択中のカード）</td></tr>
+            <tr><td class="scKey"><kbd>Esc</kbd></td><td>開いているパネルを閉じる（拡大/重なり/公開/トークン/この一覧 など）</td></tr>
+          </table>
+          <div class="scNote">※共有用（観戦）ウィンドウは手札/サーチ非表示のため、盤面操作ショートカットも無効です。</div>
+        </div>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- calculator widget (toggle from toolbar) -->
+  <div id="calcWidget" class="hidden" aria-label="計算機">
+    <div id="calcHeader">
+      <div class="title">🧮 計算機</div>
+      <div class="btns">
+        <button id="btnCalcClear" type="button" title="クリア">C</button>
+        <button id="btnCalcClose" type="button" title="閉じる">✕</button>
+      </div>
+    </div>
+    <div id="calcBody">
+      <input id="calcInput" type="text" inputmode="decimal" autocomplete="off" placeholder="例: (1200+400)*2  /  12.5*3  /  2^10">
+      <div id="calcRow">
+        <button id="btnCalcEval" type="button">= 計算</button>
+        <button id="btnCalcCopy" type="button">結果コピー</button>
+        <button id="btnCalcBack" type="button">⌫</button>
+      </div>
+      <div id="calcResult"><div class="val">0</div><div class="hint">Enterで計算</div></div>
+      <div id="calcErr" class="calcErr hidden"></div>
+      <div id="calcHistory"></div>
     </div>
   </div>
 
@@ -1153,32 +1209,12 @@ let __uiScale = 1;
 function applyUIScale(){
   const rs = getComputedStyle(document.documentElement);
   const baseW = parseFloat(rs.getPropertyValue('--base-w')) || 2048;
-  const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 1015;
-
-  // ピンチズームで innerWidth/innerHeight が変わる端末でも崩れないように、
-  // visualViewport がある場合は width/height * scale を使って “レイアウトviewport相当” を作る
-  const vv = window.visualViewport;
-  let w = window.innerWidth || document.documentElement.clientWidth || baseW;
-  let h = window.innerHeight || document.documentElement.clientHeight || baseH;
-
-  if(vv && isFinite(vv.width) && isFinite(vv.height) && isFinite(vv.scale)){
-    w = vv.width  * vv.scale;
-    h = vv.height * vv.scale;
-
-    // ズーム中に画面がズレる（iOS Safari など）対策：必要時だけ追従
-    const z  = vv.scale || 1;
-    const ox = (z !== 1) ? (vv.offsetLeft || 0) : 0;
-    const oy = (z !== 1) ? (vv.offsetTop  || 0) : 0;
-    document.documentElement.style.setProperty('--vv-x', `${ox}px`);
-    document.documentElement.style.setProperty('--vv-y', `${oy}px`);
-  }else{
-    document.documentElement.style.setProperty('--vv-x', '0px');
-    document.documentElement.style.setProperty('--vv-y', '0px');
-  }
-
-  // 画面が大きいときは等倍（固定サイズ）、小さい時だけ縮小
-  let s = Math.min(1, w/baseW, h/baseH);
+  const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 974;
+  const w = window.innerWidth || document.documentElement.clientWidth || baseW;
+  const h = window.innerHeight || document.documentElement.clientHeight || baseH;
+  let s = Math.min(w/baseW, h/baseH);
   if(!isFinite(s) || s<=0) s = 1;
+  // 画面が大きいときは等倍（固定サイズ）
   __uiScale = s;
   document.documentElement.style.setProperty('--ui-scale', String(s));
 }
@@ -1190,16 +1226,7 @@ function getPointerBoardPos(ev){
   return { x: (ev.clientX - r.left) / sx, y: (ev.clientY - r.top) / sy };
 }
 applyUIScale();
-(function(){
-  // resize + pinch zoom (visualViewport) 対応
-  window.addEventListener('resize', applyUIScale, {passive:true});
-  window.addEventListener('orientationchange', applyUIScale, {passive:true});
-  const vv = window.visualViewport;
-  if(vv){
-    vv.addEventListener('resize', applyUIScale, {passive:true});
-    vv.addEventListener('scroll', applyUIScale, {passive:true});
-  }
-})();
+window.addEventListener('resize', applyUIScale);
 
 const btnFlip=document.getElementById('btnFlip');
 const btnRemove=document.getElementById('btnRemove'); // [patch]
@@ -1221,28 +1248,23 @@ let lastViewerPickedId=null; // 山札サーチで最後に選択/解除した�
 const IS_SPECTATOR = new URLSearchParams(location.search).has('spectator');
 if(IS_SPECTATOR) document.body.classList.add('spectator');
 
-// ===== Phase / Coin Toss =====
-const PHASES = ['スタートフェイズ','メインフェイズ','撃退フェイズ','エンドフェイズ'];
-let phaseIndex = 0;
+
+// ===== Coin Toss =====
 let lastCoin = null;
 
 function updateSpectatorBadge(){
   // 観戦(共有)ウィンドウでは #toolbar を非表示にしているため、
-  // コイントス/フェーズの結果はバッジに出して見える化する。
+  // コイントスの結果はバッジに出して見える化する。
   try{
     if(!IS_SPECTATOR) return;
     const b=document.getElementById('spectatorBadge');
     if(!b) return;
-    const phase = PHASES[phaseIndex] || '';
     const coin  = lastCoin ? `🪙コイントス：${lastCoin}` : '🪙コイントス：-';
-    b.textContent = `共有用（手札 / サーチ非表示）\nフェーズ：${phase}\n${coin}`;
+    b.textContent = `共有用（手札 / サーチ非表示）
+${coin}`;
   }catch(e){}
 }
 
-function updatePhaseUI(){
-  try{ if(btnPhase) btnPhase.textContent = `フェーズ：${PHASES[phaseIndex]}`; }catch(e){}
-  updateSpectatorBadge();
-}
 function updateCoinUI(){
   try{
     if(btnCoin){
@@ -1255,18 +1277,10 @@ function doCoinToss(){
   if(IS_SPECTATOR) return;
   lastCoin = (Math.random()<0.5) ? '表' : '裏';
   updateCoinUI();
-  try{ window.logAction && window.logAction(`コイントス：${lastCoin}`); }catch(e){}
   try{ if(typeof pushUndo==='function') pushUndo(); }catch(e){}
   try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
 }
-function nextPhase(){
-  if(IS_SPECTATOR) return;
-  phaseIndex = (phaseIndex + 1) % PHASES.length;
-  updatePhaseUI();
-  try{ window.logAction && window.logAction(`フェーズ：${PHASES[phaseIndex]}`); }catch(e){}
-  try{ if(typeof pushUndo==='function') pushUndo(); }catch(e){}
-  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
-}
+
 
 let spectatorWin = null;
 let spectatorSyncTimer = null;
@@ -1382,6 +1396,8 @@ if(IS_SPECTATOR){
         }
       }catch(e){}
       try{ loadFromJSON(d.payload, false); }catch(e){}
+      // 共有側で「重なり」表示中なら内容も追従更新
+      try{ if(stackModal && !stackModal.classList.contains('hidden')) buildStackList(); }catch(e){}
       // メイン画面と観戦画面で board サイズが違うと座標がズレるので、比率で補正
       try{
         if(__meta && __meta.w>0 && __meta.h>0 && board){
@@ -1513,7 +1529,6 @@ const btnPreview=document.getElementById('btnPreview');
 const btnBackToMode=document.getElementById('btnBackToMode');
 const btnToken=document.getElementById('btnToken');
 const btnCoin=document.getElementById('btnCoin');
-const btnPhase=document.getElementById('btnPhase');
 const deckReturnPosSel=document.getElementById('deckReturnPos'); // [patch]
 let deckReturnPos=deckReturnPosSel?deckReturnPosSel.value:'top'; // [patch]
 if(deckReturnPosSel){deckReturnPosSel.onchange=()=>{deckReturnPos=deckReturnPosSel.value;};}
@@ -2070,6 +2085,21 @@ function createZones(){
 
 function buildZoneControls(){
   document.querySelectorAll('.zoneUI,.rageUI').forEach(e=>e.remove());
+  if(IS_SPECTATOR){
+    // 共有/観戦用：操作ボタンは出さないが、怒りカウンターだけは表示する
+    const rageZ=zoneDom['rage'];
+    if(rageZ){
+      const ui=document.createElement('div');
+      ui.className='rageUI';
+      const span=document.createElement('span');
+      span.id='rageCounter';
+      span.textContent=rageCount;
+      ui.appendChild(span);
+      rageZ.appendChild(ui);
+    }
+    return;
+  }
+
   const mk=t=>{const b=document.createElement('button');b.textContent=t;return b;};
   const deckZ=zoneDom['deckMain'];if(deckZ){const ui=document.createElement('div');ui.className='zoneUI';const s=mk('サーチ'),rv=mk('公開'),sh=mk('シャッフル'),d1=mk('1ドロー'),d5=mk('5ドロー');ui.append(s,rv,sh,d1,d5);deckZ.appendChild(ui);s.onclick=()=>openViewer('deck');rv.onclick=()=>openRevealPrompt();sh.onclick=()=>{shuffleDeck();pushUndo();};d1.onclick=()=>{drawFromDeck(1);pushUndo();};d5.onclick=()=>{drawFromDeck(5);pushUndo();};}
   const disZ=zoneDom['discard'];if(disZ){const ui=document.createElement('div');ui.className='zoneUI';const s=mk('サーチ'),bk=mk('山札へ戻す');ui.append(s,bk);disZ.appendChild(ui);s.onclick=()=>openViewer('discard');bk.onclick=()=>{if(discardToDeck()) pushUndo();};}
@@ -2078,8 +2108,41 @@ function buildZoneControls(){
 
 function buildAreaControls(){
   document.querySelectorAll('.areaUI').forEach(e=>e.remove());
-  const chain=['slot1','slot2','slot3','slot4','slot5','slot6','slot7','slot8'];const repel={slot6:'slot5',slot7:'slot4',slot8:'slot3'};
-  chain.forEach(id=>{const dom=zoneDom[id];if(!dom)return;const ui=document.createElement('div');ui.className='areaUI';const f=document.createElement('button');f.textContent='前進';const b=document.createElement('button');b.textContent='後退';const s=document.createElement('button');s.textContent='重なり';ui.append(f,b,s);s.onclick=()=>openStack(id);if(repel[id]){const r=document.createElement('button');r.textContent='撃退';ui.append(r);r.onclick=()=>{moveZoneCards(id,repel[id]);pushUndo();};}dom.appendChild(ui);f.onclick=()=>{const i=chain.indexOf(id);if(i!==-1&&i<chain.length-1){moveZoneCards(id,chain[i+1]);pushUndo();}};b.onclick=()=>{const i=chain.indexOf(id);if(i>0){moveZoneCards(id,chain[i-1]);pushUndo();}};});
+  const chain=['slot1','slot2','slot3','slot4','slot5','slot6','slot7','slot8'];
+  const repel={slot6:'slot5',slot7:'slot4',slot8:'slot3'};
+
+  chain.forEach(id=>{
+    const dom=zoneDom[id];
+    if(!dom) return;
+
+    const ui=document.createElement('div');
+    ui.className='areaUI';
+
+    // 共有/観戦用でも「重なり」は表示させたい（閲覧専用）
+    const s=document.createElement('button');
+    s.textContent='重なり';
+    ui.appendChild(s);
+    s.onclick=()=>openStack(id);
+
+    if(!IS_SPECTATOR){
+      // 操作系ボタンはメイン画面のみ
+      const f=document.createElement('button'); f.textContent='前進';
+      const b=document.createElement('button'); b.textContent='後退';
+      ui.insertBefore(f, s);
+      ui.insertBefore(b, s);
+
+      if(repel[id]){
+        const r=document.createElement('button'); r.textContent='撃退';
+        ui.appendChild(r);
+        r.onclick=()=>{ moveZoneCards(id, repel[id]); pushUndo(); };
+      }
+
+      f.onclick=()=>{ const i=chain.indexOf(id); if(i!==-1 && i<chain.length-1){ moveZoneCards(id, chain[i+1]); pushUndo(); } };
+      b.onclick=()=>{ const i=chain.indexOf(id); if(i>0){ moveZoneCards(id, chain[i-1]); pushUndo(); } };
+    }
+
+    dom.appendChild(ui);
+  });
 }
 
 function moveZoneCards(fromId,toId){
@@ -2117,8 +2180,70 @@ fileInput.addEventListener('change',e=>handleFiles(e.target.files));
 backInput.addEventListener('change',e=>setBackImage(e.target.files));
 window.addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransfer.files);});window.addEventListener('dragover',e=>e.preventDefault());
 
-function handleFiles(fileList){[...fileList].forEach(f=>{if(!f.type.startsWith('image/'))return;const url=URL.createObjectURL(f);const name=f.name||url;addToDeck(url,name);});fileInput.value="";pushUndo();}
-function setBackImage(files){if(!files||!files.length){backSrc=WHITE_BACK;updateBackImages();return;}const f=files[0];if(!f.type.startsWith('image/'))return;backSrc=URL.createObjectURL(f);backInput.value="";updateBackImages();pushUndo();}
+function handleFiles(fileList){
+  // Solo root: forward uploads to active iframe (don&apos;t add to hidden root board)
+  if(!IS_EMBED && document.body.classList.contains('soloActive')){
+    try{
+      const fr = getActiveSoloFrame();
+      const win = fr && fr.contentWindow;
+      if(win){
+        if(typeof win.handleFiles === 'function'){
+          win.handleFiles(fileList);
+        }else if(typeof win.addToDeck === 'function'){
+          [...fileList].forEach(f=>{
+            if(!f.type || !String(f.type).startsWith('image/')) return;
+            const url = URL.createObjectURL(f);
+            const name = f.name || url;
+            win.addToDeck(url, name);
+          });
+          try{ win.pushUndo && win.pushUndo(); }catch(e){}
+        }
+      }
+    }catch(e){ console.warn(e); }
+    try{ fileInput.value=""; }catch(e){}
+    return;
+  }
+
+  [...fileList].forEach(f=>{
+    if(!f.type || !String(f.type).startsWith('image/')) return;
+    const url = URL.createObjectURL(f);
+    const name = f.name || url;
+    addToDeck(url, name);
+  });
+  fileInput.value="";
+  pushUndo();
+}
+function setBackImage(files){
+  if(!files || !files.length){
+    backSrc = WHITE_BACK;
+    backInput.value="";
+    updateBackImages();
+    pushUndo();
+    return;
+  }
+
+  // Solo root: broadcast back image to BOTH boards
+  if(!IS_EMBED && document.body.classList.contains('soloActive')){
+    try{
+      const fOpp = $solo('soloFrameOpp');
+      const fYou = $solo('soloFrameYou');
+      [fOpp, fYou].forEach(fr=>{
+        try{
+          const win = fr && fr.contentWindow;
+          if(win && typeof win.setBackImage === 'function') win.setBackImage(files);
+        }catch(e){}
+      });
+    }catch(e){ console.warn(e); }
+    try{ backInput.value=""; }catch(e){}
+    return;
+  }
+
+  const f = files[0];
+  backSrc = URL.createObjectURL(f);
+  backInput.value="";
+  updateBackImages();
+  pushUndo();
+}
 function updateBackImages(){Object.values(state.cards).forEach(c=>{if(c.faceDown&&!['deckMain','discard'].includes(c.zone)){renderCard(c);}});}
 
 function addToDeck(frontSrc,nameKey){dupCountByName[nameKey]=dupCountByName[nameKey]||0;if(dupCountByName[nameKey]>=MAX_DUP_PER_NAME){alert(`${nameKey} は上限${MAX_DUP_PER_NAME}枚です`);return;}dupCountByName[nameKey]++;const card=spawnCard(frontSrc,{zone:'deckMain',faceDown:true,origName:nameKey});hideIfPooled(card);deckPool.push(card.id);updateCounters();}
@@ -2166,7 +2291,7 @@ function onDragEnd(ev){
     if (snapEnabled && z) snapCardToZone(c, z);
     renderCard(c); // ←スナップ後の座標を反映
   });
-  // ログ（移動）
+  // （移動）
   try{
     const n = dragInfo.rects?.length || 0;
     if(n>0){
@@ -2295,8 +2420,6 @@ btnUndo.onclick=undo;btnSave.onclick=saveLocal;btnLoad.onclick=loadLocal;
 if(btnOpenSpectator) btnOpenSpectator.onclick=openSpectatorWindow;btnTurnStart.onclick=()=>{turnStart();};btnPreview.onclick=openPreview;btnBackToMode.onclick=()=>{ if(document.body.classList.contains('soloActive')){ exitSoloMode('start'); } else { goBackToMode(); } };
 btnToken.onclick=()=>{openTokenSelector();};
 if(btnCoin) btnCoin.onclick=doCoinToss;
-if(btnPhase) btnPhase.onclick=nextPhase;
-updatePhaseUI();
 updateCoinUI();
 
 // [patch] keyboard shortcuts
@@ -2551,7 +2674,7 @@ function undo(){
   state.undoStack.pop();
   loadFromJSON(state.undoStack[state.undoStack.length-1],false);
 } 
-function lightState(){const {cards,order}=state;return {cards,order,deckPool,discardPool,monsterPool,dupCountByName,backSrc,rageCount,phaseIndex,lastCoin};}
+function lightState(){const {cards,order}=state;return {cards,order,deckPool,discardPool,monsterPool,dupCountByName,backSrc,rageCount,lastCoin};}
 function saveLocal(){try{const json=JSON.stringify(lightState());const bytes=new Blob([json]).size;if(bytes>MAX_SAVE_BYTES){alert(`保存データが大きすぎます (約${(bytes/1024).toFixed(1)}KB)`);return;}localStorage.setItem('go_state',json);alert('保存しました');}catch(e){alert('保存中エラー:'+e.message);}}
 function loadLocal(){try{const json=localStorage.getItem('go_state');if(!json){alert('データがありません');return;}loadFromJSON(json,true);}catch(e){alert('読込中エラー:'+e.message);}}
 function loadFromJSON(json,push=true){
@@ -2571,8 +2694,7 @@ function loadFromJSON(json,push=true){
   backSrc=p.backSrc||WHITE_BACK;
   rageCount=p.rageCount||0;
   // phase/coin meta
-  try{ phaseIndex = (typeof p.phaseIndex==='number') ? p.phaseIndex : 0; }catch(e){ phaseIndex = 0; }
-  try{ lastCoin = (Object.prototype.hasOwnProperty.call(p,'lastCoin')) ? p.lastCoin : null; }catch(e){ lastCoin = null; }
+try{ lastCoin = (Object.prototype.hasOwnProperty.call(p,'lastCoin')) ? p.lastCoin : null; }catch(e){ lastCoin = null; }
 
   // 観戦(spectator)側は公開モーダルを GCARD_REVEAL メッセージで制御するため、
   // GCARD_SYNC のたびに勝手に閉じないようにする（ここが「一瞬で閉じる」原因）
@@ -2589,7 +2711,6 @@ function loadFromJSON(json,push=true){
   state.order.forEach(id=>renderCard(state.cards[id]));
   updateCounters();
   updateRageDisplay();
-  updatePhaseUI();
   updateCoinUI();
 
   if(!IS_SPECTATOR){
@@ -2604,7 +2725,7 @@ function loadFromJSON(json,push=true){
 
 // ===== start modal handlers =====
 btnStartBuild.onclick=()=>{startModal.style.display='none';openBuilder();};
-btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');phaseIndex=0;lastCoin=null;updatePhaseUI();updateCoinUI();autoLoadBackImage();};
+btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');lastCoin=null;updateCoinUI();autoLoadBackImage();};
 function goBackToMode(){if(revealIsOpen()) cancelReveal(); toolbar.classList.add('hidden');viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
 
 
@@ -2618,7 +2739,7 @@ if(IS_EMBED){
   // keep toolbars in embedded instances, but hide spectator button (not needed)
   try{ if(btnOpenSpectator) btnOpenSpectator.style.display='none'; }catch(e){}
   // reset meta UI
-  try{ phaseIndex=0; lastCoin=null; updatePhaseUI(); updateCoinUI(); }catch(e){}
+  try{ lastCoin=null; updateCoinUI(); }catch(e){}
   try{ autoLoadBackImage(); }catch(e){}
   // deck init from parent
   window.addEventListener('message',(ev)=>{
@@ -2629,15 +2750,32 @@ if(IS_EMBED){
       return;
     }
     if(d.type==='SOLO_SET_META'){
-      try{
-        if(typeof d.phaseIndex==='number' && Array.isArray(PHASES) && PHASES.length){
-          const n = ((d.phaseIndex % PHASES.length) + PHASES.length) % PHASES.length;
-          phaseIndex = n;
-          updatePhaseUI();
-        }
-        if('coin' in d){
+      try{if('coin' in d){
           lastCoin = d.coin ? String(d.coin) : null;
           updateCoinUI();
+        }
+      }catch(e){ console.error(e); }
+      return;
+    }
+    if(d.type==='SOLO_CMD' && d.targetId){
+      try{
+        const tid = String(d.targetId);
+        // select
+        if(tid==='deckReturnPos'){
+          const sel = document.getElementById('deckReturnPos');
+          const v = (d.payload && typeof d.payload.value==='string') ? d.payload.value : '';
+          if(sel && v) sel.value = v;
+          if(sel) sel.dispatchEvent(new Event('change', {bubbles:true}));
+          return;
+        }
+
+        const el = document.getElementById(tid);
+        if(el){
+          if(typeof el.onclick === 'function') el.onclick();
+          else if(typeof el.click === 'function') el.click();
+        }else{
+          // 予備：IDが取れない場合のフォールバック
+          if(tid==='OPEN_SPECTATOR' && typeof openSpectatorWindow==='function') openSpectatorWindow();
         }
       }catch(e){ console.error(e); }
       return;
@@ -3066,7 +3204,49 @@ libFilter.addEventListener('input',renderLibrary);
 
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
-function renderDeckThumbs(){gridMonster.innerHTML='';gridMain.innerHTML='';const buildSection=(obj,grid,which)=>{Object.entries(obj).forEach(([id,num])=>{const info=CARD_DB.find(c=>c.id===id)||{srcGuess:WHITE_BACK,name:id};const wrap=document.createElement('div');wrap.className='deckThumb';const img=document.createElement('img');img.src=info.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};wrap.appendChild(img);const cnt=document.createElement('div');cnt.className='deckCnt';cnt.textContent='x'+num;wrap.appendChild(cnt);const ctrl=document.createElement('div');ctrl.className='ctrl';const plus=document.createElement('button');plus.textContent='＋';plus.onclick=()=>{addToBuild(id,which,1);};const minus=document.createElement('button');minus.textContent='－';minus.onclick=()=>{decFromBuild(id,which);};ctrl.append(plus,minus);wrap.appendChild(ctrl);grid.appendChild(wrap);});};buildSection(buildMon,gridMonster,'monster');buildSection(buildMain,gridMain,'main');}
+function renderDeckThumbs(){
+  gridMonster.innerHTML='';
+  gridMain.innerHTML='';
+  const buildSection=(obj,grid,which)=>{
+    Object.entries(obj).forEach(([id,num])=>{
+      const info = CARD_DB.find(c=>c.id===id) || {srcGuess:WHITE_BACK,name:id,id};
+      const wrap=document.createElement('div');
+      wrap.className='deckThumb';
+      wrap.dataset.id=id;
+
+      const img=document.createElement('img');
+      img.src=info.srcGuess;
+      img.onerror=()=>{img.src=WHITE_BACK;};
+      wrap.appendChild(img);
+
+      const cnt=document.createElement('div');
+      cnt.className='deckCnt';
+      cnt.textContent='x'+num;
+      wrap.appendChild(cnt);
+
+      const ctrl=document.createElement('div');
+      ctrl.className='ctrl';
+      const plus=document.createElement('button');
+      plus.textContent='＋';
+      plus.addEventListener('click',(e)=>{e.stopPropagation(); addToBuild(id,which,1);});
+      const minus=document.createElement('button');
+      minus.textContent='－';
+      minus.addEventListener('click',(e)=>{e.stopPropagation(); decFromBuild(id,which);});
+      ctrl.append(plus,minus);
+      wrap.appendChild(ctrl);
+
+      // 右側（構築中デッキ）カードをクリック → 拡大表示
+      wrap.addEventListener('click',()=>{
+        previewImg.src=info.srcGuess;
+        preview.classList.remove('hidden');
+      });
+
+      grid.appendChild(wrap);
+    });
+  };
+  buildSection(buildMon,gridMonster,'monster');
+  buildSection(buildMain,gridMain,'main');
+}
 function updateBuildCount(){const m=sumObj(buildMain),k=sumObj(buildMon);countInfo.textContent=`メイン ${m}/${MAIN_LIMIT}　怪獣 ${k}/${MON_LIMIT}`;btnBuildStart.disabled=!(m===MAIN_LIMIT&&k===MON_LIMIT);}
 function sumObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:buildMon});};
@@ -3329,25 +3509,21 @@ function getActiveSoloFrame(){
   }catch(e){}
   return fYou || fOpp || null;
 }
-
-// 親ツールバーの「フェーズ / コイントス」表示を、アクティブ盤面(iframe)の状態に追従させる
+// 親ツールバーの「コイントス」表示を、アクティブ盤面(iframe)の状態に追従させる
 function mirrorMetaFromIframe(win){
   try{
     if(!win || !win.document) return;
     const pCoin = document.getElementById('btnCoin');
-    const pPhase = document.getElementById('btnPhase');
     const iCoin = win.document.getElementById('btnCoin');
-    const iPhase = win.document.getElementById('btnPhase');
     if(pCoin && iCoin) pCoin.textContent = iCoin.textContent;
-    if(pPhase && iPhase) pPhase.textContent = iPhase.textContent;
   }catch(e){}
 }
 
-// ===== ソロ用メタ（フェーズ/コイン）を両盤面へ同期 =====
+// ===== ソロ用メタ（コイン）を両盤面へ同期 =====
 function soloPostMetaToFrame(fr){
   try{
     if(!fr || !fr.contentWindow) return;
-    fr.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*');
+    fr.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin}, '*');
   }catch(e){}
 }
 function soloBroadcastMeta(){
@@ -3366,45 +3542,47 @@ function soloCoinTossBroadcast(){
   try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
   soloBroadcastMeta();
 }
-function soloNextPhaseBroadcast(){
-  if(IS_SPECTATOR) return;
-  phaseIndex = (phaseIndex + 1) % PHASES.length;
-  updatePhaseUI();
-  try{ window.logAction && window.logAction(`フェーズ：${PHASES[phaseIndex]}`); }catch(e){}
-  try{ if(typeof scheduleSpectatorSyncFast==='function') scheduleSpectatorSyncFast(); }catch(e){}
-  soloBroadcastMeta();
-}
 
 
-function forwardToActiveIframe(targetId){
+function forwardToActiveIframe(targetId, payload){
   const fr = getActiveSoloFrame();
-  if(!fr) return;
+  if(!fr) return false;
+
+  // 1) same-originなら直接叩く（hiddenボタンの click が効かない環境があるので onclick 優先）
   try{
     const win = fr.contentWindow;
-    if(!win || !win.document) return;
-
-    if(targetId === 'deckReturnPos'){
-      const src = document.getElementById('deckReturnPos');
-      const dst = win.document.getElementById('deckReturnPos');
-      if(src && dst){
-        dst.value = src.value;
-        dst.dispatchEvent(new Event('change', {bubbles:true}));
+    if(win && win.document){
+      if(targetId === 'deckReturnPos'){
+        const src = document.getElementById('deckReturnPos');
+        const dst = win.document.getElementById('deckReturnPos');
+        const v = (payload && typeof payload.value==='string') ? payload.value : (src ? src.value : '');
+        if(dst){
+          if(v) dst.value = v;
+          dst.dispatchEvent(new Event('change', {bubbles:true}));
+          return true;
+        }
+        return false;
       }
-      return;
-    }
 
-    const el = win.document.getElementById(targetId);
-    if(el && typeof el.click === 'function'){
-      el.click();
-      // coin/phase は iframe 内の表示が変わるので、親ツールバーにも反映
-      if(targetId==='btnCoin' || targetId==='btnPhase'){
-        try{ requestAnimationFrame(()=>mirrorMetaFromIframe(win)); }
-        catch(e){ try{ setTimeout(()=>mirrorMetaFromIframe(win), 0); }catch(e2){} }
-      }
+      const el = win.document.getElementById(targetId);
+      if(!el) return false;
+
+      if(typeof el.onclick === 'function'){ el.onclick(); return true; }
+      if(typeof el.click === 'function'){ el.click(); return true; }
+      return false;
     }
   }catch(e){
-    console.warn(e);
+    // file:// や厳格設定などでクロスオリジン扱いになる場合があるので後段へ
   }
+
+  // 2) クロスオリジンでも動く postMessage フォールバック
+  try{
+    if(fr.contentWindow){
+      fr.contentWindow.postMessage({type:'SOLO_CMD', targetId, payload: payload||null}, '*');
+      return true;
+    }
+  }catch(e){}
+  return false;
 }
 
 function wireSoloForwarding(){
@@ -3415,34 +3593,57 @@ function wireSoloForwarding(){
   const tb = document.getElementById('toolbar');
   if(!tb) return;
 
+  // ソロ中に「アクティブ盤面」に効かせたい操作
   const forwardIds = new Set([
     'btnFlip','btnRemove','btnToFront','btnToBack','btnUndo',
-    'btnSave','btnLoad','btnLog','btnTurnStart','btnPreview',
-    'btnToken','btnCoin','btnPhase'
+    'btnSave','btnLoad','btnTurnStart','btnPreview','btnToken'
   ]);
+
+  const getIdFromEvent = (ev)=>{
+    const el = (ev.target && ev.target.closest) ? ev.target.closest('[id]') : null;
+    return el ? el.id : '';
+  };
 
   // クリックを、アクティブ盤面(iframe)に転送
   tb.addEventListener('click', (ev)=>{
     if(!document.body.classList.contains('soloActive')) return;
 
-    const t = ev.target;
-    if(!(t instanceof HTMLElement)) return;
-
-    const id = t.id;
+    const id = getIdFromEvent(ev);
     if(!id) return;
+
+    // ファイル入力は親側で処理（ファイルダイアログを開く必要がある）
+    if(id==='fileInput' || id==='backInput') return;
 
     // ソロ専用ボタンは親側で処理
     if(id==='btnSoloOverview' || id==='btnBackToMode') return;
+
+    // 計算機/ショートカットは親側UIなので転送しない
+    if(id==='btnCalc' || id==='btnShortcuts') return;
+
+    // コイントスは「対戦全体の状態」なので親で決めて両方へ同期
+    if(id==='btnCoin'){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      soloCoinTossBroadcast();
+      return;
+    }
+
+    // 共有用(手札非表示)：まず親でウィンドウを開いておく（ポップアップ対策）
+    if(id==='btnOpenSpectator'){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      try{
+        // まずはユーザー操作の文脈で開く（既存があれば再利用）
+        window.open(spectatorUrl(), 'GCardSpectator', 'popup,width=1280,height=720');
+      }catch(e){}
+      forwardToActiveIframe('btnOpenSpectator', {preopened:true});
+      return;
+    }
 
     if(!forwardIds.has(id)) return;
 
     ev.preventDefault();
     ev.stopImmediatePropagation();
-
-    // コイントス/フェーズは「対戦全体の状態」なので、両方の盤面へ同時に反映
-    if(id==='btnCoin'){ soloCoinTossBroadcast(); return; }
-    if(id==='btnPhase'){ soloNextPhaseBroadcast(); return; }
-
     forwardToActiveIframe(id);
   }, true);
 
@@ -3456,7 +3657,7 @@ function wireSoloForwarding(){
     if(t.id === 'deckReturnPos'){
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      forwardToActiveIframe('deckReturnPos');
+      forwardToActiveIframe('deckReturnPos', {value: t.value});
     }
   }, true);
 
@@ -3733,8 +3934,8 @@ function startSoloMode(){
   try{ builder.classList.add('hidden'); }catch(e){}
   try{ toolbar.classList.remove('hidden'); }catch(e){}
   try{ document.body.classList.add('soloActive'); }catch(e){}
-  // ソロ開始時はメタ（コイン/フェーズ）を初期化して親・両盤面で揃える
-  try{ phaseIndex=0; lastCoin=null; updatePhaseUI(); updateCoinUI(); }catch(e){}
+  // ソロ開始時はメタ（コイン）を初期化して親・両盤面で揃える
+  try{ lastCoin=null; updateCoinUI(); }catch(e){}
   try{ updateSoloToolbarHeightVar(); }catch(e){}
   try{ viewer.classList.add('hidden'); }catch(e){}
   try{ preview.classList.add('hidden'); }catch(e){}
@@ -3757,16 +3958,16 @@ function startSoloMode(){
   if(soloFrameOpp){
     soloFrameOpp.onload = ()=>{
       try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckOpp}, '*'); }catch(e){}
-      // ソロのメタ（フェーズ/コイン）も初期同期
-      try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
+      // ソロのメタ（コイン）も初期同期
+      try{ soloFrameOpp.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin}, '*'); }catch(e){}
     };
     soloFrameOpp.src = baseUrl + '?embed=1&flip=1';
   }
   if(soloFrameYou){
     soloFrameYou.onload = ()=>{
       try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_INIT_DECK', deck: deckYou}, '*'); }catch(e){}
-      // ソロのメタ（フェーズ/コイン）も初期同期
-      try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin, phaseIndex:phaseIndex}, '*'); }catch(e){}
+      // ソロのメタ（コイン）も初期同期
+      try{ soloFrameYou.contentWindow.postMessage({type:'SOLO_SET_META', coin:lastCoin}, '*'); }catch(e){}
     };
     soloFrameYou.src = baseUrl + '?embed=1';
   }
@@ -3888,332 +4089,319 @@ function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
 
 pushUndo();updateCounters();updateRageDisplay();
 
-// ===== Action Log v1 =====
-(function(){
-  const LOG_KEY = 'go_action_log_v1';
-  const MAX_LOG = 500;
-  let actionLog = [];
-
-  const elLog = document.getElementById('log');
-  const elLogList = document.getElementById('logList');
-  const elLogSearch = document.getElementById('logSearch');
-  const btnLog = document.getElementById('btnLog');
-  const btnLogClose = document.getElementById('btnLogClose');
-  const btnLogCopy = document.getElementById('btnLogCopy');
-  const btnLogClear = document.getElementById('btnLogClear');
-
-  function safeParse(json, fallback){
-    try{ const v = JSON.parse(json); return v ?? fallback; }catch(e){ return fallback; }
-  }
-  function loadLog(){
-    actionLog = safeParse(localStorage.getItem(LOG_KEY) || '[]', []);
-    if(!Array.isArray(actionLog)) actionLog = [];
-  }
-  function saveLog(){
-    try{ localStorage.setItem(LOG_KEY, JSON.stringify(actionLog.slice(-MAX_LOG))); }catch(e){}
-  }
-  function pad2(n){ return String(n).padStart(2,'0'); }
-  function fmtTime(iso){
-    try{
-      const d = new Date(iso);
-      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-    }catch(e){ return '--:--:--'; }
-  }
-  function zoneLabel(zoneId){
-    if(zoneId==='hand') return '手札';
-    if(zoneId==='deckMain') return '山札';
-    if(zoneId==='discard') return '捨て札';
-    if(zoneId==='monster') return '怪獣';
-    const z = (typeof zones!=='undefined' && Array.isArray(zones)) ? zones.find(z=>z.id===zoneId) : null;
-    return z ? z.name : String(zoneId||'');
-  }
-  function cardLabelById(id){
-    const c = state && state.cards ? state.cards[id] : null;
-    if(!c) return String(id);
-    return c.origName || c.name || c.id || String(id);
-  }
-
-  function logAction(msg){
-    if(!msg) return;
-    const entry = { t: new Date().toISOString(), msg: String(msg) };
-    actionLog.push(entry);
-    if(actionLog.length > MAX_LOG) actionLog.shift();
-    saveLog();
-    if(!elLog.classList.contains('hidden')) renderLog();
-  }
-  // expose for debugging
-  window.logAction = logAction;
-
-  function renderLog(){
-    if(!elLogList) return;
-    const q = (elLogSearch?.value || '').trim().toLowerCase();
-    const lines = [];
-    for(const e of actionLog){
-      const line = `[${fmtTime(e.t)}] ${e.msg}`;
-      if(!q || line.toLowerCase().includes(q)) lines.push(line);
-    }
-    elLogList.textContent = lines.join('\n');
-    // scroll to bottom
-    elLogList.scrollTop = elLogList.scrollHeight;
-  }
-
-  function openLog(){
-    if(!elLog) return;
-    elLog.classList.remove('hidden');
-    renderLog();
-    try{ elLogSearch?.focus(); }catch(e){}
-  }
-  function closeLog(){
-    if(!elLog) return;
-    elLog.classList.add('hidden');
-  }
-
-  // UI wiring
-  if(btnLog) btnLog.onclick = openLog;
-  if(btnLogClose) btnLogClose.onclick = closeLog;
-  if(elLog) elLog.addEventListener('click', (e)=>{ if(e.target===elLog) closeLog(); });
-  if(elLogSearch) elLogSearch.addEventListener('input', renderLog);
-  document.addEventListener('keydown', (e)=>{
-    if(elLog && !elLog.classList.contains('hidden') && e.key==='Escape'){
-      e.preventDefault(); closeLog();
-    }
-  });
-
-  if(btnLogCopy) btnLogCopy.onclick = async ()=>{
-    const text = elLogList?.textContent || '';
-    if(!text){ alert('ログが空です'); return; }
-    try{
-      await navigator.clipboard.writeText(text);
-      alert('ログをコピーしました');
-    }catch(err){
-      // fallback
-      const ta=document.createElement('textarea');
-      ta.value=text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy');
-      ta.remove();
-      alert('ログをコピーしました');
-    }
-  };
-
-  if(btnLogClear) btnLogClear.onclick = ()=>{
-    if(!confirm('ログをクリアしますか？（盤面は変わりません）')) return;
-    actionLog = [];
-    saveLog();
-    renderLog();
-  };
-
-  // initial load
-  loadLog();
-
-  // --------- Patch / hook major actions ----------
-  // Flip
-  if(typeof btnFlip!=='undefined' && btnFlip && typeof btnFlip.onclick==='function'){
-    const _flip = btnFlip.onclick;
-    btnFlip.onclick = ()=>{
-      // count eligible before
-      let n=0;
-      selection?.forEach?.(id=>{
-        const c=state.cards[id]; if(!c) return;
-        if(c.zone==='deckMain' || c.zone==='discard') return;
-        n++;
-      });
-      _flip();
-      if(n>0) logAction(`表裏反転：${n}枚`);
-    };
-  }
-
-  // Remove
-  if(typeof btnRemove!=='undefined' && btnRemove && typeof btnRemove.onclick==='function'){
-    const _rm = btnRemove.onclick;
-    btnRemove.onclick = ()=>{
-      const ids = Array.from(selection||[]);
-      const n = ids.length;
-      const preview = ids.slice(0,3).map(cardLabelById).join(' / ');
-      _rm();
-      if(n>0) logAction(`消滅：${n}枚${preview?`（${preview}${n>3?'...':''}）`:''}`);
-    };
-  }
-
-  // Front/Back ordering buttons
-  if(typeof btnToFront!=='undefined' && btnToFront && typeof btnToFront.onclick==='function'){
-    const _f = btnToFront.onclick;
-    btnToFront.onclick = ()=>{ const n=(selection?.size||0); _f(); if(n>0) logAction(`最前面：${n}枚`); };
-  }
-  if(typeof btnToBack!=='undefined' && btnToBack && typeof btnToBack.onclick==='function'){
-    const _b = btnToBack.onclick;
-    btnToBack.onclick = ()=>{ const n=(selection?.size||0); _b(); if(n>0) logAction(`最後面：${n}枚`); };
-  }
-
-  // Undo function
-  if(typeof undo==='function'){
-    const _undo = undo;
-    window.undo = function(){
-      const before = state.undoStack?.length||0;
-      _undo();
-      const after = state.undoStack?.length||0;
-      if(after < before) logAction('Undo');
-    };
-  }
-
-  // Save / Load
-  if(typeof saveLocal==='function'){
-    const _save = saveLocal;
-    window.saveLocal = function(){
-      _save();
-      logAction('保存');
-    };
-  }
-  if(typeof loadLocal==='function'){
-    const _load = loadLocal;
-    window.loadLocal = function(){
-      _load();
-      logAction('読込');
-    };
-  }
-
-  // Turn start
-  if(typeof turnStart==='function'){
-    const _ts = turnStart;
-    window.turnStart = function(){
-      _ts();
-      logAction('ターンスタート');
-    };
-  }
-
-  // Draw / Shuffle
-  if(typeof drawFromDeck==='function'){
-    const _draw = drawFromDeck;
-    window.drawFromDeck = function(n){
-      const before = deckPool?.length||0;
-      const actual = Math.min(Number(n)||0, before);
-      _draw(n);
-      if(actual>0) logAction(`山札→手札：${actual}枚ドロー（残り${deckPool.length}）`);
-    };
-  }
-  if(typeof shuffleDeck==='function'){
-    const _sh = shuffleDeck;
-    window.shuffleDeck = function(){
-      _sh();
-      logAction(`山札シャッフル（${deckPool.length}枚）`);
-    };
-  }
-
-  // Viewer (Search)
-  if(typeof openViewer==='function'){
-    const _ov = openViewer;
-    window.openViewer = function(mode){
-      _ov(mode);
-      logAction(`サーチ：${mode==='discard'?'捨て札':(mode==='deck'?'山札':String(mode))}`);
-    };
-  }
-  if(typeof viewerMoveToHand==='function'){
-    const _m = viewerMoveToHand;
-    window.viewerMoveToHand = function(){
-      const n = viewerSelection?.size||0;
-      const from = viewerMode==='discard' ? '捨て札' : '山札';
-      _m();
-      if(n>0) logAction(`サーチ→手札：${n}枚（from ${from}）`);
-    };
-  }
-  if(typeof viewerMoveToDiscard==='function'){
-    const _m = viewerMoveToDiscard;
-    window.viewerMoveToDiscard = function(){
-      const n = viewerSelection?.size||0;
-      const from = viewerMode==='discard' ? '捨て札' : '山札';
-      _m();
-      if(n>0) logAction(`サーチ→捨て札：${n}枚（from ${from}）`);
-    };
-  }
-
-  // Reveal
-  if(typeof startReveal==='function'){
-    const _sr = startReveal;
-    window.startReveal = function(n){
-      _sr(n);
-      logAction(`公開：山札上から${n}枚`);
-    };
-  }
-  if(typeof cancelReveal==='function'){
-    const _cr = cancelReveal;
-    window.cancelReveal = function(){
-      const wasOpen = (typeof revealPool!=='undefined' && revealPool && revealPool.length) ? revealPool.length : 0;
-      _cr();
-      if(wasOpen) logAction('公開キャンセル');
-    };
-  }
-  if(typeof revealMoveSelectedToHand==='function'){
-    const _r = revealMoveSelectedToHand;
-    window.revealMoveSelectedToHand = function(){
-      const n = revealSelection?.size||0;
-      _r();
-      if(n>0) logAction(`公開→手札：${n}枚`);
-    };
-  }
-  if(typeof revealMoveSelectedToDiscard==='function'){
-    const _r = revealMoveSelectedToDiscard;
-    window.revealMoveSelectedToDiscard = function(){
-      const n = revealSelection?.size||0;
-      _r();
-      if(n>0) logAction(`公開→捨て札：${n}枚`);
-    };
-  }
-  if(typeof returnRevealToDeck==='function'){
-    const _r = returnRevealToDeck;
-    window.returnRevealToDeck = function(){
-      const n = revealPool?.length||0;
-      _r();
-      if(n>0) logAction(`公開→山札へ戻す：${n}枚（順番反映）`);
-    };
-  }
-
-  // Move via drag/drop
-  if(typeof moveSelectionToZone==='function'){
-    const _mv = moveSelectionToZone;
-    window.moveSelectionToZone = function(zoneId){
-      const ids = Array.from(selection||[]);
-      const beforeZones = new Map();
-      ids.forEach(id=>{
-        const c=state.cards[id];
-        if(c) beforeZones.set(id, c.zone);
-      });
-      _mv(zoneId);
-      // count actually moved
-      let moved=0;
-      const fromSet=new Set();
-      ids.forEach(id=>{
-        const c=state.cards[id];
-        const before=beforeZones.get(id);
-        if(c && before && c.zone!==before){
-          moved++;
-          fromSet.add(zoneLabel(before));
-        }
-      });
-      if(moved>0){
-        const from = Array.from(fromSet).join(',');
-        logAction(`移動：${moved}枚（${from} → ${zoneLabel(zoneId)}）`);
-      }
-    };
-  }
-
-  // Tokens
-  if(typeof spawnTokens==='function'){
-    const _st = spawnTokens;
-    window.spawnTokens = function(src, origName, count){
-      _st(src, origName, count);
-      if(count>0) logAction(`トークン生成：${origName||'token'} ×${count}`);
-    };
-  }
-
-  // A small greeting for the session (only once per page load)
-  logAction('（セッション開始）');
-})();
-
-
 // [spectator-sync] 状態読み込み後も同期
 let __wrapLoadFromJSON=false;try{if(!__wrapLoadFromJSON){const __loadFromJSON=loadFromJSON;loadFromJSON=(json,push=true)=>{__loadFromJSON(json,push);sendStateToSpectator();};__wrapLoadFromJSON=true;}}catch(e){}
 
 // [spectator-sync] Undo積み後も同期
 let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushUndo=()=>{__pushUndo();sendStateToSpectator();};__wrapPushUndo=true;}}catch(e){}
+
+
+/* ===== Added: Calculator (Play mode) & Shortcuts list ===== */
+(function(){
+  // -------- Shortcuts modal --------
+  const btnShortcuts = document.getElementById('btnShortcuts');
+  const shortcuts = document.getElementById('shortcuts');
+  const btnShortcutsClose = document.getElementById('btnShortcutsClose');
+
+  function openShortcuts(){
+    if(!shortcuts) return;
+    shortcuts.classList.remove('hidden');
+    try{ shortcuts.tabIndex = -1; shortcuts.focus(); }catch(e){}
+  }
+  function closeShortcuts(){
+    if(!shortcuts) return;
+    shortcuts.classList.add('hidden');
+  }
+
+  if(btnShortcuts) btnShortcuts.onclick = openShortcuts;
+  if(btnShortcutsClose) btnShortcutsClose.onclick = closeShortcuts;
+  if(shortcuts){
+    shortcuts.addEventListener('click', (e)=>{ if(e.target===shortcuts) closeShortcuts(); });
+  }
+
+  // キャプチャで握って、ショートカット表示中に盤面操作が誤爆しないようにする
+  document.addEventListener('keydown', (e)=>{
+    if(!shortcuts || shortcuts.classList.contains('hidden')) return;
+
+    if(e.key === 'Escape'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeShortcuts();
+      return;
+    }
+
+    // 代表的な盤面ショートカットは抑制
+    const isSpace = (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar');
+    if(e.key === 'Delete' || e.key === 'f' || e.key === 'F' || isSpace){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  // -------- Calculator widget --------
+  const btnCalc = document.getElementById('btnCalc');
+  const w = document.getElementById('calcWidget');
+  if(!w) return;
+
+  const header = document.getElementById('calcHeader');
+  const input = document.getElementById('calcInput');
+  const resultVal = document.querySelector('#calcResult .val');
+  const errEl = document.getElementById('calcErr');
+  const histEl = document.getElementById('calcHistory');
+
+  const btnEval = document.getElementById('btnCalcEval');
+  const btnCopy = document.getElementById('btnCalcCopy');
+  const btnBack = document.getElementById('btnCalcBack');
+  const btnClose = document.getElementById('btnCalcClose');
+  const btnClear = document.getElementById('btnCalcClear');
+
+  const POS_KEY = 'gcd_calc_pos_v1';
+  const HIST_KEY = 'gcd_calc_hist_v1';
+
+  let lastValue = '0';
+
+  function showErr(msg){
+    if(!errEl) return;
+    if(msg){
+      errEl.textContent = String(msg);
+      errEl.classList.remove('hidden');
+    }else{
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+    }
+  }
+  function setResult(v){
+    lastValue = String(v);
+    if(resultVal) resultVal.textContent = lastValue;
+  }
+
+  function normalizeExpr(s){
+    return String(s||'')
+      .replace(/[×]/g,'*')
+      .replace(/[÷]/g,'/')
+      .replace(/,/g,'')
+      .replace(/\^/g,'**');
+  }
+
+  function fmtNumber(v){
+    // できるだけ見やすく（小数は末尾0を落とす）
+    if(typeof v !== 'number') return String(v);
+    if(!isFinite(v)) return String(v);
+    let s = String(v);
+    if(s.includes('e') || s.includes('E')) return s;
+    if(s.includes('.')){
+      s = s.replace(/(\.\d*?[1-9])0+$/,'$1').replace(/\.0+$/,'');
+    }
+    return s;
+  }
+
+  function safeEval(expr){
+    const s = normalizeExpr(expr).trim();
+    if(!s) return { err: '式を入力してね' };
+
+    // 数字と演算子だけ許可（Function の注入対策）
+    if(!/^[0-9+\-*/().%\s]*$/.test(s)){
+      return { err: '使えるのは 数字 と + - * / % ( ) . だけです' };
+    }
+
+    try{
+      const v = Function('"use strict";return (' + s + ')')();
+      if(typeof v !== 'number' || !isFinite(v)) return { err: '計算結果が不正です（∞/NaN）' };
+      return { val: v };
+    }catch(e){
+      return { err: '式が正しくないっぽい（括弧や演算子を確認）' };
+    }
+  }
+
+  function loadHistory(){
+    try{
+      const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+      return Array.isArray(a) ? a : [];
+    }catch(e){
+      return [];
+    }
+  }
+  function saveHistory(a){
+    try{
+      localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, 30)));
+    }catch(e){}
+  }
+  function renderHistory(){
+    if(!histEl) return;
+    const hist = loadHistory();
+    histEl.innerHTML = '';
+    if(!hist.length){
+      const d = document.createElement('div');
+      d.className = 'calcHistItem';
+      d.style.opacity = '.65';
+      d.textContent = '（履歴なし）';
+      d.onclick = ()=>{ try{ input?.focus(); }catch(e){} };
+      histEl.appendChild(d);
+      return;
+    }
+    hist.forEach(it=>{
+      const d = document.createElement('div');
+      d.className = 'calcHistItem';
+      d.textContent = `${it.expr} = ${it.res}`;
+      d.title = 'クリックで式を入力';
+      d.onclick = ()=>{
+        if(!input) return;
+        input.value = it.expr;
+        input.focus();
+        try{ input.select(); }catch(e){}
+      };
+      histEl.appendChild(d);
+    });
+  }
+  function addHistory(expr, res){
+    const item = { expr: String(expr).trim(), res: String(res) };
+    const hist = loadHistory().filter(h => !(h.expr === item.expr && h.res === item.res));
+    hist.unshift(item);
+    saveHistory(hist);
+    renderHistory();
+  }
+
+  function evaluate(){
+    const expr = input ? input.value : '';
+    const out = safeEval(expr);
+    if(out.err){
+      showErr(out.err);
+      return;
+    }
+    showErr('');
+    const res = fmtNumber(out.val);
+    setResult(res);
+    addHistory(expr, res);
+  }
+
+  function restorePos(){
+    try{
+      const p = JSON.parse(localStorage.getItem(POS_KEY) || 'null');
+      if(p && typeof p.x === 'number' && typeof p.y === 'number'){
+        w.style.left = p.x + 'px';
+        w.style.top  = p.y + 'px';
+        w.style.right = 'auto';
+      }
+    }catch(e){}
+  }
+  function savePos(){
+    try{
+      const r = w.getBoundingClientRect();
+      localStorage.setItem(POS_KEY, JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) }));
+    }catch(e){}
+  }
+
+  function openCalc(){
+    w.classList.remove('hidden');
+    showErr('');
+    restorePos();
+    renderHistory();
+    try{ input?.focus(); input?.select(); }catch(e){}
+  }
+  function closeCalc(){
+    w.classList.add('hidden');
+    showErr('');
+  }
+  function toggleCalc(){
+    if(w.classList.contains('hidden')) openCalc();
+    else closeCalc();
+  }
+
+  if(btnCalc) btnCalc.onclick = toggleCalc;
+  if(btnClose) btnClose.onclick = closeCalc;
+  if(btnClear) btnClear.onclick = ()=>{
+    if(input) input.value = '';
+    showErr('');
+    setResult('0');
+    try{ input?.focus(); }catch(e){}
+  };
+  if(btnEval) btnEval.onclick = evaluate;
+
+  if(btnBack) btnBack.onclick = ()=>{
+    if(!input) return;
+    input.focus();
+    const s = input.selectionStart ?? 0;
+    const e = input.selectionEnd ?? 0;
+    const v = input.value || '';
+    if(s !== e){
+      input.value = v.slice(0, s) + v.slice(e);
+      input.setSelectionRange(s, s);
+    }else if(s > 0){
+      input.value = v.slice(0, s-1) + v.slice(s);
+      input.setSelectionRange(s-1, s-1);
+    }
+  };
+
+  if(btnCopy) btnCopy.onclick = async ()=>{
+    const text = String(lastValue || '');
+    if(!text){ alert('結果がありません'); return; }
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(err){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    try{
+      const orig = btnCopy.textContent;
+      btnCopy.textContent = 'コピー済み';
+      setTimeout(()=>{ btnCopy.textContent = orig; }, 650);
+    }catch(e){}
+  };
+
+  if(input){
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        evaluate();
+      }else if(e.key === 'Escape'){
+        e.preventDefault();
+        closeCalc();
+      }
+    });
+  }
+
+  // drag move (header)
+  let drag = null;
+  if(header){
+    header.addEventListener('pointerdown', (e)=>{
+      const t = e.target;
+      if(t && t.closest && t.closest('button')) return;
+
+      if(w.classList.contains('hidden')) return;
+      e.preventDefault();
+
+      const r = w.getBoundingClientRect();
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+
+      try{ header.setPointerCapture(e.pointerId); }catch(err){}
+
+      const onMove = (ev)=>{
+        if(!drag) return;
+        const x = Math.max(6, Math.min(window.innerWidth  - r.width  - 6, ev.clientX - drag.dx));
+        const y = Math.max(6, Math.min(window.innerHeight - r.height - 6, ev.clientY - drag.dy));
+        w.style.left = x + 'px';
+        w.style.top  = y + 'px';
+        w.style.right = 'auto';
+      };
+
+      const onUp = ()=>{
+        if(!drag) return;
+        drag = null;
+        document.removeEventListener('pointermove', onMove, true);
+        savePos();
+      };
+
+      document.addEventListener('pointermove', onMove, true);
+      document.addEventListener('pointerup', onUp, { once:true, capture:true });
+      document.addEventListener('pointercancel', onUp, { once:true, capture:true });
+    });
+  }
+})();
+
 </script>
 
   <!-- solo deck select modal -->
