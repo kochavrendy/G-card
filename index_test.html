@@ -276,7 +276,7 @@
   }
   #previewInfo{
     flex:1;
-    min-width:280px;
+    min-width:240px;
     height:100%;
     overflow:auto;
     border-radius:16px;
@@ -285,19 +285,31 @@
     padding:12px 14px;
     color:#eee;
   }
-  #previewInfo .pvTitle{font-size:18px;font-weight:800;margin:0 0 6px 0;}
-  #previewInfo .pvSub{font-size:12px;opacity:.85;margin:0 0 12px 0;line-height:1.4;}
-  #previewInfo .pvRow{margin:6px 0;font-size:13px;line-height:1.5;}
-  #previewInfo .pvKey{opacity:.75;margin-right:6px;}
+  #previewInfo .pvTitle{font-size:24px;font-weight:900;margin:0 0 10px 0;}
+  #previewInfo .pvSub{font-size:16px;opacity:.86;margin:0 0 16px 0;line-height:1.45;}
+  #previewInfo .pvRow{margin:10px 0;font-size:17px;line-height:1.55;}
+  #previewInfo .pvKey{opacity:.78;margin-right:6px;font-weight:800;}
   #previewInfo .pvTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-  #previewInfo .pvTag{font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,14);background:rgba(255,255,255,06);}
-  #previewInfo .pvText{white-space:pre-wrap;font-size:13px;line-height:1.55;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,14);}
+  #previewInfo .pvTag{font-size:16px;padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,20);background:rgba(255,255,255,0.90);color:#111;}
+  #previewInfo .pvText{white-space:pre-wrap;font-size:15px;line-height:1.62;margin-top:12px;padding-top:12px;border-top:1px dashed rgba(255,255,255,14);}
   #previewClose{
     position:absolute;
     top:10px;right:10px;
     background:#000c;color:#fff;border:1px solid rgba(255,255,255,24);
     border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:18px;
     display:grid;place-items:center;
+  }
+
+  /* preview: avoid toolbar overlap (normal play mode) */
+  :root{ --previewSafeTop: 72px; }
+  body:not(.soloActive) #preview{
+    align-items:flex-start;
+    justify-content:center;
+    padding:16px;
+    padding-top: calc(16px + var(--previewSafeTop));
+  }
+  body:not(.soloActive) #previewPanel{
+    height: min(calc(92vh - var(--previewSafeTop)), 760px);
   }
 /* token selector */
   #token.hidden{display:none;}#token{position:fixed;inset:0;z-index:4700;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
@@ -964,6 +976,14 @@ body.soloActive #toolbar{ right:auto !important; }
   opacity:0.9;
   line-height:1.4;
 }
+#monsterHud .mhSubLine{ margin-top:6px; }
+#monsterHud .mhSubLine:first-child{ margin-top:0; }
+#monsterHud #mhStack{
+  font-size:13px;
+  font-weight:800;
+  padding:3px 10px;
+  letter-spacing:0.03em;
+}
 #monsterHud .mhSub .badge{
   display:inline-block;
   padding:2px 8px;
@@ -971,6 +991,12 @@ body.soloActive #toolbar{ right:auto !important; }
   background:rgba(255,255,255,0.10);
   border:1px solid rgba(255,255,255,0.14);
   margin-right:6px;
+}
+#monsterHud #mhArea{
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:0.06em;
+  padding:4px 10px;
 }
 #monsterHud .mhStats{
   display:grid;
@@ -1002,7 +1028,8 @@ body.soloActive #toolbar{ right:auto !important; }
   color:#fff;
 }
 #repelHud .rhLabel{
-  font-size:12px;
+  font-size:16px;
+  font-weight:900;
   letter-spacing:0.06em;
   opacity:0.9;
 }
@@ -1019,6 +1046,38 @@ body.soloActive #toolbar{ right:auto !important; }
   opacity:0.75;
 }
 
+
+  /* inline keyword icons in preview */
+  .inline-icon{
+    height:1.75em;
+    vertical-align:-0.20em;
+    margin:0 0.14em;
+    image-rendering:auto;
+  }
+  .inline-icon-range{
+    font-size:0.95em;
+    font-weight:900;
+    margin-left:0.05em;
+    vertical-align:0.15em;
+  }
+
+  .color-icon{height:1.65em;}
+  .advBadge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.92);
+    border:1px solid rgba(0,0,0,0.18);
+    border-radius:999px;
+    padding:3px 10px;
+    margin:0 0.12em;
+    vertical-align:middle;
+  }
+  .advBadge .adv-icon{
+    height:1.55em;
+    vertical-align:0;
+    margin:0;
+  }
 </style>
 </head>
 <body>
@@ -1101,7 +1160,7 @@ body.soloActive #toolbar{ right:auto !important; }
            <div id="libMetaBar">
              <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="白">白</option></select>
              <select id="libType"><option value="">種別:すべて</option><option value="怪獣">怪獣</option><option value="交戦">交戦</option><option value="戦略">戦略</option></select>
-             <select id="libGrade"><option value="">等級:すべて</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+             <select id="libGrade"><option value="">等級:すべて</option></select>
            </div>
           <div id="libList"></div>
         </div>
@@ -1261,6 +1320,8 @@ body.soloActive #toolbar{ right:auto !important; }
             <tr><td class="scKey"><kbd>Alt</kbd> + ホイール</td><td>カードの拡大 / 縮小</td></tr>
             <tr><td class="scKey"><kbd>F</kbd></td><td>選択カードを表裏反転</td></tr>
             <tr><td class="scKey"><kbd>Delete</kbd></td><td>選択カードを消滅（完全削除）</td></tr>
+            <tr><td class="scKey"><kbd>E</kbd></td><td>選択カードを最前面へ</td></tr>
+            <tr><td class="scKey"><kbd>R</kbd></td><td>選択カードを最後面へ</td></tr>
             <tr><td class="scKey"><kbd>Space</kbd></td><td>拡大表示（選択中のカード）</td></tr>
             <tr><td class="scKey"><kbd>Esc</kbd></td><td>開いているパネルを閉じる（拡大/重なり/公開/トークン/この一覧 など）</td></tr>
           </table>
@@ -1754,6 +1815,49 @@ const libFilter=document.getElementById('libFilter');
 const libColor=document.getElementById('libColor');
 const libType=document.getElementById('libType');
 const libGrade=document.getElementById('libGrade');
+// ===== libGrade options (auto from meta) =====
+function rebuildLibGradeOptions(){
+  try{
+    if(!libGrade) return;
+    const prev = libGrade.value || '';
+    const grades = new Set();
+
+    // Collect unique grade values from CARD_META (via getMetaById)
+    if(typeof CARD_DB!=='undefined' && Array.isArray(CARD_DB)){
+      CARD_DB.forEach(c=>{
+        const m = (typeof getMetaById==='function') ? getMetaById(c.id) : (c && c.meta ? c.meta : null);
+        if(!m) return;
+        const g = m.grade;
+        if(g===undefined || g===null || g==='') return;
+        grades.add(String(g).trim());
+      });
+    }
+
+    let arr = Array.from(grades).filter(Boolean);
+
+    // Fallback (in case meta is missing): show 1..8
+    if(arr.length===0){
+      arr = Array.from({length:8}, (_,i)=>String(i+1));
+    }
+
+    // Sort: numbers asc, then others
+    arr.sort((a,b)=>{
+      const aNum = /^[0-9]+$/.test(a);
+      const bNum = /^[0-9]+$/.test(b);
+      if(aNum && bNum) return Number(a)-Number(b);
+      if(aNum) return -1;
+      if(bNum) return 1;
+      return a.localeCompare(b,'ja');
+    });
+
+    const esc = (v)=>String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    libGrade.innerHTML = '<option value="">等級:すべて</option>' + arr.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
+
+    if(prev && arr.includes(prev)) libGrade.value = prev;
+  }catch(e){}
+}
+rebuildLibGradeOptions();
 const libSetBar=document.getElementById('libSetBar');
 const libSetSection=document.getElementById('libSetSection');
 const libSetHeader=document.getElementById('libSetHeader');
@@ -2372,7 +2476,7 @@ function moveZoneCards(fromId,toId){
 function updateRageDisplay(){const el=document.getElementById('rageCounter');if(el)el.textContent=rageCount;}
 
 // ===== Play HUD (monster + total repel) =====
-let __playHud=null,__mhImg=null,__mhName=null,__mhArea=null,__mhGrade=null,__mhRage=null,__mhThreat=null,__rhValue=null;
+let __playHud=null,__mhImg=null,__mhName=null,__mhArea=null,__mhStack=null,__mhGrade=null,__mhRage=null,__mhThreat=null,__rhValue=null;
 let __playHudTimer=null;
 
 function __roman(n){
@@ -2386,7 +2490,6 @@ function __fmt(n){
 }
 
 function initPlayHud(){
-  if(IS_SPECTATOR) return;
   if(document.getElementById('playHud')) return;
 
   __playHud=document.createElement('div');
@@ -2401,7 +2504,8 @@ function initPlayHud(){
       <div class="mhMeta">
         <div class="mhName" id="mhName">怪獣：未配置</div>
         <div class="mhSub">
-          <span class="badge" id="mhArea">エリア -</span>
+          <div class="mhSubLine"><span class="badge" id="mhArea">エリア -</span></div>
+          <div class="mhSubLine"><span class="badge" id="mhStack">下に0枚</span></div>
         </div>
       </div>
     </div>
@@ -2432,6 +2536,7 @@ function initPlayHud(){
   __mhImg=monster.querySelector('#mhImg');
   __mhName=monster.querySelector('#mhName');
   __mhArea=monster.querySelector('#mhArea');
+  __mhStack=monster.querySelector('#mhStack');
   __mhGrade=monster.querySelector('#mhGrade');
   __mhRage=monster.querySelector('#mhRage');
   __mhThreat=monster.querySelector('#mhThreat');
@@ -2503,7 +2608,6 @@ function __calcTotalRepel(){
 }
 
 function updatePlayHud(){
-  if(IS_SPECTATOR) return;
   if(!__playHud) return;
 
   // ビルダー（デッキ構築UI）が開いている時はHUDを隠す
@@ -2523,6 +2627,14 @@ function updatePlayHud(){
     __mhImg.src=currentSrc(card);
     __mhName.textContent = meta.name || card.origName || '怪獣カード';
     __mhArea.textContent = zone ? `エリア ${zone.name}` : 'エリア -';
+    // 怪獣カードの「下に重なっている枚数」を表示（同一エリア内での順序）
+    try{
+      const idsInZone = (zone && zone.id) ? getZoneCardIds(zone.id) : [];
+      const idx = idsInZone.indexOf(card.id);
+      const under = (idx>0) ? idx : 0;
+      if(__mhStack) __mhStack.textContent = `下に${under}枚`;
+    }catch(e){ if(__mhStack) __mhStack.textContent = '下に0枚'; }
+
     __mhGrade.textContent = meta.grade ? __roman(meta.grade) : '-';
     __mhRage.textContent = String(rage);
 
@@ -2531,9 +2643,10 @@ function updatePlayHud(){
     const threat = (Number.isFinite(baseThreat)?baseThreat:0) + (rage*5000);
     __mhThreat.textContent = __fmt(threat);
   }else{
-    __mhImg.src = WHITE_BACK;
+    __mhImg.src = (backSrc || WHITE_BACK);
     __mhName.textContent = '怪獣：未配置';
     __mhArea.textContent = 'エリア -';
+    if(__mhStack) __mhStack.textContent = '下に0枚';
     __mhGrade.textContent = '-';
     __mhRage.textContent = String(rage);
     __mhThreat.textContent = __fmt(rage*5000);
@@ -2555,6 +2668,7 @@ window.addEventListener('resize',()=>{applyUIScale();
   try{ positionPlayHud(); }catch(e){}
   updateCounters();
   updateRageDisplay();
+  try{ updatePreviewToolbarSafeVar(); }catch(e){}
   layoutHand(); // ← 追加
 });
 
@@ -2831,6 +2945,12 @@ document.addEventListener('keydown',(e)=>{if(IS_SPECTATOR) return;
   }else if(e.key==='Delete'){
     e.preventDefault();
     btnRemove.click();
+  }else if(e.key==='e' || e.key==='E'){
+    e.preventDefault();
+    if(btnToFront) btnToFront.click();
+  }else if(e.key==='r' || e.key==='R'){
+    e.preventDefault();
+    if(btnToBack) btnToBack.click();
   }else if(e.code==='Space' || e.key===' '){
     e.preventDefault();
     openPreview();
@@ -2846,22 +2966,171 @@ function escHtml(s){
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 }
+
+// ===== Inline keyword icons (preview info) =====
+const INLINE_ICON_TOKENS = [
+  '相手のターン中','あなたのターン中',
+  '怒り','覚醒4','覚醒6','覚醒8',
+  '逆襲','強襲','共鳴','拠点',
+  '出現時','進化','進攻時','破壊','進行1','進行2'
+];
+const INLINE_ICON_MAP = Object.fromEntries(INLINE_ICON_TOKENS.map(t => [t, `${CARD_FOLDER}/${t}.png`]));
+
+function _escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// 強襲は「強襲」「強襲1〜4」「強襲2」など表記ゆれがあるのでパターンで拾う（数字は半角/全角・空白ありでもOK）
+const INLINE_ICON_PATTERNS = [
+  '強襲[ 　]*[1-4１-４][ 　]*[〜～\-][ 　]*[1-4１-４]', // 例: 強襲1〜4 / 強襲１-４
+  '強襲[ 　]*[1-4１-４]',                               // 例: 強襲2 / 強襲 ２
+  ...INLINE_ICON_TOKENS.filter(t => t !== '強襲').slice().sort((a,b)=>b.length-a.length).map(_escapeRegExp),
+  '強襲'
+];
+const _INLINE_ICON_RE = new RegExp(`(${INLINE_ICON_PATTERNS.join('|')})`, 'g');
+
+function _zenkakuToHankakuDigits(s){
+  return String(s).replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));
+}
+
+function _buildInlineIconNode(token){
+  const raw = String(token ?? '');
+  // --- 強襲（番号付き/範囲付き） ---
+  if(raw.startsWith('強襲')){
+    const compact = _zenkakuToHankakuDigits(raw).replace(/[ 　]/g,''); // 全角/半角空白除去・数字は半角化
+    const range = compact.match(/^強襲([1-4])([〜～\-])([1-4])$/);
+    if(range){
+      // 範囲表記（例: 強襲1〜4）は、該当する番号分のアイコンを並べて表示する
+      const frag = document.createDocumentFragment();
+      const a = Number(range[1]);
+      const b = Number(range[3]);
+      const start = Math.min(a,b);
+      const end   = Math.max(a,b);
+
+      for(let i=start;i<=end;i++){
+        const img = document.createElement('img');
+        img.src = `${CARD_FOLDER}/強襲${i}.png`;
+        img.alt = `強襲${i}`;
+        img.className = 'inline-icon';
+        img.loading = 'lazy';
+        img.onerror = () => { try{ img.replaceWith(document.createTextNode(`強襲${i}`)); }catch(e){} };
+        frag.appendChild(img);
+        if(i<end) frag.appendChild(document.createTextNode(' '));
+      }
+      return frag;
+    }
+
+    const single = compact.match(/^強襲([1-4])$/);
+    const img = document.createElement('img');
+    img.src = single ? `${CARD_FOLDER}/強襲${single[1]}.png` : `${CARD_FOLDER}/強襲.png`;
+    img.alt = raw;
+    img.className = 'inline-icon';
+    img.loading = 'lazy';
+    img.onerror = () => { try{ img.replaceWith(document.createTextNode(raw)); }catch(e){} };
+    return img;
+  }
+
+  // --- それ以外は固定トークン ---
+  const img = document.createElement('img');
+  img.src = INLINE_ICON_MAP[raw] || `${CARD_FOLDER}/${raw}.png`;
+  img.alt = raw;
+  img.className = 'inline-icon';
+  img.loading = 'lazy';
+  img.onerror = () => { try{ img.replaceWith(document.createTextNode(raw)); }catch(e){} };
+  return img;
+}
+
+function applyInlineIcons(root){
+  if(!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){
+      if(!n || !n.nodeValue) return NodeFilter.FILTER_REJECT;
+      if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const p = n.parentNode;
+      if(!p) return NodeFilter.FILTER_REJECT;
+      const tag = p.nodeName;
+      if(tag==='SCRIPT' || tag==='STYLE' || tag==='TEXTAREA' || tag==='INPUT') return NodeFilter.FILTER_REJECT;
+      // skip inside buttons/labels where layout can break
+      if(tag==='BUTTON') return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes=[];
+  let n;
+  while((n = walker.nextNode())) nodes.push(n);
+
+  for(const node of nodes){
+    const text = node.nodeValue;
+    if(!_INLINE_ICON_RE.test(text)) { _INLINE_ICON_RE.lastIndex = 0; continue; }
+    _INLINE_ICON_RE.lastIndex = 0;
+
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m;
+    while((m = _INLINE_ICON_RE.exec(text)) !== null){
+      const idx = m.index;
+      const token = m[1];
+      if(idx > last) frag.appendChild(document.createTextNode(text.slice(last, idx)));
+
+      const iconNode = _buildInlineIconNode(token);
+
+      // 進行アイコン（黒+透過）は背景付きで見やすく
+      if((token==='進行1' || token==='進行2') && iconNode && iconNode.nodeType===1 && iconNode.tagName==='IMG'){
+        iconNode.classList.add('adv-icon');
+        const wrap = document.createElement('span');
+        wrap.className = 'advBadge';
+        wrap.appendChild(iconNode);
+        frag.appendChild(wrap);
+      }else{
+        frag.appendChild(iconNode);
+      }
+
+      last = idx + token.length;
+    }
+    if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+
+    node.parentNode.replaceChild(frag, node);
+  }
+}
+
+function advanceToHtml(advRaw){
+  const n = (advRaw==null || advRaw==='—') ? null : Number(advRaw);
+  if(n===1 || n===2){
+    const token = `進行${n}`;
+    const src = `${CARD_FOLDER}/${token}.png`;
+    return `<span class="advBadge"><img class="inline-icon adv-icon" src="${src}" alt="${token}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${token}'))"></span>`;
+  }
+  return escHtml(advRaw!=null ? advRaw : '—');
+}
+
+function colorToHtml(colorRaw){
+  const c = String(colorRaw ?? '—').trim();
+  if(c==='赤' || c==='青' || c==='緑'){
+    const src = `${CARD_FOLDER}/${c}.png`;
+    return `<img class="inline-icon color-icon" src="${src}" alt="${c}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${c}'))">`;
+  }
+  return escHtml(colorRaw!=null ? colorRaw : '—');
+}
+
+
 function buildPreviewInfoHtml(card, meta){
-  const id = escHtml(card && card.id ? card.id : '');
+  const idRaw = String(card && card.id ? card.id : '');
+  const idDisp = idRaw.replace(/ol$/i,'');
+  const id = escHtml(idDisp);
   const set = escHtml(card && card.set ? card.set : '');
   const name = escHtml(meta && meta.name ? meta.name : (card && card.name ? card.name : id));
-  const color = escHtml(meta && meta.color ? meta.color : '—');
+  const colorRaw = (meta && meta.color ? meta.color : '—');
+  const colorHtml = colorToHtml(colorRaw);
   const type  = escHtml(meta && meta.type  ? meta.type  : '—');
   const grade = escHtml(meta && meta.grade != null ? meta.grade : '—');
-  const adv   = escHtml(meta && meta.advance != null ? meta.advance : '—');
+  const advRaw = (meta && meta.advance != null ? meta.advance : null);
+  const advHtml = advanceToHtml(advRaw);
   const power = escHtml(meta && meta.power != null ? meta.power : '—');
   const feats = (meta && Array.isArray(meta.features)) ? meta.features : [];
   const txt   = meta && meta.text ? meta.text : '';
 
   let html = `<div class="pvTitle">${name}</div>`;
   html += `<div class="pvSub">${id}${set ? ` / ${set}` : ''}${meta ? '' : ' / （メタ未登録）'}</div>`;
-  html += `<div class="pvRow"><span class="pvKey">色</span>${color}　<span class="pvKey">種別</span>${type}</div>`;
-  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進行</span>${adv}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
+  html += `<div class="pvRow"><span class="pvKey">色</span>${colorHtml}　<span class="pvKey">種別</span>${type}</div>`;
+  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進行</span>${advHtml}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
 
   if(feats.length){
     html += `<div class="pvTags">` + feats.map(t=>`<span class="pvTag">${escHtml(t)}</span>`).join('') + `</div>`;
@@ -2876,11 +3145,28 @@ function buildPreviewInfoHtml(card, meta){
 
 const previewInfo=document.getElementById('previewInfo');
 
+function updatePreviewToolbarSafeVar(){
+  try{
+    const tb = document.getElementById('toolbar');
+    if(!tb) return 0;
+    // toolbar is scaled by --ui-scale, so DOMRect is the actual on-screen size
+    const h = tb.getBoundingClientRect().height;
+    const safe = Math.ceil(h + 12);
+    document.documentElement.style.setProperty('--previewSafeTop', String(safe) + 'px');
+    return safe;
+  }catch(e){
+    return 0;
+  }
+}
+
 function openPreviewByCardId(cardId){
   const card = CARD_DB.find(c=>c.id===cardId) || {id:cardId,name:cardId,set:getSetKeyFromId(cardId),srcGuess:WHITE_BACK};
   const meta = getMetaById(cardId);
   previewImg.src = card.srcGuess || WHITE_BACK;
   if(previewInfo) previewInfo.innerHTML = buildPreviewInfoHtml(card, meta);
+
+  if(previewInfo) applyInlineIcons(previewInfo);
+updatePreviewToolbarSafeVar();
   preview.classList.remove('hidden');
 }
 function openPreview(){
@@ -2892,6 +3178,9 @@ function openPreview(){
   const meta = getMetaById(metaKey);
   const fakeCard = {id: metaKey, name: (meta && meta.name) ? meta.name : metaKey, set:getSetKeyFromId(metaKey)};
   if(previewInfo) previewInfo.innerHTML = buildPreviewInfoHtml(fakeCard, meta);
+
+  if(previewInfo) applyInlineIcons(previewInfo);
+updatePreviewToolbarSafeVar();
   preview.classList.remove('hidden');
 }
 function closePreview(){preview.classList.add('hidden');}
@@ -3710,7 +3999,65 @@ function renderDeckThumbs(){
 function updateBuildCount(){const m=sumObj(buildMain),k=sumObj(buildMon);countInfo.textContent=`メイン ${m}/${MAIN_LIMIT}　怪獣 ${k}/${MON_LIMIT}`;btnBuildStart.disabled=!(m===MAIN_LIMIT&&k===MON_LIMIT);}
 function sumObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:buildMon});};
-btnCodeLoad.onclick=()=>{try{const obj=decodeDeck(deckCodeBox.value.trim());buildMain=obj.main||{};buildMon=obj.monster||{};renderDeckThumbs();updateBuildCount();alert('読込完了');}catch(e){alert('コードが不正です');}};
+function makeDebugRandomDeck(){
+  const idsAll = IDS.slice();
+  const shuffle = (arr)=>{
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      const tmp=arr[i];arr[i]=arr[j];arr[j]=tmp;
+    }
+    return arr;
+  };
+  const pickUnique = (arr, n)=>{
+    const a = shuffle(arr.slice());
+    return a.slice(0, Math.min(n, a.length));
+  };
+  const isMonsterCandidate = (id)=>{
+    try{
+      const m=getMetaById(id);
+      const t=String(m?.type||'');
+      const d=String(m?.deck||'');
+      return d==='monster' || t.includes('怪獣') || t.toLowerCase().includes('monster');
+    }catch(e){ return false; }
+  };
+
+  const monCandidates = idsAll.filter(isMonsterCandidate);
+  const monPick = pickUnique((monCandidates.length>=MON_LIMIT?monCandidates:idsAll), MON_LIMIT);
+
+  const mainCandidates = idsAll.filter(id=>!monPick.includes(id));
+  let mainPick = pickUnique((mainCandidates.length>=MAIN_LIMIT?mainCandidates:idsAll), MAIN_LIMIT);
+
+  // 万一足りなければ重複OKで埋める
+  while(mainPick.length<MAIN_LIMIT){
+    mainPick.push(idsAll[Math.floor(Math.random()*idsAll.length)]);
+  }
+
+  const main={}; for(const id of mainPick){ main[id]=(main[id]||0)+1; }
+  const monster={}; for(const id of monPick){ monster[id]=(monster[id]||0)+1; }
+  return {main, monster};
+}
+btnCodeLoad.onclick=()=>{
+  try{
+    const raw = deckCodeBox.value.trim();
+    if(raw && raw.toLowerCase()==='kochavrendy'){
+      const obj = makeDebugRandomDeck();
+      buildMain=obj.main||{};
+      buildMon=obj.monster||{};
+      renderDeckThumbs();
+      updateBuildCount();
+      alert('デバッグ用：ランダムデッキを生成しました');
+      return;
+    }
+    const obj=decodeDeck(raw);
+    buildMain=obj.main||{};
+    buildMon=obj.monster||{};
+    renderDeckThumbs();
+    updateBuildCount();
+    alert('読込完了');
+  }catch(e){
+    alert('コードが不正です');
+  }
+};
 
 // ===== Deck QR =====
 function normalizeDeckCodeFromText(t){
@@ -4593,7 +4940,7 @@ let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushU
 
     // 代表的な盤面ショートカットは抑制
     const isSpace = (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar');
-    if(e.key === 'Delete' || e.key === 'f' || e.key === 'F' || isSpace){
+    if(e.key === 'Delete' || e.key === 'f' || e.key === 'F' || e.key === 'e' || e.key === 'E' || e.key === 'r' || e.key === 'R' || isSpace){
       e.preventDefault();
       e.stopImmediatePropagation();
     }
