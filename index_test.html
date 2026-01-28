@@ -2855,18 +2855,25 @@ function __calcTotalRepel(){
   const battleZones=zones.filter(z=>/^slot\d+$/.test(z.id));
   const strategyZones=zones.filter(z=>/^strategy\d+$/.test(z.id));
 
-  // 交戦ゾーン：交戦カードの撃退力 + そのカードのカウンターのみ
+  // 交戦ゾーン：重なっている場合は「一番上の交戦カード」だけを参照（表向きのみ）
   for(const z of battleZones){
     const ids=getZoneCardIds(z.id);
-    for(const id of ids){
+
+    // 上（前面）から探して、最初に見つかった交戦カードだけを採用
+    for(let i=ids.length-1;i>=0;i--){
+      const id=ids[i];
       const c=state.cards[id];
-      if(!c) continue;
+      if(!c || c.faceDown) continue; // 表向きのみ
+
       const meta=getMetaById(String((c.metaId||c.origName||'')).replace(/\.png$/i,''));
       if(meta && meta.type==='交戦'){
         const v=Number(meta.power||0);
         if(Number.isFinite(v)) total+=v;
+
         const cv=getCounterSum(c);
         if(Number.isFinite(cv) && cv) total+=cv;
+
+        break; // ←下の交戦カードは加算しない
       }
     }
   }
