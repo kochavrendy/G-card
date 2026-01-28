@@ -1536,10 +1536,9 @@ const IDS = [
   // ol なし系
   ...rangeIds('BP02', 1, 80, { suffix: '' }),
   ...rangeIds('BP03', 1, 80, { suffix: '' }),
+  ...rangeIds('BP04', 1, 90, { suffix: '' }), 
   ...rangeIds('FC01', 1, 6, { suffix: '' }), 
-
-  'PR-004',
-  'PR-005',
+  ...rangeIds('PR', 1, 14, { suffix: '' }), 
 ];
 
 const CARD_DB = IDS.map(id => ({
@@ -3647,7 +3646,7 @@ document.addEventListener('keydown',(e)=>{if(IS_SPECTATOR) return; if(!preview.c
 let tokenSelection=null;
 function openTokenSelector(){
   tokenSelection=null;tokenGrid.innerHTML='';tokenCountInput.value='1';
-  const tokens=['BP02-T01','BP02-T02','BP02-T03','BP02-T04'];
+  const tokens=['BP02-T01','BP02-T02','BP02-T03','BP02-T04','BP04-T01'];
   tokens.forEach(id=>{
     const w=document.createElement('div');w.className='tokenThumb';w.dataset.id=id;
     const img=document.createElement('img');img.src=`${CARD_FOLDER}/${id}.png`;img.onerror=()=>{img.src=WHITE_BACK;};
@@ -4270,7 +4269,7 @@ let libSetFilter='__ALL__'; // '__ALL__' = 全表示
 
 function getAvailableSets(){
   const s = new Set(CARD_DB.map(c=>c.set).filter(x=>x && x!=='OTHER'));
-  const baseOrder=['SD1','SD2','BP01','BP02','BP03','FC01'];
+  const baseOrder=['SD1','SD2','BP01','BP02','BP03','BP04','FC01'];
   const rest=[...s].filter(k=>!baseOrder.includes(k)).sort((a,b)=>a.localeCompare(b,'ja'));
   return [...baseOrder.filter(k=>s.has(k)), ...rest];
 }
