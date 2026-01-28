@@ -1156,7 +1156,7 @@ body.soloActive #toolbar{ right:auto !important; }
     vertical-align:0.15em;
   }
 
-  .color-icon{height:1.25em;}
+  .color-icon{height:1.8em;}
   .advBadge{
     display:inline-flex;
     align-items:center;
@@ -1258,7 +1258,7 @@ body.soloActive #toolbar{ right:auto !important; }
 
           <input id="libFilter" placeholder="名前 / 特徴 / テキストで検索…" />
            <div id="libMetaBar">
-             <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="白">白</option></select>
+             <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="緑">緑</option><option value="白">白</option></select>
              <select id="libType"><option value="">種別:すべて</option><option value="怪獣">怪獣</option><option value="交戦">交戦</option><option value="戦略">戦略</option></select>
              <select id="libGrade"><option value="">等級:すべて</option></select>
            </div>
@@ -3520,8 +3520,8 @@ function applyInlineIcons(root){
 
       const iconNode = _buildInlineIconNode(token);
 
-      // 進行アイコン（黒+透過）は背景付きで見やすく
-      if((token==='進行1' || token==='進行2') && iconNode && iconNode.nodeType===1 && iconNode.tagName==='IMG'){
+      // 進攻アイコン（黒+透過）は背景付きで見やすく
+      if((token==='進攻1' || token==='進攻2') && iconNode && iconNode.nodeType===1 && iconNode.tagName==='IMG'){
         iconNode.classList.add('adv-icon');
         const wrap = document.createElement('span');
         wrap.className = 'advBadge';
@@ -3542,7 +3542,7 @@ function applyInlineIcons(root){
 function advanceToHtml(advRaw){
   const n = (advRaw==null || advRaw==='—') ? null : Number(advRaw);
   if(n===1 || n===2){
-    const token = `進行${n}`;
+    const token = `進攻${n}`;
     const src = _iconPng(token);
     return `<span class="advBadge"><img class="inline-icon adv-icon" src="${src}" alt="${token}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${token}'))"></span>`;
   }
@@ -3551,7 +3551,7 @@ function advanceToHtml(advRaw){
 
 function colorToHtml(colorRaw){
   const c = String(colorRaw ?? '—').trim();
-  if(c==='赤' || c==='青' || c==='緑'){
+  if(c==='赤' || c==='青' || c==='白' || c==='緑'){
     const src = _iconPng(c);
     return `<img class="inline-icon color-icon" src="${src}" alt="${c}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${c}'))">`;
   }
@@ -3577,7 +3577,7 @@ function buildPreviewInfoHtml(card, meta){
   let html = `<div class="pvTitle">${name}</div>`;
   html += `<div class="pvSub">${id}${set ? ` / ${set}` : ''}${meta ? '' : ' / （メタ未登録）'}</div>`;
   html += `<div class="pvRow"><span class="pvKey">色</span>${colorHtml}　<span class="pvKey">種別</span>${type}</div>`;
-  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進行</span>${advHtml}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
+  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進攻</span>${advHtml}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
 
   if(feats.length){
     html += `<div class="pvTags">` + feats.map(t=>`<span class="pvTag">${escHtml(t)}</span>`).join('') + `</div>`;
