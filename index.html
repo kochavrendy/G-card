@@ -4432,11 +4432,67 @@ if(libGrade) libGrade.addEventListener('change',renderLibrary);
 
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
+// ===== Deck Builder: sort order (怪獣→交戦→戦略, 等級昇順, 色:赤→青→緑→白, カードNo昇順) =====
+const __BUILD_TYPE_RANK = {'怪獣':0,'交戦':1,'戦略':2};
+const __BUILD_COLOR_RANK = {'赤':0,'青':1,'緑':2,'白':3};
+
+function __buildNormId(id){ return String(id||'').replace(/ol$/i,''); }
+
+function __buildTypeOf(id, which){
+  if(which==='monster') return '怪獣';
+  const m = getMetaById(id) || null;
+  const t = String(m && m.type ? m.type : '');
+  if(t.includes('怪獣')) return '怪獣';
+  if(t.includes('交戦')) return '交戦';
+  if(t.includes('戦略')) return '戦略';
+  return t || '';
+}
+function __buildTypeRank(typeStr){
+  return (__BUILD_TYPE_RANK[typeStr] != null) ? __BUILD_TYPE_RANK[typeStr] : 9;
+}
+function __buildGradeNum(id){
+  const m = getMetaById(id) || null;
+  const g = (m && m.grade != null && m.grade !== '') ? Number(m.grade) : NaN;
+  return Number.isFinite(g) ? g : 999;
+}
+function __buildColorRank(id){
+  const m = getMetaById(id) || null;
+  const c = String(m && m.color ? m.color : '').trim();
+  return (__BUILD_COLOR_RANK[c] != null) ? __BUILD_COLOR_RANK[c] : 9;
+}
+function __buildCardNoNum(id){
+  const s = __buildNormId(id);
+  // "BP04-001" / "SD01-015" / "PR-12" などを想定
+  let mm = s.match(/-(\d+)(?!.*\d)/); // 末尾の数字塊（ハイフン区切り優先）
+  if(!mm) mm = s.match(/(\d+)(?!.*\d)/); // 念のため最後の数字塊
+  return mm ? parseInt(mm[1],10) : 999999;
+}
+function __buildSortEntries(which){
+  return (a,b)=>{
+    const ida=a[0], idb=b[0];
+    const ta = __buildTypeRank(__buildTypeOf(ida, which));
+    const tb = __buildTypeRank(__buildTypeOf(idb, which));
+    if(ta!==tb) return ta-tb;
+
+    const ga = __buildGradeNum(ida), gb = __buildGradeNum(idb);
+    if(ga!==gb) return ga-gb;
+
+    const ca = __buildColorRank(ida), cb = __buildColorRank(idb);
+    if(ca!==cb) return ca-cb;
+
+    const na = __buildCardNoNum(ida), nb = __buildCardNoNum(idb);
+    if(na!==nb) return na-nb;
+
+    // 最終安定化（同一Noなどのケース）
+    return __buildNormId(ida).localeCompare(__buildNormId(idb), 'ja');
+  };
+}
 function renderDeckThumbs(){
   gridMonster.innerHTML='';
   gridMain.innerHTML='';
   const buildSection=(obj,grid,which)=>{
-    Object.entries(obj).forEach(([id,num])=>{
+    const entries = Object.entries(obj).sort(__buildSortEntries(which));
+    entries.forEach(([id,num])=>{
       const info = CARD_DB.find(c=>c.id===id) || {srcGuess:WHITE_BACK,name:id,id};
       const wrap=document.createElement('div');
       wrap.className='deckThumb';
