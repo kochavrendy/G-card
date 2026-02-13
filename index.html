@@ -408,6 +408,14 @@
   #stackFooter{display:flex;gap:8px;justify-content:flex-end;}
   #stackFooter button{background:#444;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;}
   #stackFooter button:hover{background:#666;}
+  #stackDropChooser.hidden{display:none;}
+  #stackDropChooser{position:fixed;inset:0;z-index:4760;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;}
+  #stackDropChooserPanel{width:min(420px,92vw);background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:14px;display:flex;flex-direction:column;gap:10px;}
+  #stackDropChooserTitle{font-size:16px;font-weight:700;}
+  #stackDropChooserHelp{font-size:12px;opacity:.85;}
+  #stackDropChooserBtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  #stackDropChooserBtns button{background:#444;border:none;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;}
+  #stackDropChooserBtns button:hover{background:#666;}
   /* reveal (deck top 공개) */
   #reveal.hidden{display:none;}
   #reveal{position:fixed;inset:0;z-index:4800;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
@@ -1401,6 +1409,18 @@ body.soloActive #toolbar{ right:auto !important; }
     </div>
   </div>
 
+  <div id="stackDropChooser" class="hidden">
+    <div id="stackDropChooserPanel" role="dialog" aria-modal="true" aria-label="重ね位置を選択">
+      <div id="stackDropChooserTitle">重ねる位置を選択</div>
+      <div id="stackDropChooserHelp">このエリアには既にカードがあります。どこに重ねますか？</div>
+      <div id="stackDropChooserBtns">
+        <button id="btnStackDropBottom">一番下</button>
+        <button id="btnStackDropSecondTop">上から2番目</button>
+        <button id="btnStackDropTop">一番上</button>
+      </div>
+    </div>
+  </div>
+
   <!-- reveal / deck top 공개 -->
   <div id="reveal" class="hidden">
     <div id="revealPanel">
@@ -2041,6 +2061,11 @@ const stackTitle=document.getElementById('stackTitle');
 const stackList=document.getElementById('stackList');
 const btnStackClose=document.getElementById('btnStackClose');
 const btnStackMoveAll=document.getElementById('btnStackMoveAll');
+const stackDropChooser=document.getElementById('stackDropChooser');
+const stackDropChooserTitle=document.getElementById('stackDropChooserTitle');
+const btnStackDropTop=document.getElementById('btnStackDropTop');
+const btnStackDropSecondTop=document.getElementById('btnStackDropSecondTop');
+const btnStackDropBottom=document.getElementById('btnStackDropBottom');
 let stackZoneId=null;
 let stackSelectedId=null;
 
@@ -2083,6 +2108,43 @@ stackModal.addEventListener('click',e=>{ if(e.target===stackModal) closeStack();
 stackModal.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();closeStack();}
 });
+
+function shouldAskStackDrop(cardId, zoneId){
+  if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return false;
+  return state.order.some(id=>id!==cardId && state.cards[id] && state.cards[id].zone===zoneId);
+}
+function chooseStackDropPos(zoneId){
+  return new Promise((resolve)=>{
+    if(!stackDropChooser){ resolve('top'); return; }
+    const z=zones.find(z=>z.id===zoneId);
+    if(stackDropChooserTitle){
+      stackDropChooserTitle.textContent = z ? `「${z.name}」に重ねる位置を選択` : '重ねる位置を選択';
+    }
+    const done=(v)=>{
+      stackDropChooser.classList.add('hidden');
+      cleanup();
+      resolve(v || 'top');
+    };
+    const onKey=(e)=>{ if(e.key==='Escape'){ e.preventDefault(); done('top'); } };
+    const onTop=()=>done('top');
+    const onSecond=()=>done('secondTop');
+    const onBottom=()=>done('bottom');
+    const onBackdrop=(e)=>{ if(e.target===stackDropChooser) done('top'); };
+    const cleanup=()=>{
+      document.removeEventListener('keydown', onKey, true);
+      stackDropChooser.removeEventListener('click', onBackdrop);
+      btnStackDropTop && btnStackDropTop.removeEventListener('click', onTop);
+      btnStackDropSecondTop && btnStackDropSecondTop.removeEventListener('click', onSecond);
+      btnStackDropBottom && btnStackDropBottom.removeEventListener('click', onBottom);
+    };
+    btnStackDropTop && btnStackDropTop.addEventListener('click', onTop);
+    btnStackDropSecondTop && btnStackDropSecondTop.addEventListener('click', onSecond);
+    btnStackDropBottom && btnStackDropBottom.addEventListener('click', onBottom);
+    stackDropChooser.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey, true);
+    stackDropChooser.classList.remove('hidden');
+  });
+}
 
 function getZoneCardIds(zoneId){
   // state.order の順（奥→手前）で返す
@@ -3127,6 +3189,7 @@ function rerenderAll(){state.order.forEach(id=>renderCard(state.cards[id]));}
 function onClickCard(ev,card){if(ev.shiftKey){selection.has(card.id)?selection.delete(card.id):selection.add(card.id);}else{selection.clear();selection.add(card.id);}updateSelectionVisual();ev.stopPropagation();}
 board.addEventListener('click',()=>{selection.clear();updateSelectionVisual();});
 function updateSelectionVisual(){document.querySelectorAll('.card').forEach(e=>e.classList.remove('selected'));selection.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('selected');});}
+const DRAG_COMMIT_DISTANCE = 6;
 let dragInfo=null;function startDrag(ev,card){ev.preventDefault();ev.stopPropagation();// 既に複数選択されている状態で、その中の1枚をドラッグ開始した時は選択を崩さない
 const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));const multi=ev.shiftKey;if(!multi && !keepGroup){selection.clear();selection.add(card.id);updateSelectionVisual();}else if(multi && !selection.has(card.id)){selection.add(card.id);updateSelectionVisual();}let ids=[...selection];
   // Alt+ドラッグ：同一ゾーン（エリア）のカードをまとめて移動
@@ -3140,28 +3203,71 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
     }
   }
   const p=getPointerBoardPos(ev);
-  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
 function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
-function onDragEnd(ev){
+function placeCardInZoneOrder(cardId, zoneId, posMode){
+  if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return;
+  const filtered=state.order.filter(id=>id!==cardId);
+  const zoneIds=filtered.filter(id=>state.cards[id] && state.cards[id].zone===zoneId);
+  if(!zoneIds.length){
+    state.order=filtered.concat(cardId);
+    syncOrderToDOM();
+    return;
+  }
+  let zoneInsert=zoneIds.length;
+  if(posMode==='bottom') zoneInsert=0;
+  else if(posMode==='secondTop') zoneInsert=Math.max(0,zoneIds.length-1);
+  const anchor=(zoneInsert>=zoneIds.length) ? null : zoneIds[zoneInsert];
+  const anchorIdx=anchor ? filtered.indexOf(anchor) : -1;
+  if(anchorIdx===-1) filtered.push(cardId);
+  else filtered.splice(anchorIdx,0,cardId);
+  state.order=filtered;
+  syncOrderToDOM();
+}
+async function onDragEnd(ev){
   if(!dragInfo) return;
-  dragInfo.rects.forEach(r=>{
+  const zoneDropChoice={};
+  let committed=0;
+  for(const r of dragInfo.rects){
     const el=document.getElementById(r.id);
     el.classList.remove('active');
     el.releasePointerCapture(ev.pointerId);
 
     const c=state.cards[r.id];
     const z=hitZone(c);
-    c.zone = z ? z.id : null;
+    const nextZone = z ? z.id : null;
+    const movedDist = Math.hypot(c.x-r.startX, c.y-r.startY);
+    const movedEnough = movedDist >= DRAG_COMMIT_DISTANCE;
+    const zoneChanged = nextZone !== r.startZone;
+    if(!movedEnough && !zoneChanged){
+      c.x=r.startX; c.y=r.startY; c.zone=r.startZone;
+      renderCard(c);
+      continue;
+    }
+
+    committed++;
+    c.zone = nextZone;
 
     updatePoolsMembership(c);
     hideIfPooled(c);
 
+    if(z){
+      let dropPos='top';
+      if(shouldAskStackDrop(c.id, z.id)){
+        if(zoneDropChoice[z.id]) dropPos=zoneDropChoice[z.id];
+        else{
+          dropPos=await chooseStackDropPos(z.id);
+          zoneDropChoice[z.id]=dropPos;
+        }
+      }
+      placeCardInZoneOrder(c.id, z.id, dropPos);
+    }
     if (snapEnabled && z) snapCardToZone(c, z);
     renderCard(c); // ←スナップ後の座標を反映
-  });
+  }
   // （移動）
   try{
-    const n = dragInfo.rects?.length || 0;
+    const n = committed;
     if(n>0){
       const zonesAfter = [...new Set(dragInfo.rects.map(r=>state.cards[r.id]?.zone||null))];
       if(zonesAfter.length===1){
@@ -3175,8 +3281,10 @@ function onDragEnd(ev){
     }
   }catch(e){}
   dragInfo=null;
-  pushUndo();
-  updateCounters();
+  if(committed>0){
+    pushUndo();
+    updateCounters();
+  }
 }
 function hitZone(card){const cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--card-w'));const centerX=card.x+(cw*card.scale)/2;const centerY=card.y+(cw*1.333*card.scale)/2;const bw=board.clientWidth,bh=board.clientHeight;for(const z of zones){const zx=z.x*bw,zy=z.y*bh,zw=z.w*bw,zh=z.h*bh;if(centerX>zx&&centerX<zx+zw&&centerY>zy&&centerY<zy+zh){return z;}}return null;}
 
@@ -3964,7 +4072,7 @@ if(d.type==='SOLO_CMD' && d.targetId){
         const tid = String(d.targetId);
         // select
         if(tid==='deckReturnPos'){
-          const sel = document.getElementById('deckReturnPos');
+          const sel = document.getElementById(tid);
           const v = (d.payload && typeof d.payload.value==='string') ? d.payload.value : '';
           if(sel && v) sel.value = v;
           if(sel) sel.dispatchEvent(new Event('change', {bubbles:true}));
@@ -4931,8 +5039,8 @@ function forwardToActiveIframe(targetId, payload){
     const win = fr.contentWindow;
     if(win && win.document){
       if(targetId === 'deckReturnPos'){
-        const src = document.getElementById('deckReturnPos');
-        const dst = win.document.getElementById('deckReturnPos');
+        const src = document.getElementById(targetId);
+        const dst = win.document.getElementById(targetId);
         const v = (payload && typeof payload.value==='string') ? payload.value : (src ? src.value : '');
         if(dst){
           if(v) dst.value = v;
@@ -5092,7 +5200,7 @@ function wireSoloForwarding(){
     if(t.id === 'deckReturnPos'){
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      forwardToActiveIframe('deckReturnPos', {value: t.value});
+      forwardToActiveIframe(t.id, {value: t.value});
     }
   }, true);
 
