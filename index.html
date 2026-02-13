@@ -3189,6 +3189,7 @@ function rerenderAll(){state.order.forEach(id=>renderCard(state.cards[id]));}
 function onClickCard(ev,card){if(ev.shiftKey){selection.has(card.id)?selection.delete(card.id):selection.add(card.id);}else{selection.clear();selection.add(card.id);}updateSelectionVisual();ev.stopPropagation();}
 board.addEventListener('click',()=>{selection.clear();updateSelectionVisual();});
 function updateSelectionVisual(){document.querySelectorAll('.card').forEach(e=>e.classList.remove('selected'));selection.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('selected');});}
+const DRAG_COMMIT_DISTANCE = 6;
 let dragInfo=null;function startDrag(ev,card){ev.preventDefault();ev.stopPropagation();// 既に複数選択されている状態で、その中の1枚をドラッグ開始した時は選択を崩さない
 const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));const multi=ev.shiftKey;if(!multi && !keepGroup){selection.clear();selection.add(card.id);updateSelectionVisual();}else if(multi && !selection.has(card.id)){selection.add(card.id);updateSelectionVisual();}let ids=[...selection];
   // Alt+ドラッグ：同一ゾーン（エリア）のカードをまとめて移動
@@ -3202,7 +3203,7 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
     }
   }
   const p=getPointerBoardPos(ev);
-  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
 function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
 function placeCardInZoneOrder(cardId, zoneId, posMode){
   if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return;
@@ -3233,7 +3234,18 @@ async function onDragEnd(ev){
 
     const c=state.cards[r.id];
     const z=hitZone(c);
-    c.zone = z ? z.id : null;
+    const nextZone = z ? z.id : null;
+    const movedDist = Math.hypot(c.x-r.startX, c.y-r.startY);
+    const movedEnough = movedDist >= DRAG_COMMIT_DISTANCE;
+    const zoneChanged = nextZone !== r.startZone;
+    if(!movedEnough && !zoneChanged){
+      c.x=r.startX; c.y=r.startY; c.zone=r.startZone;
+      renderCard(c);
+      continue;
+    }
+
+    committedIds.push(c.id);
+    c.zone = nextZone;
 
     updatePoolsMembership(c);
     hideIfPooled(c);
@@ -3254,7 +3266,7 @@ async function onDragEnd(ev){
   }
   // （移動）
   try{
-    const n = dragInfo.rects?.length || 0;
+    const n = committedIds.length;
     if(n>0){
       const zonesAfter = [...new Set(dragInfo.rects.map(r=>state.cards[r.id]?.zone||null))];
       if(zonesAfter.length===1){
@@ -3268,8 +3280,10 @@ async function onDragEnd(ev){
     }
   }catch(e){}
   dragInfo=null;
-  pushUndo();
-  updateCounters();
+  if(committedIds.length>0){
+    pushUndo();
+    updateCounters();
+  }
 }
 function hitZone(card){const cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--card-w'));const centerX=card.x+(cw*card.scale)/2;const centerY=card.y+(cw*1.333*card.scale)/2;const bw=board.clientWidth,bh=board.clientHeight;for(const z of zones){const zx=z.x*bw,zy=z.y*bh,zw=z.w*bw,zh=z.h*bh;if(centerX>zx&&centerX<zx+zw&&centerY>zy&&centerY<zy+zh){return z;}}return null;}
 
