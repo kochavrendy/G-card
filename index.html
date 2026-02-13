@@ -4072,7 +4072,7 @@ if(d.type==='SOLO_CMD' && d.targetId){
         const tid = String(d.targetId);
         // select
         if(tid==='deckReturnPos'){
-          const sel = document.getElementById(tid);
+          const sel = document.getElementById('deckReturnPos');
           const v = (d.payload && typeof d.payload.value==='string') ? d.payload.value : '';
           if(sel && v) sel.value = v;
           if(sel) sel.dispatchEvent(new Event('change', {bubbles:true}));
@@ -5039,8 +5039,8 @@ function forwardToActiveIframe(targetId, payload){
     const win = fr.contentWindow;
     if(win && win.document){
       if(targetId === 'deckReturnPos'){
-        const src = document.getElementById(targetId);
-        const dst = win.document.getElementById(targetId);
+        const src = document.getElementById('deckReturnPos');
+        const dst = win.document.getElementById('deckReturnPos');
         const v = (payload && typeof payload.value==='string') ? payload.value : (src ? src.value : '');
         if(dst){
           if(v) dst.value = v;
@@ -5200,7 +5200,7 @@ function wireSoloForwarding(){
     if(t.id === 'deckReturnPos'){
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      forwardToActiveIframe(t.id, {value: t.value});
+      forwardToActiveIframe('deckReturnPos', {value: t.value});
     }
   }, true);
 
