@@ -3192,10 +3192,12 @@ function updateSelectionVisual(){document.querySelectorAll('.card').forEach(e=>e
 const DRAG_COMMIT_DISTANCE = 6;
 let dragInfo=null;function startDrag(ev,card){ev.preventDefault();ev.stopPropagation();// 既に複数選択されている状態で、その中の1枚をドラッグ開始した時は選択を崩さない
 const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));const multi=ev.shiftKey;if(!multi && !keepGroup){selection.clear();selection.add(card.id);updateSelectionVisual();}else if(multi && !selection.has(card.id)){selection.add(card.id);updateSelectionVisual();}let ids=[...selection];
+  let altBulkMove=false;
   // Alt+ドラッグ：同一ゾーン（エリア）のカードをまとめて移動
   if(ev.altKey && card.zone && card.zone!=='hand' && card.zone!=='deckMain' && card.zone!=='discard'){
     const zIds=getZoneCardIds(card.zone);
     if(zIds.length>1){
+      altBulkMove=true;
       ids = zIds.slice(); // 奥→手前（state.order準拠）
       // 選択表示も束に揃える
       selection.clear(); zIds.forEach(id=>selection.add(id));
@@ -3203,7 +3205,7 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
     }
   }
   const p=getPointerBoardPos(ev);
-  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});document.addEventListener('pointermove',onDragMove,true);document.addEventListener('pointerup',onDragEnd,{once:true,capture:true});document.addEventListener('pointercancel',onDragEnd,{once:true,capture:true});}
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects,altBulkMove};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});document.addEventListener('pointermove',onDragMove,true);document.addEventListener('pointerup',onDragEnd,{once:true,capture:true});document.addEventListener('pointercancel',onDragEnd,{once:true,capture:true});}
 function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
 function placeCardInZoneOrder(cardId, zoneId, posMode){
   if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return;
@@ -3254,7 +3256,7 @@ async function onDragEnd(ev){
 
     if(z){
       let dropPos='top';
-      if(shouldAskStackDrop(c.id, z.id)){
+      if(!dragInfo.altBulkMove && shouldAskStackDrop(c.id, z.id)){
         if(zoneDropChoice[z.id]) dropPos=zoneDropChoice[z.id];
         else{
           dropPos=await chooseStackDropPos(z.id);
