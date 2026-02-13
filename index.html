@@ -3203,7 +3203,7 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
     }
   }
   const p=getPointerBoardPos(ev);
-  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});document.addEventListener('pointermove',onDragMove,true);document.addEventListener('pointerup',onDragEnd,{once:true,capture:true});document.addEventListener('pointercancel',onDragEnd,{once:true,capture:true});}
 function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
 function placeCardInZoneOrder(cardId, zoneId, posMode){
   if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return;
@@ -3226,6 +3226,8 @@ function placeCardInZoneOrder(cardId, zoneId, posMode){
 }
 async function onDragEnd(ev){
   if(!dragInfo) return;
+  const committedIds=[];
+  document.removeEventListener('pointermove',onDragMove,true);
   const zoneDropChoice={};
   for(const r of dragInfo.rects){
     const el=document.getElementById(r.id);
