@@ -3227,7 +3227,7 @@ function placeCardInZoneOrder(cardId, zoneId, posMode){
 async function onDragEnd(ev){
   if(!dragInfo) return;
   const zoneDropChoice={};
-  let committed=0;
+  const committedIds=[];
   for(const r of dragInfo.rects){
     const el=document.getElementById(r.id);
     el.classList.remove('active');
@@ -3245,7 +3245,7 @@ async function onDragEnd(ev){
       continue;
     }
 
-    committed++;
+    committedIds.push(c.id);
     c.zone = nextZone;
 
     updatePoolsMembership(c);
@@ -3267,7 +3267,7 @@ async function onDragEnd(ev){
   }
   // （移動）
   try{
-    const n = committed;
+    const n = committedIds.length;
     if(n>0){
       const zonesAfter = [...new Set(dragInfo.rects.map(r=>state.cards[r.id]?.zone||null))];
       if(zonesAfter.length===1){
@@ -3281,7 +3281,7 @@ async function onDragEnd(ev){
     }
   }catch(e){}
   dragInfo=null;
-  if(committed>0){
+  if(committedIds.length>0){
     pushUndo();
     updateCounters();
   }
