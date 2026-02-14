@@ -1,1483 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<title>G-CARD Directeor_v2.1</title>
-<style>
-  *{box-sizing:border-box;}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#181818;font-family:sans-serif;}
-  :root{--ui-bg:#000a;--ui-fg:#eee;--zone-border:#00bfff88;--zone-fill:#00bfff14;--card-w:180px; --set-thumb-w:clamp(130px,18vw,220px); --set-thumb-aspect:21/11;}
-  #board{position:relative;width:100vw;height:100vh;background:#222;overflow:hidden;}
-  #board::before{content:"";position:absolute;inset:0;background:url("playmat.png") center/cover no-repeat;z-index:0;transform:rotate(0deg);transform-origin:center;pointer-events:none;}
-  body.flipLayout #board::before{transform:rotate(180deg);}
-  .zone,.card{z-index:2;}
-
-  #toolbar{position:fixed;top:8px;left:8px;z-index:12000;background:var(--ui-bg);max-width:calc(100vw - 16px);flex-wrap:wrap;color:var(--ui-fg);padding:6px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;backdrop-filter:blur(4px);}    
-  #toolbar button,#toolbar label{cursor:pointer;border:none;background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;}#toolbar button:hover,#toolbar label:hover{background:#555;}
-  #toolbar select{background:#111;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;}
-  #fileInput,#backInput{display:none;}
-  .zone{position:absolute;border:2px dashed var(--zone-border);background:var(--zone-fill);color:#bdeaff;font-size:12px;padding:2px 4px;pointer-events:none;}
-  .zone-label{position:absolute;top:-16px;left:0;font-weight:bold;text-shadow:0 0 3px #000;}
-  .zoneUI{position:absolute;right:4px;bottom:4px;display:flex;gap:4px;pointer-events:auto;}
-  .zoneUI button{background:#000c;color:#fff;border:1px solid #555;font-size:11px;padding:2px 6px;border-radius:4px;cursor:pointer;}
-  .areaUI{position:absolute;top:-20px;left:50%;transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto;}
-  .areaUI button{background:#000c;color:#fff;border:1px solid #555;font-size:10px;padding:1px 4px;border-radius:4px;cursor:pointer;}
-  /* flipLayout(上側盤面)では slot1~5 のエリアボタンが手札に被るため、下側へ移動 */
-  body.flipLayout .zone[data-zone-id="slot1"] .areaUI,
-  body.flipLayout .zone[data-zone-id="slot2"] .areaUI,
-  body.flipLayout .zone[data-zone-id="slot3"] .areaUI,
-  body.flipLayout .zone[data-zone-id="slot4"] .areaUI,
-  body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
-    top: calc(100% + 6px);
-    bottom: auto;
-  }
-  .rageUI{position:absolute;inset:0;pointer-events:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;}
-  #rageCounter{background:#000c;color:#fff;border:2px solid #555;font-size:42px;font-weight:700;padding:6px 14px;border-radius:10px;min-width:72px;text-align:center;text-shadow:0 0 6px #000;}
-  .rageBtns{display:flex;gap:6px;}
-  .rageBtns button{background:#000c;color:#fff;border:1px solid #555;font-size:12px;padding:3px 10px;border-radius:4px;cursor:pointer;}
-  .card{position:absolute;width:var(--card-w);height:auto;transform-origin:50% 50%;user-select:none;touch-action:none;border-radius:6px;box-shadow:0 2px 4px #000a;transition:box-shadow .12s ease;}
-  .card.active{box-shadow:0 0 10px #00bfff;}
-  .card.selected{outline:3px solid #ff0;}
-  .hidden{display:none !important;}
-  #deckCounter,#discardCounter,#monsterCounter{position:absolute;z-index:2100;color:#fff;font-size:18px;font-weight:bold;text-shadow:0 0 6px #000;background:#0007;padding:2px 6px;border-radius:4px;pointer-events:none;}
-  /* viewer */
-  #viewer.hidden{display:none;}#viewer{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;}
-  #viewerPanel{position:relative;width:80vw;height:80vh;background:#222;color:#eee;border-radius:10px;box-shadow:0 0 20px #000;padding:12px 16px;display:flex;flex-direction:column;}
-  #viewerPanel h2{margin:0 0 8px;font-size:18px;}#viewerSearch{margin-bottom:8px;padding:4px 6px;width:220px;background:#111;color:#eee;border:1px solid #444;border-radius:4px;font-size:13px;}
-  #viewerGrid{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:6px;padding:4px;}
-  .thumbWrap{position:relative;cursor:pointer;}
-  .thumbWrap img{width:100px;border-radius:6px;box-shadow:0 2px 4px #000a;border:2px solid transparent;}
-  .thumbWrap.selected img{border-color:#ff0;}
-  .thumbName{position:absolute;bottom:2px;right:4px;background:#000a;color:#fff;font-size:11px;padding:1px 4px;border-radius:3px;}
-  #viewerBtns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;}#viewerBtns button{background:#444;border:none;color:#fff;padding:6px 12px;border-radius:5px;font-size:13px;cursor:pointer;}#viewerBtns button:hover{background:#666;}
-  /* start modal */
-  #startModal{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;}
-  #startBox{background:#222;color:#eee;padding:24px 32px;border-radius:12px;box-shadow:0 0 20px #000;min-width:320px;text-align:center;}
-  #startBox h1{margin:0 0 16px;font-size:22px;}
-  #startBox button{margin:6px 0;padding:10px 16px;font-size:15px;background:#444;border:1px solid #666;border-radius:6px;color:#fff;cursor:pointer;width:100%;}
-  #startBox button:hover{background:#666;}
-  /* deck builder */
-  #builder.hidden{display:none;}#builder{position:fixed;inset:0;z-index:4600;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;}
-  #builderPanel{position:relative;width:92vw;height:92vh;background:#222;color:#eee;border-radius:10px;box-shadow:0 0 20px #000;padding:12px 16px;display:flex;flex-direction:column;}
-  #builderMain{flex:1;display:flex;gap:12px;overflow:hidden;}
-  #libPane{flex:1.2;display:flex;flex-direction:column;min-width:0;}
-  #deckPane{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
-  #libFilter{padding:10px 12px;width:100%;background:#111;color:#eee;border:1px solid rgba(255,255,255,18);border-radius:14px;font-size:13px;margin-bottom:8px;}
-
-  #libMetaBar{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin:0 0 8px 0;
-  }
-  #libMetaBar select{
-    background:#111;
-    color:#eee;
-    border:1px solid rgba(255,255,255,18);
-    border-radius:12px;
-    padding:8px 10px;
-    font-size:12px;
-    cursor:pointer;
-  }
-  
-  /* set / pack filter (deck builder) */
-  #libSetBar{
-    display:flex;
-    gap:10px;
-    flex-wrap:nowrap;
-    align-items:stretch;
-    overflow-x:auto;
-    padding:2px 2px 10px;
-    margin:0 0 10px 0;
-    scroll-snap-type:x proximity;
-  }
-  #libSetBar::-webkit-scrollbar{height:10px;}
-  #libSetBar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px;}
-  #libSetBar::-webkit-scrollbar-track{background:rgba(0,0,0,.25);border-radius:999px;}
-
-  /* collapsible wrapper for set bar */
-  .setSection{
-    border:1px solid rgba(255,255,255,.12);
-    background:rgba(0,0,0,.18);
-    border-radius:12px;
-    padding:8px 10px;
-    margin:0 0 10px 0;
-  }
-  .setHeader{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    cursor:pointer;
-    user-select:none;
-    padding:2px 2px;
-  }
-  .setHeader:focus{outline:2px solid rgba(0,191,255,.65);outline-offset:2px;border-radius:10px;}
-  .setHeaderLeft{display:flex;align-items:baseline;gap:8px;min-width:0;}
-  .setHeaderTitle{font-size:12px;opacity:.9;letter-spacing:.06em;white-space:nowrap;}
-  .setHeaderCurrent{
-    font-size:12px;
-    opacity:.95;
-    padding:3px 8px;
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,.16);
-    background:rgba(0,0,0,.25);
-    max-width:220px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-  .setToggle{
-    width:30px;height:30px;
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,.18);
-    background:rgba(0,0,0,.15);
-    color:#fff;
-    cursor:pointer;
-    display:grid;
-    place-items:center;
-    padding:0;
-    transition:transform .15s ease;
-  }
-  #libSetBarWrap{
-    margin-top:8px;
-    overflow:hidden;
-    max-height:600px;
-    opacity:1;
-    transition:max-height .18s ease, opacity .18s ease, margin .18s ease;
-  }
-  .setSection.collapsed #libSetBarWrap{
-    max-height:0;
-    opacity:0;
-    margin-top:0;
-  }
-  .setSection.collapsed .setToggle{transform:rotate(-90deg);}
-
-  #libSetBar .setBtn{
-    cursor:pointer;
-    border:1px solid rgba(255,255,255,.14);
-    background: rgba(0,0,0,.35);
-    color:#fff;
-    border-radius:16px;
-    padding:10px 10px 8px;
-    font-size:12px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:flex-start;
-    gap:8px;
-    min-width: calc(var(--set-thumb-w) + 20px);
-    box-shadow: 0 10px 22px rgba(0,0,0,.32);
-    scroll-snap-align:start;
-    transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
-  }
-  #libSetBar .setBtn:hover{ filter:brightness(1.08); transform: translateY(-1px); }
-  #libSetBar .setBtn:active{ transform: translateY(0) scale(.99); }
-  #libSetBar .setBtn.active{
-    outline:3px solid rgba(45,212,255,.72);
-    outline-offset:1px;
-    box-shadow: 0 0 0 1px rgba(45,212,255,.22), 0 14px 30px rgba(0,0,0,.38);
-  }
-  #libSetBar .setBtn img{
-    width: var(--set-thumb-w);
-    aspect-ratio: 21 / 11;
-    height: auto;
-    border-radius: 12px;
-    display:block;
-    border:1px solid rgba(255,255,255,.10);
-  }
-  #libSetBar .setBtn .setLabel{
-    font-weight:800;
-    letter-spacing:.02em;
-    user-select:none;
-    white-space:nowrap;
-    line-height:1.05;
-    opacity:.92;
-  }
-  #libSetBar .setBtn.all{
-    min-width: 110px;
-    padding:10px 12px;
-    justify-content:center;
-  }
-
-#libList{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px;background:#1113;border:1px solid #444;border-radius:4px;}
-  .libCard{width:120px;cursor:pointer;position:relative;}
-  .libCard img{width:100%;border-radius:6px;box-shadow:0 2px 4px #000a;}
-  .libBtns{position:absolute;bottom:4px;left:4px;display:flex;gap:4px;}
-  .libBtns button{background:#000b;color:#fff;border:1px solid #666;font-size:11px;padding:2px 4px;border-radius:4px;cursor:pointer;}
-  #deckScroll{flex:1;overflow:auto;border:1px solid #444;border-radius:4px;padding:6px;background:#1113;display:flex;flex-direction:column;gap:12px;}
-  .deckGroup{border:1px solid #444;border-radius:6px;padding:6px;background:#0004;}
-  .deckGroup h4{margin:0 0 6px;font-size:15px;}
-  .deckGrid{display:flex;flex-wrap:wrap;gap:6px;}
-  .deckThumb{position:relative;width:90px;}
-  .deckThumb img{width:100%;border-radius:6px;box-shadow:0 2px 4px #000a;}
-  .deckCnt{position:absolute;top:2px;left:2px;background:#000c;color:#fff;font-size:11px;padding:1px 4px;border-radius:3px;}
-  .deckThumb .ctrl{position:absolute;bottom:2px;right:2px;display:flex;gap:2px;}
-  .deckThumb .ctrl button{background:#000b;color:#fff;border:1px solid #666;font-size:10px;padding:0 4px;border-radius:3px;cursor:pointer;}
-  #builderFooter{margin-top:10px;display:flex;justify-content:flex-start;align-items:flex-start;gap:10px;flex-wrap:wrap;}
-  #builderFooter textarea{flex:1 1 320px;width:auto;min-width:260px;height:54px;background:#000;color:#eee;border:1px solid #555;border-radius:4px;padding:4px;font-size:11px;}
-  #builderFooter button{background:#444;border:1px solid #666;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;}
-  #builderFooter button:hover{background:#666;}
-
-  .builderBtnCol{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;min-width:240px;flex:1 1 340px;justify-content:flex-end;align-items:center;}
-  .builderBtnCol button,.builderBtnCol .btnLike{white-space:nowrap;}
-  .builderSep{flex-basis:100%;width:100%;height:1px;background:rgba(255,255,255,.12);margin:6px 0;}
-  .btnLike{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#444;border:1px solid #666;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;user-select:none;}
-  .btnLike:hover{background:#666;}
-  .btnLike input{display:none;}
-
-  /* deck manager */
-  #deckMgr.hidden{display:none;}
-  #deckMgr{position:fixed;inset:0;z-index:5200;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
-  #deckMgrPanel{width:min(920px,92vw);height:min(620px,86vh);background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;}
-  #deckMgrHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
-  #deckMgrHeader h2{margin:0;font-size:18px;}
-  .deckMgrRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
-  #deckMgrHeader input{width:min(320px,60vw);background:#000;border:1px solid #555;color:#fff;border-radius:10px;padding:8px 10px;font-size:13px;}
-  #deckMgrList{padding:12px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px;}
-  .deckItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:12px;}
-  .deckMeta{display:flex;flex-direction:column;gap:4px;min-width:0;}
-  .deckName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .deckInfo{opacity:.8;font-size:12px;}
-  .deckActions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-  .deckActions button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
-  .deckActions button:hover{background:#666;}
-  #deckMgrFooter{padding:10px 14px;border-top:1px solid rgba(255,255,255,.10);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;}
-  #deckMgrFooter .hint{margin-right:auto;opacity:.75;font-size:12px;}
-  #countInfo{font-size:13px;}
-    /* preview */
-  #preview.hidden{display:none;}
-  #preview{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.90);display:flex;align-items:center;justify-content:center;padding:16px;}
-  #previewPanel{
-    position:relative;
-    width:min(96vw, 1200px);
-    height:min(92vh, 760px);
-    display:flex;
-    gap:14px;
-    align-items:stretch;
-    justify-content:center;
-  }
-  #previewLeft{
-    height:100%;
-    aspect-ratio:460/642;
-    max-width:62%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  #previewImg{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    border-radius:16px;
-    box-shadow:0 0 20px #000;
-    background:transparent;
-  }
-  #previewInfo{
-    flex:1;
-    min-width:240px;
-    height:100%;
-    overflow:auto;
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,12);
-    background:rgba(0,0,0,0.25);
-    padding:12px 14px;
-    color:#eee;
-  }
-  #previewInfo .pvTitle{font-size:24px;font-weight:900;margin:0 0 10px 0;}
-  #previewInfo .pvSub{font-size:16px;opacity:.86;margin:0 0 16px 0;line-height:1.45;}
-  #previewInfo .pvRow{margin:10px 0;font-size:17px;line-height:1.55;}
-  #previewInfo .pvKey{opacity:.78;margin-right:6px;font-weight:800;}
-  #previewInfo .pvTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-  #previewInfo .pvTag{font-size:16px;padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,20);background:rgba(255,255,255,0.90);color:#111;}
-  #previewInfo .pvText{white-space:pre-wrap;font-size:17px;line-height:1.68;margin-top:12px;padding-top:12px;border-top:1px dashed rgba(255,255,255,14);}
-  #previewClose{
-    position:absolute;
-    top:10px;right:10px;
-    background:#000c;color:#fff;border:1px solid rgba(255,255,255,24);
-    border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:18px;
-    display:grid;place-items:center;
-  }
-
-  /* preview: avoid toolbar overlap (normal play mode) */
-  :root{ --previewSafeTop: 72px; }
-  body:not(.soloActive) #preview{
-    align-items:flex-start;
-    justify-content:center;
-    padding:16px;
-    padding-top: calc(16px + var(--previewSafeTop));
-  }
-  body:not(.soloActive) #previewPanel{
-    height: min(calc(92vh - var(--previewSafeTop)), 760px);
-  }
-/* token selector */
-  #token.hidden{display:none;}#token{position:fixed;inset:0;z-index:4700;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
-  #tokenPanel{position:relative;width:820px;max-width:95vw;max-height:90vh;background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
-  #tokenPanel h2{margin:0 0 8px;font-size:20px;}
-  #tokenGrid{display:flex;gap:12px;flex-wrap:wrap;overflow:auto;padding:4px;}
-  .tokenThumb{position:relative;cursor:pointer;}
-  .tokenThumb img{width:140px;border-radius:8px;box-shadow:0 2px 6px #000a;border:3px solid transparent;}
-  .tokenName{position:absolute;bottom:4px;right:6px;background:#000a;color:#fff;font-size:12px;padding:2px 6px;border-radius:4px;}
-  .tokenThumb.selected img{border-color:#ff0;}
-  #tokenFooter{display:flex;gap:10px;justify-content:flex-end;align-items:center;}
-  #tokenCount{width:100px;background:#111;color:#eee;border:1px solid #444;border-radius:6px;padding:6px 8px;font-size:14px;}
-
-  /* stack (area overlap) */
-  
-  /* ===== counter selector ===== */
-  #counter.hidden{display:none;}
-  #counter{position:fixed;inset:0;z-index:12650;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
-  #counterPanel{position:relative;width:720px;max-width:94vw;max-height:88vh;overflow:hidden;background:#141414;border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
-  #counterPanel h2{margin:0 0 2px;font-size:20px;}
-  #counterHelp{font-size:13px;opacity:.86;line-height:1.35;}
-  #counterGrid{display:flex;gap:12px;flex-wrap:wrap;overflow:auto;padding:6px 4px;}
-  .counterThumb{position:relative;cursor:pointer;}
-  .counterThumb img{height:44px;max-width:240px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.55);border:2px solid transparent;background:#000;}
-  .counterThumb:hover img{border-color:#fff8;}
-  #counterFooter{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:6px;}
-  #counterFooter button{background:#333;border:1px solid #555;color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer;}
-  #counterFooter button:hover{background:#555;}
-  #btnCounterClear{background:#8b0000;border-color:#b44;}
-  #btnCounterClear:hover{background:#b00000;}
-
-  /* ===== card counter overlay ===== */
-  .cardCounterOverlay{
-    position:absolute;
-    left:0;
-    top:0;
-    width:var(--card-w);
-    height:var(--card-h);
-    pointer-events:none;
-    transform-origin:50% 50%;
-    z-index:3;
-  }
-  .cardCounterOverlay.hidden{display:none !important;}
-  .cardCounterBadge{
-    position:absolute;
-    left:50%;
-    bottom:6px;
-    transform:translateX(-50%);
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    row-gap:6px;
-    max-width:calc(var(--card-w) - 12px);
-  }
-  .cardCounterBadge .ctrItem{
-    display:flex;
-    align-items:center;
-    gap:4px;
-  }
-  .cardCounterBadge img{
-    height:calc(2.1em * var(--ctr-scale, 1));
-    vertical-align:middle;
-    image-rendering:auto;
-    filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));
-  }
-  .cardCounterBadge .ctrCount{
-    font-size:1.18em;
-    font-weight:900;
-    color:#fff;
-    text-shadow:0 2px 4px rgba(0,0,0,.75);
-    padding:1px 6px;
-    border-radius:999px;
-    background:rgba(0,0,0,.45);
-    line-height:1.2;
-  }
-
-
-#stack.hidden{display:none;}
-  #stack{position:fixed;inset:0;z-index:4750;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
-  #stackPanel{position:relative;width:760px;max-width:95vw;max-height:88vh;background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
-  #stackPanel h2{margin:0;font-size:18px;}
-  #stackHelp{font-size:12px;opacity:.85;}
-  #stackList{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;}
-  .stackRow{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#111;border:1px solid #333;border-radius:10px;cursor:pointer;}
-  .stackRow.selected{outline:2px solid #ff0;}
-  .stackThumb{position:relative;}
-  .stackThumb img{width:90px;border-radius:8px;box-shadow:0 2px 6px #000a;}
-  .stackBadge{position:absolute;top:6px;left:6px;background:#000a;color:#fff;font-size:11px;padding:1px 6px;border-radius:999px;}
-  .stackInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
-  .stackName{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .stackMeta{font-size:11px;opacity:.75;}
-  .stackCtrl{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-  .stackCtrl button{background:#444;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;}
-  .stackCtrl button:hover{background:#666;}
-  #stackFooter{display:flex;gap:8px;justify-content:flex-end;}
-  #stackFooter button{background:#444;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;}
-  #stackFooter button:hover{background:#666;}
-  /* reveal (deck top 공개) */
-  #reveal.hidden{display:none;}
-  #reveal{position:fixed;inset:0;z-index:4800;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;}
-  #revealPanel{position:relative;width:760px;max-width:95vw;max-height:88vh;background:#222;color:#eee;border-radius:12px;box-shadow:0 0 20px #000;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
-  #revealPanel h2{margin:0;font-size:18px;}
-  #revealHelp{font-size:12px;opacity:.85;}
-  #revealList{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;}
-  .revealRow{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#111;border:1px solid #333;border-radius:10px;cursor:pointer;}
-  .revealRow.selected{outline:2px solid #ff0;}
-  .revealThumb img{width:90px;border-radius:8px;box-shadow:0 2px 6px #000a;}
-  .revealInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
-  .revealName{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .revealMeta{font-size:11px;opacity:.75;}
-  .revealCtrl{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-  .revealCtrl button{background:#444;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;}
-  .revealCtrl button:hover{background:#666;}
-  #revealFooter{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
-  #revealFooter button{background:#444;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;}
-  #revealFooter button:hover{background:#666;}
-
-
-
-  /* ===== Action Log ===== */
-  /* ===== Spectator (Discord共有) ===== */
-  #spectatorBadge{
-    position:fixed; top:8px; right:8px; z-index:9999;
-    background:#000c; color:#fff; padding:6px 10px; border-radius:10px;
-    font-size:13px; display:none; user-select:none;
-    white-space:pre-line;
-  }
-  body.spectator #spectatorBadge{ display:block; }
-  body.spectator #toolbar{ display:none !important; }
-  body.spectator #viewer{ display:none; } /* 山札サーチ一覧は非表示（共有画面には出さない） */
-  body.spectator.showDiscardViewer #viewer{ display:flex; } /* 捨て札一覧は共有OK */
-  body.spectator.showDiscardViewer #viewerSearch{ display:none !important; }
-  body.spectator.showDiscardViewer #viewerBtns{ display:none !important; }
-
-  #spectatorPickPanel{
-    position:fixed; top:8px; left:8px; z-index:9999;
-    background:#000c; color:#fff; padding:8px 10px; border-radius:12px;
-    display:flex; align-items:center; gap:10px; user-select:none;
-    max-width:420px;
-  }
-  #spectatorPickPanel img{ width:140px; border-radius:10px; box-shadow:0 0 12px #000; }
-  #spectatorPickPanel .title{ font-weight:700; font-size:13px; line-height:1.1; }
-  #spectatorPickPanel .sub{ font-size:12px; opacity:.9; }
-
-  body.spectator #builder{ display:none !important; }
-  body.spectator #startModal{ display:none !important; }
-  body.spectator #board{ pointer-events:auto; } /* 共有用でもエリアUI(重なり)は押せるように */
-  body.spectator .card{ pointer-events:none; } /* カード自体の誤操作防止 */
-
-
-
-/* =========================================================
-   UI Redesign Pack (v3.1) — 2025-12-17
-   目的：見た目を「単調→締まったゲームUI」へ（機能はそのまま）
-   ========================================================= */
-
-:root{
-  --bg0:#0b0d12;
-  --bg1:#0f131b;
-  --panel:rgba(18,22,30,.72);
-  --panelSolid:rgba(18,22,30,.92);
-  --panelEdge:rgba(255,255,255,.10);
-  --text:#eaf0ff;
-  --muted:#a8b3c9;
-
-  --accent:#2dd4ff;        /* cyan */
-  --accent2:#a78bfa;       /* violet */
-  --danger:#ff4d5a;
-  --warn:#ffcc66;
-  --success:#22c55e;
-
-  --shadow:0 18px 45px rgba(0,0,0,.55);
-  --shadowSoft:0 8px 20px rgba(0,0,0,.35);
-
-  --radius:18px;
-  --radiusSm:12px;
-  --pill:999px;
-
-  --ui-bg:var(--panel);
-  --ui-fg:var(--text);
-  --zone-border:rgba(45,212,255,.42);
-  --zone-fill:rgba(45,212,255,.09);
-}
-
-/* base */
-html,body{
-  background: radial-gradient(1200px 900px at 15% 10%, rgba(167,139,250,.14), transparent 60%),
-              radial-gradient(1200px 900px at 85% 45%, rgba(45,212,255,.12), transparent 60%),
-              linear-gradient(180deg, var(--bg1), var(--bg0));
-  color:var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
-}
-
-/* board overlay (上に被さらないように) */
-#board{ background-color:#0b0d12; isolation:isolate; }
-#board::before{
-  content:"";
-  position:absolute; inset:0;
-  background:
-    radial-gradient(900px 600px at 20% 10%, rgba(167,139,250,.16), transparent 60%),
-    radial-gradient(900px 600px at 80% 40%, rgba(45,212,255,.14), transparent 60%),
-    linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.35));
-  pointer-events:none;
-  z-index:0;
-}
-#board .zone, #board .card{ z-index:1; }
-
-/* toolbar */
-#toolbar{
-  border-radius:var(--radius);
-  padding:10px 12px;
-  background: var(--panel);
-  border:1px solid var(--panelEdge);
-  box-shadow: var(--shadowSoft);
-  backdrop-filter: blur(12px) saturate(140%);
-  gap:10px;
-  font-size:12px;
-}
-
-/* common button look */
-#toolbar button,
-#toolbar label,
-.zoneUI button,
-.areaUI button,
-.rageBtns button,
-#viewerBtns button,
-#builderFooter button,
-#tokenFooter button,
-#stackFooter button,
-.stackCtrl button,
-.revealCtrl button,
-#revealFooter button,
-#startBox button{
-  border-radius: var(--pill);
-  border:1px solid rgba(255,255,255,.14);
-  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
-  color:var(--text);
-  box-shadow: 0 6px 16px rgba(0,0,0,.28);
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, filter .12s ease;
-  letter-spacing:.01em;
-}
-
-#toolbar button,
-#toolbar label{ padding:9px 18px; min-width:76px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
-#toolbar button:hover,
-#toolbar label:hover{ transform: translateY(-1px); filter: brightness(1.05); border-color: rgba(255,255,255,.22); }
-#toolbar button:active,
-#toolbar label:active{ transform: translateY(0) scale(.98); box-shadow: 0 4px 12px rgba(0,0,0,.22); }
-#toolbar button:focus-visible,
-#toolbar label:focus-visible{ outline:2px solid rgba(45,212,255,.55); outline-offset:2px; }
-
-#toolbar select{
-  background: rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.14);
-  color:var(--text);
-  border-radius: var(--pill);
-  padding:6px 10px;
-}
-
-/* highlight key actions */
-#btnRemove{
-  background: linear-gradient(180deg, rgba(255,77,90,.95), rgba(185,18,32,.92)) !important;
-  border-color: rgba(255,140,150,.35) !important;
-}
-#btnTurnStart{
-  background: linear-gradient(180deg, rgba(45,212,255,.30), rgba(32,96,255,.30)) !important;
-  border-color: rgba(45,212,255,.30) !important;
-}
-#btnOpenSpectator{
-  background: linear-gradient(180deg, rgba(34,197,94,.30), rgba(45,212,255,.22)) !important;
-  border-color: rgba(34,197,94,.30) !important;
-}
-#btnSave{
-  background: linear-gradient(180deg, rgba(255,204,102,.26), rgba(255,255,255,.06)) !important;
-  border-color: rgba(255,204,102,.22) !important;
-}
-
-/* zones */
-.zone{
-  border:1px solid var(--zone-border) !important;
-  border-style: solid !important;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(45,212,255,.10), rgba(45,212,255,.04)) !important;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
-  padding:0 !important;
-  overflow: visible;
-}
-.zone-label{
-  top:8px !important;
-  left:8px !important;
-  font-weight:700;
-  font-size:12px;
-  color: rgba(234,240,255,.95);
-  background: rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.10);
-  padding:4px 8px;
-  border-radius: var(--pill);
-  backdrop-filter: blur(8px);
-  text-shadow:none !important;
-}
-
-/* slot 1-8 labels outside the frame */
-.zone.slot-zone .zone-label{
-  top:-26px !important;
-  left:50% !important;
-  transform:translateX(-50%) !important;
-}
-
-/* zone buttons */
-.zoneUI{ right:8px !important; bottom:8px !important; gap:6px !important; }
-
-/* deckMain: ボタンが枠からはみ出さないように折り返し */
-.zone[data-zone-id="deckMain"] .zoneUI{
-  left:8px !important;
-  right:8px !important;
-  max-width:calc(100% - 16px) !important;
-  flex-wrap:wrap !important;
-  justify-content:flex-end !important;
-  align-content:flex-end !important;
-}
-.zone[data-zone-id="deckMain"] .zoneUI button{
-  white-space:nowrap;
-  flex:0 0 auto;
-}
-
-.zoneUI button,
-.areaUI button,
-.rageBtns button{
-  font-size:11px !important;
-  padding:6px 10px !important;
-  border-radius: var(--pill) !important;
-  background: rgba(0,0,0,.45) !important;
-  border:1px solid rgba(255,255,255,.14) !important;
-  box-shadow: 0 10px 18px rgba(0,0,0,.30) !important;
-}
-.zoneUI button:hover,
-.areaUI button:hover,
-.rageBtns button:hover{ filter: brightness(1.06); transform: translateY(-1px); }
-
-/* areaUI position tweak (outside the frame) */
-.areaUI{
-  top:-34px !important;
-  left:auto !important;
-  right:0px !important;
-  transform:none !important;
-  gap:6px !important;
-}
-
-/* solo: flipLayout(上側盤面)のslot1~5は手札と被るので、エリアボタンをゾーン下へ */
-body.flipLayout .zone[data-zone-id="slot1"] .areaUI,
-body.flipLayout .zone[data-zone-id="slot2"] .areaUI,
-body.flipLayout .zone[data-zone-id="slot3"] .areaUI,
-body.flipLayout .zone[data-zone-id="slot4"] .areaUI,
-body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
-  top: calc(100% + 8px) !important;
-  bottom: auto !important;
-}
-
-
-/* counters */
-#deckCounter,#discardCounter,#monsterCounter{
-  border-radius: var(--pill) !important;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.35) !important;
-  padding:6px 10px !important;
-  font-size:14px !important;
-  box-shadow: 0 10px 18px rgba(0,0,0,.28);
-}
-
-/* cards */
-.card{
-  border-radius: 12px !important;
-  box-shadow: 0 14px 28px rgba(0,0,0,.38) !important;
-  outline: 1px solid rgba(255,255,255,.06);
-  transition: box-shadow .14s ease, transform .14s ease, filter .14s ease;
-  will-change: transform;
-}
-.card.active{
-  box-shadow: 0 0 0 2px rgba(45,212,255,.55), 0 18px 40px rgba(0,0,0,.55) !important;
-}
-.card.selected{
-  outline: 2px solid rgba(255, 214, 10, .90) !important;
-  box-shadow: 0 0 0 3px rgba(255, 214, 10, .28), 0 18px 40px rgba(0,0,0,.55) !important;
-}
-
-/* modals: overlay */
-#viewer,#builder,#token,#stack,#reveal,#startModal{
-  background:
-    radial-gradient(900px 600px at 20% 10%, rgba(167,139,250,.18), transparent 60%),
-    radial-gradient(900px 600px at 80% 40%, rgba(45,212,255,.14), transparent 60%),
-    rgba(0,0,0,.82) !important;
-}
-
-/* modals: panels */
-#viewerPanel,#builderPanel,#tokenPanel,#stackPanel,#revealPanel,#startBox{
-  background: linear-gradient(180deg, rgba(18,22,30,.94), rgba(10,12,16,.90)) !important;
-  border:1px solid rgba(255,255,255,.10) !important;
-  border-radius: 20px !important;
-  box-shadow: var(--shadow) !important;
-}
-
-/* headings */
-#viewerPanel h2,
-#builderPanel h2,
-#tokenPanel h2,
-#stackPanel h2,
-#revealPanel h2,
-
-#startBox h1{
-  letter-spacing:.02em;
-}
-
-/* inputs */
-#viewerSearch,
-#libFilter,
-
-#tokenCount,
-#builderFooter textarea{
-  border-radius: 14px !important;
-  border:1px solid rgba(255,255,255,.12) !important;
-  background: rgba(0,0,0,.35) !important;
-  color: var(--text) !important;
-  padding:10px 12px !important;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
-}
-#builderFooter textarea{ padding:10px 12px !important; }
-
-/* list containers */
-#viewerGrid,#libList,#deckScroll{
-  border-radius: 16px !important;
-  border:1px solid rgba(255,255,255,.10) !important;
-  background: rgba(0,0,0,.22) !important;
-}
-
-/* rows */
-.stackRow,.revealRow{
-  border-radius: 16px !important;
-  border:1px solid rgba(255,255,255,.10) !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;
-}
-.stackRow:hover,.revealRow:hover{ filter: brightness(1.05); }
-.stackRow.selected,.revealRow.selected{
-  outline:2px solid rgba(255, 214, 10, .80) !important;
-}
-
-/* thumbs */
-.thumbWrap img,
-.libCard img,
-.deckThumb img,
-.stackThumb img,
-.revealThumb img,
-.tokenThumb img{
-  outline: 1px solid rgba(255,255,255,.08);
-}
-
-/* spectator badge */
-#spectatorBadge{
-  background: rgba(0,0,0,.40) !important;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--pill) !important;
-  box-shadow: var(--shadowSoft) !important;
-  backdrop-filter: blur(10px) saturate(140%);
-}
-
-/* =========================================================
-   Fullscreen Deck Builder
-   - 盤面が透けて見える/モーダルが小さい問題を解消
-   - 構築画面そのものを画面いっぱいに表示
-   ========================================================= */
-
-/* overlay 자체を不透明にして盤面を見せない */
-#builder{
-  align-items: stretch !important;
-  justify-content: stretch !important;
-  padding: 0 !important;
-  /* 透過なし（背景が“うっすら盤面”にならない） */
-  background:
-    radial-gradient(900px 600px at 20% 10%, rgba(167,139,250,.18), transparent 60%),
-    radial-gradient(900px 600px at 80% 40%, rgba(45,212,255,.14), transparent 60%),
-    linear-gradient(180deg, #0f131b, #0b0d12) !important;
-}
-
-/* パネルをフルスクリーン化 */
-#builderPanel{
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: none !important;
-  max-height: none !important;
-  border-radius: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-}
-#spectatorPickPanel{
-  background: rgba(0,0,0,.40) !important;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 18px !important;
-  box-shadow: var(--shadowSoft) !important;
-  backdrop-filter: blur(10px) saturate(140%);
-}
-
-/* scrollbars (Chromium) */
-*::-webkit-scrollbar{ width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.14); border-radius: 999px; border:2px solid rgba(0,0,0,.25); }
-*::-webkit-scrollbar-track{ background: rgba(0,0,0,.18); border-radius: 999px; }
-
-@media (prefers-reduced-motion: reduce){
-  *{ transition: none !important; animation: none !important; }
-}
-
-
-  /* ===== Solo (一人回し) ===== */
-  #soloContainer.hidden, #soloDeckModal.hidden{display:none !important;}
-  #soloDeckModal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);z-index:10000;}
-  #soloDeckPanel{width:min(760px,92vw);max-height:min(82vh,760px);background:rgba(18,22,32,.96);border:1px solid rgba(90,120,180,.35);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;}
-  #soloDeckHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(90,120,180,.25);}
-  #soloDeckHeader h2{margin:0;font-size:18px;letter-spacing:.02em;}
-  #btnSoloClose{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:6px 10px;cursor:pointer;}
-  #btnSoloClose:hover{background:rgba(255,255,255,.06);}
-  #soloStepText{padding:10px 14px;color:#cfe6ff;font-size:13px;}
-  #soloDeckSearch{margin:0 14px 10px 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(90,120,180,.25);background:rgba(0,0,0,.25);color:#fff;outline:none;}
-  #soloDeckSearch:focus{border-color:rgba(120,170,255,.55);box-shadow:0 0 0 3px rgba(120,170,255,.18);}
-  #soloDeckList{padding:12px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,.18);}
-  .soloDeckItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid rgba(90,120,180,.25);border-radius:14px;background:rgba(255,255,255,.03);}
-  .soloDeckMeta{min-width:0;}
-  .soloDeckName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .soloDeckInfo{opacity:.8;font-size:12px;margin-top:2px;}
-  .soloDeckActions{display:flex;gap:8px;flex:0 0 auto;}
-  .soloDeckActions button{background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
-  .soloDeckActions button:hover{background:rgba(255,255,255,.06);}
-  .soloDeckActions button.primary{background:rgba(0,160,255,.22);border-color:rgba(0,160,255,.45);}
-  .soloDeckActions button.primary:hover{background:rgba(0,160,255,.30);}
-  #soloDeckFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid rgba(90,120,180,.25);background:rgba(10,12,18,.75);}
-  #soloPickedInfo{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #soloDeckFooter .btnRow{display:flex;gap:8px;}
-  #soloDeckFooter button{background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
-  #soloDeckFooter button:disabled{opacity:.45;cursor:not-allowed;}
-  #soloDeckFooter button.primary{background:rgba(0,160,255,.22);border-color:rgba(0,160,255,.45);}
-  #soloDeckFooter button.primary:hover{background:rgba(0,160,255,.30);}
-  #soloContainer{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;}
-  #soloTopBar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.10);}
-  #soloTopBar .soloTitle{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #btnSoloExit{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;cursor:pointer;}
-  #btnSoloExit:hover{background:rgba(255,255,255,.10);}
-  #soloScroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;}
-  #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
-
-  /* --- Solo: toolbar pinned + overview (2面同時表示) --- */
-  #toolbar .soloOnly{display:none;}
-  body.soloActive #toolbar .soloOnly{display:inline-flex;}
-  body.soloActive #toolbar{right:8px;}
-  body.soloActive{padding-top:0;}
-  #soloTopBar{display:none;} /* ソロ中は既存ツールバーに集約 */
-  #soloScroll{position:relative;}
-  #soloFrames{display:flex;flex-direction:column;}
-  #soloFrames iframe{width:100vw;height:100vh;border:0;display:block;scroll-snap-align:start;background:#000;}
-  /* 既存の指定をsoloFramesに寄せるため、soloScroll iframeは上書きで軽く残す */
-  #soloScroll iframe{width:100vw;height:100vh;border:0;display:block;background:#000;}
-
-  /* toolbar overlap避け（ソロ中は上に余白を作る） */
-  body.soloActive #soloContainer{ padding-top: var(--soloToolbarH, 56px); }
-  body.soloActive #soloScroll{ height: calc(100vh - var(--soloToolbarH, 56px)); }
-  body.soloActive #soloFrames iframe{ height: calc(100vh - var(--soloToolbarH, 56px)); }
-
-  #soloContainer.overview #soloScroll{
-    overflow:hidden;
-    scroll-snap-type:none;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px;
-  }
-  #soloContainer.overview #soloFrames{
-    position:relative;
-    left:auto;
-    width:auto;
-    transform:scale(var(--soloOverviewScale, .5));
-    transform-origin:center center;
-  }
-
-
-  /* ===== Deck QR ===== */
-  #qrModal{position:fixed;inset:0;z-index:5350;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
-  #qrPanel{width:min(900px,96vw);max-height:92vh;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;}
-  .qrHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
-  .qrHeader h2{margin:0;font-size:18px;}
-  .qrHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
-  .qrBody{padding:12px 14px;display:flex;flex-direction:column;gap:10px;align-items:center;}
-  #qrCanvas{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
-  #qrImg{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
-  #qrText{width:100%;height:84px;resize:none;background:#000;border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:12px;padding:8px 10px;font-size:12px;}
-  .qrHint{font-size:12px;opacity:.8;text-align:center;}
-  .qrBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
-  .qrBtns button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;}
-
-/* ===== Fixed UI size + auto scale (2025-12-26) =====
-   目的：端末差で盤面/ボタンがギチギチにならないよう、
-   「基準解像度で固定して描画 → 画面が小さい時だけ全体を等倍縮小」します。
-*/
-:root{
-  --base-w: 2048px;   /* 添付スクショ基準 */
-  --base-h: 1015px;    /* 添付スクショ基準 */
-  --ui-scale: 1;
-  --stage-left: 0px;
-  --stage-top: 0px;
-}
-
-/* 盤面は基準サイズで描画し、画面が小さいときだけ縮小して収める */
-#stageWrap{
-  position:fixed;
-  inset:0;
-  overflow:hidden;
-  background:#181818;
-  z-index:0;
-}
-#stage{
-  position:absolute;
-  left:var(--stage-left);
-  top:var(--stage-top);
-width:var(--base-w);
-  height:var(--base-h);
-  transform:scale(var(--ui-scale));
-  transform-origin:0 0;
-}
-
-/* boardはstageに追従（既存の 100vw/100vh を上書き） */
-#board{
-  width:100% !important;
-  height:100% !important;
-}
-
-/* toolbarも同じ倍率で縮小（折り返しを起こしにくい固定幅へ） */
-#toolbar{
-  max-width:none !important;
-  width:calc(var(--base-w) - 16px);
-  left:calc(var(--stage-left) + 8px) !important;
-  top:calc(var(--stage-top) + 8px) !important;
-  transform:scale(var(--ui-scale));
-  transform-origin:0 0;
-}
-body.soloActive #toolbar{ right:auto !important; }
-
-
-  /* ===== Shortcuts modal ===== */
-  #shortcuts.hidden{display:none !important;}
-  #shortcuts{position:fixed;inset:0;z-index:13000;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;}
-  #shortcutsPanel{width:min(720px,92vw);max-height:88vh;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;}
-  #shortcutsHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
-  #shortcutsHeader h2{margin:0;font-size:18px;}
-  #shortcutsHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
-  #shortcutsHeader button:hover{background:#666;}
-  #shortcutsBody{padding:12px 14px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
-  .scSection{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:14px;padding:10px 12px;}
-  .scSection h3{margin:0 0 8px;font-size:14px;opacity:.92;}
-  .scTable{width:100%;border-collapse:collapse;font-size:13px;}
-  .scTable td{padding:7px 8px;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;}
-  .scKey{white-space:nowrap;font-weight:800;}
-  .scNote{opacity:.85;font-size:12px;line-height:1.35;}
-  kbd{display:inline-block;padding:2px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);box-shadow:0 1px 0 rgba(0,0,0,.35);font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px;}
-
-  /* ===== Calculator (Play mode) ===== */
-  #calcWidget.hidden{display:none !important;}
-  #calcWidget{position:fixed;right:8px;top:56px;z-index:12050;width:290px;max-width:calc(100vw - 16px);background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.16);border-radius:16px;backdrop-filter:blur(6px);color:#fff;box-shadow:0 14px 40px rgba(0,0,0,.45);overflow:hidden;}
-  #calcHeader{cursor:move;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.10);user-select:none;}
-  #calcHeader .title{font-weight:900;letter-spacing:.03em;}
-  #calcHeader .btns{display:flex;gap:6px;align-items:center;}
-  #calcHeader button{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:10px;padding:4px 8px;cursor:pointer;font-size:12px;}
-  #calcHeader button:hover{background:rgba(255,255,255,.10);}
-  #calcBody{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
-  #calcInput{width:100%;padding:9px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;}
-  #calcInput:focus{border-color:rgba(45,212,255,.75);box-shadow:0 0 0 2px rgba(45,212,255,.18);}
-  #calcRow{display:flex;gap:6px;flex-wrap:wrap;}
-  #calcRow button{flex:1 1 auto;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:12px;padding:7px 10px;cursor:pointer;font-size:12px;}
-  #calcRow button:hover{background:rgba(255,255,255,.10);}
-  #calcResult{font-size:20px;font-weight:900;padding:10px 10px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  #calcResult .val{word-break:break-all;}
-  #calcResult .hint{opacity:.7;font-size:11px;font-weight:600;}
-  #calcHistory{max-height:170px;overflow:auto;border-top:1px solid rgba(255,255,255,.10);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:6px;}
-  .calcHistItem{cursor:pointer;padding:7px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:12px;line-height:1.2;}
-  .calcHistItem:hover{background:rgba(255,255,255,.08);}
-  .calcErr{color:#ffb3b3;font-size:12px;}
-
-
-
-/* ===== Play HUD (monster + total repel) ===== */
-#playHud{
-  position:absolute;
-  right:10px;
-  top:10px;
-  left:auto;
-  z-index:9999;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  pointer-events:none;
-  user-select:none;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
-}
-.playHudPanel{
-  background:rgba(0,0,0,0.72);
-  border:1px solid rgba(255,255,255,0.18);
-  border-radius:10px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.35);
-  overflow:hidden;
-}
-#monsterHud{
-  width:260px;
-}
-#monsterHud .mhTop{
-  display:flex;
-  gap:10px;
-  padding:10px;
-  align-items:flex-start;
-}
-#monsterHud .mhCard{
-  width:120px;
-  aspect-ratio: 63 / 88;
-  border-radius:8px;
-  overflow:hidden;
-  background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.14);
-  flex:0 0 auto;
-}
-#monsterHud .mhCard img{
-  width:100%;
-  height:100%;
-  display:block;
-}
-#monsterHud .mhMeta{
-  flex:1 1 auto;
-  min-width:0;
-  color:#fff;
-}
-#monsterHud .mhName{
-  font-weight:800;
-  font-size: 16px;
-  line-height:1.15;
-  margin:0 0 6px 0;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#monsterHud .mhSub{
-  font-size:12px;
-  opacity:0.9;
-  line-height:1.4;
-}
-#monsterHud .mhSubLine{ margin-top:6px; }
-#monsterHud .mhSubLine:first-child{ margin-top:0; }
-#monsterHud #mhStack{
-  font-size:18px;
-  font-weight:900;
-  padding:4px 8px;
-  letter-spacing:0.04em;
-  line-height:1.15;
-  display:block;
-  width:100%;
-  text-align:center;
-}
-#monsterHud .mhSub .badge{
-  display:inline-block;
-  padding:2px 8px;
-  border-radius:999px;
-  background:rgba(255,255,255,0.10);
-  border:1px solid rgba(255,255,255,0.14);
-  margin-right:6px;
-  max-width:100%;
-  box-sizing:border-box;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#monsterHud #mhArea{
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:0.06em;
-  padding:4px 8px;
-  line-height:1.15;
-  display:block;
-  width:100%;
-  text-align:center;
-}
-#monsterHud .mhStats{
-  display:grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
-  gap:0;
-  border-top:1px solid rgba(255,255,255,0.14);
-}
-#monsterHud .mhStat{
-  padding:10px 10px 8px;
-  border-right:1px solid rgba(255,255,255,0.14);
-  color:#fff;
-  text-align:center;
-}
-#monsterHud .mhStat:last-child{ border-right:none; }
-#monsterHud .mhLabel{
-  font-size:11px;
-  letter-spacing:0.06em;
-  opacity:0.9;
-}
-#monsterHud .mhValue{
-  font-size:22px;
-  font-weight:900;
-  line-height:1.05;
-  margin-top:4px;
-}
-#repelHud{
-  width:260px;
-  padding:10px 12px;
-  color:#fff;
-}
-#repelHud .rhLabel{
-  font-size:16px;
-  font-weight:900;
-  letter-spacing:0.06em;
-  opacity:0.9;
-}
-#repelHud .rhRow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
-#repelHud .rhValue{
-  font-size:28px;
-  font-weight:900;
-  line-height:1.1;
-  margin-top:6px;
-}
-#repelHud .rhNote{
-  margin-top:4px;
-  font-size:11px;
-  opacity:0.75;
-}
-
-
-  /* inline keyword icons in preview */
-  .inline-icon{
-    height:1.20em;
-    vertical-align:-0.12em;
-    margin:0 0.14em;
-    image-rendering:auto;
-  }
-  .inline-icon-range{
-    font-size:0.95em;
-    font-weight:900;
-    margin-left:0.05em;
-    vertical-align:0.15em;
-  }
-
-  .color-icon{height:1.8em;}
-  .advBadge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(255,255,255,0.92);
-    border:1px solid rgba(0,0,0,0.18);
-    border-radius:999px;
-    padding:3px 10px;
-    margin:0 0.12em;
-    vertical-align:middle;
-  }
-  .advBadge .adv-icon{
-    height:1.20em;
-    vertical-align:0;
-    margin:0;
-  }
-</style>
-</head>
-<body>
-  <div id="toolbar" class="hidden">
-
-    <!-- 画像読み込みボタン削除（入力は保持） -->
-    <input id="fileInput" type="file" accept="image/*" multiple>
-
-    <!-- 裏面画像ボタン削除（入力は保持） -->
-    <input id="backInput" type="file" accept="image/*">
-    <button id="btnFlip">選択→表裏反転</button>
-    <button id="btnRemove" style="background:#8b0000;">消滅</button>
-    <button id="btnToFront">最前面</button>
-    <button id="btnToBack">最後面</button>
-    <button id="btnUndo">↩︎Undo</button>
-    <button id="btnSave">💾保存</button>
-    <button id="btnLoad">📥読込</button>
-    <button id="btnOpenSpectator" style="background:#2a8;">📺共有用(手札非表示)</button>
-<button id="btnTurnStart" style="background:#0057b7;">ターンスタート</button>
-    <button id="btnPreview">拡大表示</button>
-    <button id="btnToken">トークン</button>
-        <button id="btnCounter" title="カウンターを載せる（+1000/+3000/+5000/+10000）">➕カウンター</button>
-<button id="btnCoin" title="コイントス（表/裏ランダム）">🪙コイントス</button>
-<button id="btnCalc" title="簡単な計算機を開く/閉じる">🧮計算機</button>
-    <button id="btnShortcuts" title="ショートカット一覧を表示">⌨️ショートカット</button>
-
-    <label>戻す位置
-      <select id="deckReturnPos">
-        <option value="top">上</option>
-        <option value="bottom">下</option>
-      </select>
-    </label>
-<button id="btnSoloOverview" class="soloOnly" title="2人の盤面を縮小して同時に表示">🧩 2面表示</button>
-<button id="btnBackToMode" style="background:#444a;">◀ モード選択に戻る</button>
-  </div>
-
-  <div id="spectatorBadge">共有用（手札 / サーチ非表示）</div>
-  <div id="spectatorPickPanel" class="hidden">
-    <img id="spectatorPickImg" alt="">
-    <div>
-      <div class="title">サーチ選択中</div>
-      <div id="spectatorPickName" class="sub"></div>
-    </div>
-  </div>
-
-  <div id="stageWrap"><div id="stage">
-    <div id="board"></div>
-    <div id="deckCounter"></div>
-    <div id="discardCounter"></div>
-    <div id="monsterCounter"></div>
-  </div></div>
-
-<!-- start modal -->
-  <div id="startModal">
-    <div id="startBox">
-      <h1>G-CARD Director</h1>
-      <button id="btnStartBuild">デッキ構築モード</button>
-      <button id="btnStartPlay">プレイモード</button>
-    </div>
-  </div>
-
-  <!-- deck builder -->
-  <div id="builder" class="hidden">
-    <div id="builderPanel">
-      <h2>デッキ構築</h2>
-      <div id="builderMain">
-        <div id="libPane">
-          <h3>カード一覧</h3>
-
-          <!-- set / pack filter (collapsible) -->
-          <div id="libSetSection" class="setSection">
-            <div id="libSetHeader" class="setHeader" role="button" tabindex="0" aria-controls="libSetBarWrap" aria-expanded="true">
-              <div class="setHeaderLeft">
-                <span class="setHeaderTitle">弾フィルタ</span>
-                <span class="setHeaderCurrent" id="libSetCurrent">すべて</span>
-              </div>
-              <button id="btnLibSetToggle" type="button" class="setToggle" aria-label="弾フィルタを折りたたみ/展開">▾</button>
-            </div>
-            <div id="libSetBarWrap">
-              <div id="libSetBar"></div>
-            </div>
-          </div>
-
-          <input id="libFilter" placeholder="名前 / 特徴 / テキストで検索…" />
-           <div id="libMetaBar">
-             <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="緑">緑</option><option value="白">白</option></select>
-             <select id="libType"><option value="">種別:すべて</option><option value="怪獣">怪獣</option><option value="交戦">交戦</option><option value="戦略">戦略</option></select>
-             <select id="libGrade"><option value="">等級:すべて</option></select>
-           </div>
-          <div id="libList"></div>
-        </div>
-        <div id="deckPane">
-          <h3>現在のデッキ</h3>
-          <div id="deckScroll">
-            <div class="deckGroup" id="grpMonster"><h4>怪獣デッキ</h4><div class="deckGrid" id="gridMonster"></div></div>
-            <div class="deckGroup" id="grpMain"><h4>メインデッキ</h4><div class="deckGrid" id="gridMain"></div></div>
-          </div>
-        </div>
-      </div>
-      <div id="builderFooter">
-        <div id="countInfo">メイン 0/50　怪獣 0/4</div>
-        <textarea id="deckCodeBox" placeholder="ここにデッキコードを貼る / 生成されたコードが出る"></textarea>
-        <div class="builderBtnCol">
-          <button id="btnCodeLoad">コード読込</button>
-          <button id="btnCodeGen">コード生成</button>
-          <button id="btnQrGen" title="現在のデッキをQRで共有">QR生成</button>
-          <button id="btnQrFile" title="QR画像（スクショ等）からデッキを取り込む">画像QR読込</button>
-          <input id="qrFileInput" type="file" accept="image/*" class="hidden" />
-          <button id="btnBuildStart">このデッキで開始</button>
-          <button id="btnBuildSolo" title="一人回し（2デッキ選択）">一人回し</button>
-          <button id="btnBuildCancel">キャンセル</button>
-          <div class="builderSep"></div>
-          <button id="btnDeckSave" title="構築中のデッキを保存して一覧に登録">💾デッキセーブ</button>
-          <button id="btnDeckLoad" title="保存済みデッキ一覧を開く">📚デッキロード</button>
-          <button id="btnDeckDownload" title="保存済みデッキ一覧(セーブデータ)をJSONでダウンロード">⬇セーブDL</button>
-          <label class="btnLike" title="ダウンロードしたセーブデータ(JSON)をアップロードして取り込む">⬆セーブUP<input id="deckUploadInput" type="file" accept="application/json,.json"></label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- deck QR -->
-  <div id="qrModal" class="hidden">
-    <div id="qrPanel" role="dialog" aria-modal="true" aria-label="デッキQR">
-      <div class="qrHeader">
-        <h2>デッキQR</h2>
-        <button id="btnQrClose" type="button">閉じる</button>
-      </div>
-      <div class="qrBody">
-        <canvas id="qrCanvas" width="320" height="320"></canvas>
-        <img id="qrImg" width="320" height="320" alt="QR" style="display:none;" />
-        <div class="qrHint">スマホで読み取ってデッキを取り込めます</div>
-        <textarea id="qrText" readonly></textarea>
-        <div class="qrBtns">
-          <button id="btnQrCopy" type="button">コードをコピー</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  
-
-  <!-- deck manager -->
-  <div id="deckMgr" class="hidden">
-    <div id="deckMgrPanel" role="dialog" aria-modal="true" aria-label="デッキ一覧">
-      <div id="deckMgrHeader">
-        <h2>デッキ一覧</h2>
-        <div class="deckMgrRight">
-          <input id="deckMgrSearch" type="text" placeholder="名前で検索" />
-          <button id="btnDeckMgrClose">閉じる</button>
-        </div>
-      </div>
-      <div id="deckMgrList"></div>
-      <div id="deckMgrFooter">
-        <div class="hint"><span id="deckMgrCount">0</span> 件</div>
-        <button id="btnDeckMgrDownload" title="保存済みデッキ一覧(セーブデータ)をJSONでダウンロード">⬇一覧DL</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- viewer -->
-  <div id="viewer" class="hidden">
-    <div id="viewerPanel">
-      <h2 id="viewerTitle"></h2>
-      <input id="viewerSearch" type="text" placeholder="名前でフィルタ...">
-      <div id="viewerGrid"></div>
-      <div id="viewerBtns">
-        <button id="btnViewerSelectAll">全選択/解除</button>
-        <button id="btnViewerCancel">キャンセル</button>
-        <button id="btnViewerToDiscard" style="display:none;">選択→捨て札へ</button>
-        <button id="btnViewerToHand">選択→手札へ</button>
-      </div>
-    </div>
-  </div>
-
-<!-- preview -->
-  <div id="preview" class="hidden">
-    <div id="previewPanel">
-       <div id="previewLeft"><img id="previewImg" src="" alt="preview"></div>
-       <div id="previewInfo" aria-label="カード情報"></div>
-       <button id="previewClose">×</button>
-     </div>
-  </div>
-
-  <!-- token selector -->
-  <div id="token" class="hidden">
-    <div id="tokenPanel">
-      <h2>トークンを選択</h2>
-      <div id="tokenGrid"></div>
-      <div id="tokenFooter">
-        <label>枚数 <input id="tokenCount" type="number" min="1" max="20" value="1"></label>
-        <button id="btnTokenCancel">キャンセル</button>
-        <button id="btnTokenCreate">生成</button>
-      </div>
-    </div>
-  </div>
-
-
-</div>
-
-  <!-- counter selector -->
-  <div id="counter" class="hidden" aria-label="カウンター選択">
-    <div id="counterPanel">
-      <h2>カウンターを選択</h2>
-      <div id="counterHelp">選択中のカードに載せます。<b>C</b>で開く / <b>1〜4</b>で即適用</div>
-      <div id="counterGrid"></div>
-      <div id="counterFooter">
-        <button id="btnCounterClear" type="button">カウンター消去</button>
-        <button id="btnCounterCancel" type="button">閉じる</button>
-      </div>
-    </div>
-  </div>
-
-  
-  <!-- stack / overlap manager -->
-  <div id="stack" class="hidden">
-    <div id="stackPanel">
-      <h2 id="stackTitle">重なり</h2>
-      <div id="stackHelp">上（手前）ほど盤面で上に表示されます。クリックで選択、ボタンで順番を変更できます。<br>束をまとめて移動：<b>「束を丸ごと移動」</b> か <b>Alt+ドラッグ</b></div>
-      <div id="stackList"></div>
-      <div id="stackFooter">
-        <button id="btnStackMoveAll">束を丸ごと移動</button>
-        <button id="btnStackClose">閉じる</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- reveal / deck top 공개 -->
-  <div id="reveal" class="hidden">
-    <div id="revealPanel">
-      <h2 id="revealTitle">山札 公開</h2>
-      <div id="revealHelp">上（山札の上）ほど先に引かれます。クリックで選択、▲▼で順番変更できます。</div>
-      <div id="revealList"></div>
-      <div id="revealFooter">
-        <button id="btnRevealSelectAll">全選択/解除</button>
-        <button id="btnRevealToHand">選択→手札へ</button>
-        <button id="btnRevealToDiscard">選択→捨て札へ</button>
-        <button id="btnRevealReturn">この順で山札上へ戻す</button>
-        <button id="btnRevealCancel">キャンセル</button>
-      </div>
-    </div>
-  </div>
-
-
-
-  <!-- shortcuts list -->
-  <div id="shortcuts" class="hidden">
-    <div id="shortcutsPanel" role="dialog" aria-modal="true" aria-label="ショートカット一覧">
-      <div id="shortcutsHeader">
-        <h2>ショートカット一覧</h2>
-        <button id="btnShortcutsClose" type="button">閉じる</button>
-      </div>
-      <div id="shortcutsBody">
-        <div class="scSection">
-          <h3>盤面操作（プレイモード）</h3>
-          <table class="scTable">
-            <tr><td class="scKey"><kbd>Shift</kbd> + クリック</td><td>複数選択 / 解除（トグル）</td></tr>
-            <tr><td class="scKey">ドラッグ</td><td>選択カードを移動（複数選択中はまとめて移動）</td></tr>
-            <tr><td class="scKey"><kbd>Alt</kbd> + ドラッグ</td><td>同じエリアに重なっている束をまとめて移動（手札/山札/捨て札以外）</td></tr>
-            <tr><td class="scKey"><kbd>Alt</kbd> + ホイール</td><td>カードの拡大 / 縮小</td></tr>
-            <tr><td class="scKey"><kbd>F</kbd></td><td>選択カードを表裏反転</td></tr>
-            <tr><td class="scKey"><kbd>Delete</kbd></td><td>選択カードを消滅（完全削除）</td></tr>
-            <tr><td class="scKey"><kbd>E</kbd></td><td>選択カードを最前面へ</td></tr>
-            <tr><td class="scKey"><kbd>R</kbd></td><td>選択カードを最後面へ</td></tr>
-                        <tr><td class="scKey"><kbd>C</kbd></td><td>カウンター選択（選択中のカードに載せる）</td></tr>
-            <tr><td class="scKey"><kbd>1</kbd>〜<kbd>4</kbd></td><td>カウンター即適用（+1000 / +3000 / +5000 / +10000）</td></tr>
-<tr><td class="scKey"><kbd>Space</kbd></td><td>拡大表示（選択中のカード）</td></tr>
-            <tr><td class="scKey"><kbd>Esc</kbd></td><td>開いているパネルを閉じる（拡大/重なり/公開/トークン/この一覧 など）</td></tr>
-          </table>
-          <div class="scNote">※共有用（観戦）ウィンドウは手札/サーチ非表示のため、盤面操作ショートカットも無効です。</div>
-        </div>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- calculator widget (toggle from toolbar) -->
-  <div id="calcWidget" class="hidden" aria-label="計算機">
-    <div id="calcHeader">
-      <div class="title">🧮 計算機</div>
-      <div class="btns">
-        <button id="btnCalcClear" type="button" title="クリア">C</button>
-        <button id="btnCalcClose" type="button" title="閉じる">✕</button>
-      </div>
-    </div>
-    <div id="calcBody">
-      <input id="calcInput" type="text" inputmode="decimal" autocomplete="off" placeholder="例: (1200+400)*2  /  12.5*3  /  2^10">
-      <div id="calcRow">
-        <button id="btnCalcEval" type="button">= 計算</button>
-        <button id="btnCalcCopy" type="button">結果コピー</button>
-        <button id="btnCalcBack" type="button">⌫</button>
-      </div>
-      <div id="calcResult"><div class="val">0</div><div class="hint">Enterで計算</div></div>
-      <div id="calcErr" class="calcErr hidden"></div>
-      <div id="calcHistory"></div>
-    </div>
-  </div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="card_meta.js"></script>
-<script>
 /***********************************************
  * v1.33a 変更点
  * - 怪獣デッキ生成順を反転：デッキ構築画面左→右の順で上になる
@@ -1590,18 +110,41 @@ const monsterCounterEl=document.getElementById('monsterCounter');
 const toolbar=document.getElementById('toolbar');
 // ===== Fixed UI size + auto scale =====
 let __uiScale = 1;
+let __lastStableUIScale = 1;
+let __lastStableStageLeft = 0;
+let __lastStableStageTop = 0;
 function applyUIScale(){
   const rs = getComputedStyle(document.documentElement);
   const baseW = parseFloat(rs.getPropertyValue('--base-w')) || 2048;
   const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 974;
-  const w = window.innerWidth || document.documentElement.clientWidth || baseW;
-  const h = window.innerHeight || document.documentElement.clientHeight || baseH;
+
+  // ピンチズーム中は visual viewport が細かく変動し、
+  // stage位置/スケールの再計算で盤面が飛ぶことがある。
+  // そのため zoom 中は最後の安定値を維持する。
+  const vv = window.visualViewport;
+  const vvScale = (vv && Number.isFinite(vv.scale) && vv.scale > 0) ? vv.scale : 1;
+  const isPinchZooming = vvScale > 1.001;
+  if(isPinchZooming){
+    document.documentElement.style.setProperty('--ui-scale', String(__lastStableUIScale || 1));
+    document.documentElement.style.setProperty('--stage-left', (__lastStableStageLeft || 0) + 'px');
+    document.documentElement.style.setProperty('--stage-top', (__lastStableStageTop || 0) + 'px');
+    return;
+  }
+
+  let w = document.documentElement.clientWidth || window.innerWidth || baseW;
+  let h = document.documentElement.clientHeight || window.innerHeight || baseH;
+
   let s = Math.min(1, w/baseW, h/baseH);
   if(!isFinite(s) || s<=0) s = 1;
+  __lastStableUIScale = s;
+
   __uiScale = s;
   document.documentElement.style.setProperty('--ui-scale', String(s));
-  const stageLeft = Math.max(0, (w - baseW * s) / 2);
-  const stageTop  = 0;
+  let stageLeft = Math.max(0, (w - baseW * s) / 2);
+  let stageTop  = 0;
+  __lastStableStageLeft = stageLeft;
+  __lastStableStageTop = stageTop;
+
   document.documentElement.style.setProperty('--stage-left', stageLeft + 'px');
   document.documentElement.style.setProperty('--stage-top', stageTop + 'px');
 }
@@ -1614,6 +157,10 @@ function getPointerBoardPos(ev){
 }
 applyUIScale();
 window.addEventListener('resize', applyUIScale);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', applyUIScale);
+  window.visualViewport.addEventListener('scroll', applyUIScale);
+}
 
 const btnFlip=document.getElementById('btnFlip');
 const btnRemove=document.getElementById('btnRemove'); // [patch]
@@ -1919,9 +466,32 @@ const btnBackToMode=document.getElementById('btnBackToMode');
 const btnToken=document.getElementById('btnToken');
 const btnCounter=document.getElementById('btnCounter');
 const btnCoin=document.getElementById('btnCoin');
+const btnToolbarCollapse=document.getElementById('btnToolbarCollapse');
 const deckReturnPosSel=document.getElementById('deckReturnPos'); // [patch]
 let deckReturnPos=deckReturnPosSel?deckReturnPosSel.value:'top'; // [patch]
 if(deckReturnPosSel){deckReturnPosSel.onchange=()=>{deckReturnPos=deckReturnPosSel.value;};}
+
+function setToolbarCollapsed(collapsed){
+  if(!toolbar) return;
+  const isCollapsed = !!collapsed;
+  toolbar.classList.toggle('collapsed', isCollapsed);
+  if(btnToolbarCollapse){
+    btnToolbarCollapse.setAttribute('aria-expanded', (!isCollapsed).toString());
+    btnToolbarCollapse.textContent = isCollapsed ? '▸ ツールバー' : '▾ ツールバー';
+  }
+  try{ localStorage.setItem('toolbarCollapsed', isCollapsed ? '1' : '0'); }catch(e){}
+}
+function loadToolbarCollapsed(){
+  let collapsed = false;
+  try{ collapsed = localStorage.getItem('toolbarCollapsed') === '1'; }catch(e){}
+  setToolbarCollapsed(collapsed);
+}
+if(btnToolbarCollapse){
+  btnToolbarCollapse.addEventListener('click', ()=>{
+    setToolbarCollapsed(!toolbar.classList.contains('collapsed'));
+  });
+}
+loadToolbarCollapsed();
 
 // start modal
 const startModal=document.getElementById('startModal');
@@ -1934,6 +504,10 @@ try{ if(FLIP_LAYOUT) document.body.classList.add('flipLayout'); }catch(e){}
 
 // builder
 const builder=document.getElementById('builder');
+const builderMain=document.getElementById('builderMain');
+const mobileBuilderTabs=document.getElementById('mobileBuilderTabs');
+const btnMobileShowLib=document.getElementById('btnMobileShowLib');
+const btnMobileShowDeck=document.getElementById('btnMobileShowDeck');
 const libFilter=document.getElementById('libFilter');
 const libColor=document.getElementById('libColor');
 const libType=document.getElementById('libType');
@@ -1996,6 +570,9 @@ const btnCodeGen=document.getElementById('btnCodeGen');
 const btnBuildStart=document.getElementById('btnBuildStart');
 const btnBuildSolo=document.getElementById('btnBuildSolo');
 const btnBuildCancel=document.getElementById('btnBuildCancel');
+const builderFooter=document.getElementById('builderFooter');
+const builderFooterHeader=document.getElementById('builderFooterHeader');
+const btnBuilderFooterToggle=document.getElementById('btnBuilderFooterToggle');
 
 const btnQrGen=document.getElementById('btnQrGen');
 const btnQrFile=document.getElementById('btnQrFile');
@@ -2041,6 +618,11 @@ const stackTitle=document.getElementById('stackTitle');
 const stackList=document.getElementById('stackList');
 const btnStackClose=document.getElementById('btnStackClose');
 const btnStackMoveAll=document.getElementById('btnStackMoveAll');
+const stackDropChooser=document.getElementById('stackDropChooser');
+const stackDropChooserTitle=document.getElementById('stackDropChooserTitle');
+const btnStackDropTop=document.getElementById('btnStackDropTop');
+const btnStackDropSecondTop=document.getElementById('btnStackDropSecondTop');
+const btnStackDropBottom=document.getElementById('btnStackDropBottom');
 let stackZoneId=null;
 let stackSelectedId=null;
 
@@ -2083,6 +665,43 @@ stackModal.addEventListener('click',e=>{ if(e.target===stackModal) closeStack();
 stackModal.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();closeStack();}
 });
+
+function shouldAskStackDrop(cardId, zoneId){
+  if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return false;
+  return state.order.some(id=>id!==cardId && state.cards[id] && state.cards[id].zone===zoneId);
+}
+function chooseStackDropPos(zoneId){
+  return new Promise((resolve)=>{
+    if(!stackDropChooser){ resolve('top'); return; }
+    const z=zones.find(z=>z.id===zoneId);
+    if(stackDropChooserTitle){
+      stackDropChooserTitle.textContent = z ? `「${z.name}」に重ねる位置を選択` : '重ねる位置を選択';
+    }
+    const done=(v)=>{
+      stackDropChooser.classList.add('hidden');
+      cleanup();
+      resolve(v || 'top');
+    };
+    const onKey=(e)=>{ if(e.key==='Escape'){ e.preventDefault(); done('top'); } };
+    const onTop=()=>done('top');
+    const onSecond=()=>done('secondTop');
+    const onBottom=()=>done('bottom');
+    const onBackdrop=(e)=>{ if(e.target===stackDropChooser) done('top'); };
+    const cleanup=()=>{
+      document.removeEventListener('keydown', onKey, true);
+      stackDropChooser.removeEventListener('click', onBackdrop);
+      btnStackDropTop && btnStackDropTop.removeEventListener('click', onTop);
+      btnStackDropSecondTop && btnStackDropSecondTop.removeEventListener('click', onSecond);
+      btnStackDropBottom && btnStackDropBottom.removeEventListener('click', onBottom);
+    };
+    btnStackDropTop && btnStackDropTop.addEventListener('click', onTop);
+    btnStackDropSecondTop && btnStackDropSecondTop.addEventListener('click', onSecond);
+    btnStackDropBottom && btnStackDropBottom.addEventListener('click', onBottom);
+    stackDropChooser.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey, true);
+    stackDropChooser.classList.remove('hidden');
+  });
+}
 
 function getZoneCardIds(zoneId){
   // state.order の順（奥→手前）で返す
@@ -3127,12 +1746,15 @@ function rerenderAll(){state.order.forEach(id=>renderCard(state.cards[id]));}
 function onClickCard(ev,card){if(ev.shiftKey){selection.has(card.id)?selection.delete(card.id):selection.add(card.id);}else{selection.clear();selection.add(card.id);}updateSelectionVisual();ev.stopPropagation();}
 board.addEventListener('click',()=>{selection.clear();updateSelectionVisual();});
 function updateSelectionVisual(){document.querySelectorAll('.card').forEach(e=>e.classList.remove('selected'));selection.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('selected');});}
+const DRAG_COMMIT_DISTANCE = 6;
 let dragInfo=null;function startDrag(ev,card){ev.preventDefault();ev.stopPropagation();// 既に複数選択されている状態で、その中の1枚をドラッグ開始した時は選択を崩さない
 const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));const multi=ev.shiftKey;if(!multi && !keepGroup){selection.clear();selection.add(card.id);updateSelectionVisual();}else if(multi && !selection.has(card.id)){selection.add(card.id);updateSelectionVisual();}let ids=[...selection];
+  let altBulkMove=false;
   // Alt+ドラッグ：同一ゾーン（エリア）のカードをまとめて移動
   if(ev.altKey && card.zone && card.zone!=='hand' && card.zone!=='deckMain' && card.zone!=='discard'){
     const zIds=getZoneCardIds(card.zone);
     if(zIds.length>1){
+      altBulkMove=true;
       ids = zIds.slice(); // 奥→手前（state.order準拠）
       // 選択表示も束に揃える
       selection.clear(); zIds.forEach(id=>selection.add(id));
@@ -3140,28 +1762,72 @@ const keepGroup=(!ev.shiftKey && selection.size>1 && selection.has(card.id));con
     }
   }
   const p=getPointerBoardPos(ev);
-  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y};});dragInfo={ids,rects};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});board.addEventListener('pointermove',onDragMove);board.addEventListener('pointerup',onDragEnd,{once:true});board.addEventListener('pointercancel',onDragEnd,{once:true});}
+  const rects=ids.map(id=>{const c=state.cards[id];return{id,dx:p.x-c.x,dy:p.y-c.y,startX:c.x,startY:c.y,startZone:c.zone};});dragInfo={ids,rects,altBulkMove};rects.forEach(r=>{const el=document.getElementById(r.id);el.classList.add('active');el.setPointerCapture(ev.pointerId);});document.addEventListener('pointermove',onDragMove,true);document.addEventListener('pointerup',onDragEnd,{once:true,capture:true});document.addEventListener('pointercancel',onDragEnd,{once:true,capture:true});}
 function onDragMove(ev){if(!dragInfo)return;const p=getPointerBoardPos(ev);dragInfo.rects.forEach(r=>{const c=state.cards[r.id];c.x=p.x-r.dx;c.y=p.y-r.dy;renderCard(c);});scheduleSpectatorSyncFast();}
-function onDragEnd(ev){
+function placeCardInZoneOrder(cardId, zoneId, posMode){
+  if(!zoneId || zoneId==='hand' || zoneId==='deckMain' || zoneId==='discard' || zoneId==='monster') return;
+  const filtered=state.order.filter(id=>id!==cardId);
+  const zoneIds=filtered.filter(id=>state.cards[id] && state.cards[id].zone===zoneId);
+  if(!zoneIds.length){
+    state.order=filtered.concat(cardId);
+    syncOrderToDOM();
+    return;
+  }
+  let zoneInsert=zoneIds.length;
+  if(posMode==='bottom') zoneInsert=0;
+  else if(posMode==='secondTop') zoneInsert=Math.max(0,zoneIds.length-1);
+  const anchor=(zoneInsert>=zoneIds.length) ? null : zoneIds[zoneInsert];
+  const anchorIdx=anchor ? filtered.indexOf(anchor) : -1;
+  if(anchorIdx===-1) filtered.push(cardId);
+  else filtered.splice(anchorIdx,0,cardId);
+  state.order=filtered;
+  syncOrderToDOM();
+}
+async function onDragEnd(ev){
   if(!dragInfo) return;
-  dragInfo.rects.forEach(r=>{
+  const committedIds=[];
+  document.removeEventListener('pointermove',onDragMove,true);
+  const zoneDropChoice={};
+  for(const r of dragInfo.rects){
     const el=document.getElementById(r.id);
     el.classList.remove('active');
     el.releasePointerCapture(ev.pointerId);
 
     const c=state.cards[r.id];
     const z=hitZone(c);
-    c.zone = z ? z.id : null;
+    const nextZone = z ? z.id : null;
+    const movedDist = Math.hypot(c.x-r.startX, c.y-r.startY);
+    const movedEnough = movedDist >= DRAG_COMMIT_DISTANCE;
+    const zoneChanged = nextZone !== r.startZone;
+    if(!movedEnough && !zoneChanged){
+      c.x=r.startX; c.y=r.startY; c.zone=r.startZone;
+      renderCard(c);
+      continue;
+    }
+
+    committedIds.push(c.id);
+    c.zone = nextZone;
 
     updatePoolsMembership(c);
     hideIfPooled(c);
 
+    if(z){
+      let dropPos='top';
+      if(!dragInfo.altBulkMove && shouldAskStackDrop(c.id, z.id)){
+        if(zoneDropChoice[z.id]) dropPos=zoneDropChoice[z.id];
+        else{
+          dropPos=await chooseStackDropPos(z.id);
+          zoneDropChoice[z.id]=dropPos;
+        }
+      }
+      placeCardInZoneOrder(c.id, z.id, dropPos);
+    }
     if (snapEnabled && z) snapCardToZone(c, z);
     renderCard(c); // ←スナップ後の座標を反映
-  });
+  }
   // （移動）
   try{
-    const n = dragInfo.rects?.length || 0;
+    const n = committedIds.length;
     if(n>0){
       const zonesAfter = [...new Set(dragInfo.rects.map(r=>state.cards[r.id]?.zone||null))];
       if(zonesAfter.length===1){
@@ -3175,8 +1841,10 @@ function onDragEnd(ev){
     }
   }catch(e){}
   dragInfo=null;
-  pushUndo();
-  updateCounters();
+  if(committedIds.length>0){
+    pushUndo();
+    updateCounters();
+  }
 }
 function hitZone(card){const cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--card-w'));const centerX=card.x+(cw*card.scale)/2;const centerY=card.y+(cw*1.333*card.scale)/2;const bw=board.clientWidth,bh=board.clientHeight;for(const z of zones){const zx=z.x*bw,zy=z.y*bh,zw=z.w*bw,zh=z.h*bh;if(centerX>zx&&centerX<zx+zw&&centerY>zy&&centerY<zy+zh){return z;}}return null;}
 
@@ -3582,8 +2250,15 @@ function buildPreviewInfoHtml(card, meta){
 
   let html = `<div class="pvTitle">${name}</div>`;
   html += `<div class="pvSub">${id}${set ? ` / ${set}` : ''}${meta ? '' : ' / （メタ未登録）'}</div>`;
-  html += `<div class="pvRow"><span class="pvKey">色</span>${colorHtml}　<span class="pvKey">種別</span>${type}</div>`;
-  html += `<div class="pvRow"><span class="pvKey">等級</span>${grade}　<span class="pvKey">進攻</span>${advHtml}　<span class="pvKey">脅威度/撃退力</span>${power}</div>`;
+  html += `<div class="pvRow pvRowMeta">`
+    + `<span class="pvItem"><span class="pvKey">色</span><span class="pvVal">${colorHtml}</span></span>`
+    + `<span class="pvItem"><span class="pvKey">種別</span><span class="pvVal">${type}</span></span>`
+    + `</div>`;
+  html += `<div class="pvRow pvRowMeta">`
+    + `<span class="pvItem"><span class="pvKey">等級</span><span class="pvVal">${grade}</span></span>`
+    + `<span class="pvItem"><span class="pvKey">進攻</span><span class="pvVal">${advHtml}</span></span>`
+    + `<span class="pvItem"><span class="pvKey">脅威度/撃退力</span><span class="pvVal">${power}</span></span>`
+    + `</div>`;
 
   if(feats.length){
     html += `<div class="pvTags">` + feats.map(t=>`<span class="pvTag">${escHtml(t)}</span>`).join('') + `</div>`;
@@ -3913,9 +2588,13 @@ try{ lastCoin = (Object.prototype.hasOwnProperty.call(p,'lastCoin')) ? p.lastCoi
 }
 
 // ===== start modal handlers =====
+function setPlayModeUI(active){
+  try{ document.body.classList.toggle('playMode', !!active); }catch(e){}
+}
+
 btnStartBuild.onclick=()=>{startModal.style.display='none';openBuilder();};
-btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');lastCoin=null;updateCoinUI();autoLoadBackImage();};
-function goBackToMode(){if(revealIsOpen()) cancelReveal(); toolbar.classList.add('hidden');viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
+btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');setPlayModeUI(true);lastCoin=null;updateCoinUI();autoLoadBackImage();};
+function goBackToMode(){if(revealIsOpen()) cancelReveal(); toolbar.classList.add('hidden');setPlayModeUI(false);viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
 
 
 // ===== embed instance (used by solo mode iframes) =====
@@ -3923,6 +2602,7 @@ if(IS_EMBED){
   try{ startModal.style.display='none'; }catch(e){}
   try{ builder.classList.add('hidden'); }catch(e){}
   try{ toolbar.classList.add('hidden'); }catch(e){}
+  setPlayModeUI(false);
   try{ if(btnBackToMode) btnBackToMode.style.display='none'; }catch(e){}
   try{ if(btnStartBuild) btnStartBuild.style.display='none'; }catch(e){}
   // keep toolbars in embedded instances, but hide spectator button (not needed)
@@ -3964,7 +2644,7 @@ if(d.type==='SOLO_CMD' && d.targetId){
         const tid = String(d.targetId);
         // select
         if(tid==='deckReturnPos'){
-          const sel = document.getElementById('deckReturnPos');
+          const sel = document.getElementById(tid);
           const v = (d.payload && typeof d.payload.value==='string') ? d.payload.value : '';
           if(sel && v) sel.value = v;
           if(sel) sel.dispatchEvent(new Event('change', {bubbles:true}));
@@ -4306,6 +2986,19 @@ function loadSetBarCollapsed(){
   if(v===null) return; // default: expanded
   setSetBarCollapsed(v==='1');
 }
+
+function setBuilderFooterCollapsed(collapsed){
+  if(!builderFooter) return;
+  builderFooter.classList.toggle('collapsed', !!collapsed);
+  if(builderFooterHeader) builderFooterHeader.setAttribute('aria-expanded', (!collapsed).toString());
+  try{ localStorage.setItem('builderFooterCollapsed', collapsed ? '1' : '0'); }catch(e){}
+}
+function loadBuilderFooterCollapsed(){
+  let v=null;
+  try{ v = localStorage.getItem('builderFooterCollapsed'); }catch(e){}
+  if(v===null) return; // default: expanded
+  setBuilderFooterCollapsed(v==='1');
+}
 if(btnLibSetToggle){
   btnLibSetToggle.addEventListener('click', (e)=>{ e.stopPropagation(); setSetBarCollapsed(!libSetSection.classList.contains('collapsed')); });
 }
@@ -4315,6 +3008,21 @@ if(libSetHeader){
     if(e.key==='Enter' || e.key===' '){
       e.preventDefault();
       setSetBarCollapsed(!libSetSection.classList.contains('collapsed'));
+    }
+  });
+}
+if(btnBuilderFooterToggle){
+  btnBuilderFooterToggle.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    setBuilderFooterCollapsed(!builderFooter.classList.contains('collapsed'));
+  });
+}
+if(builderFooterHeader){
+  builderFooterHeader.addEventListener('click', ()=>{ setBuilderFooterCollapsed(!builderFooter.classList.contains('collapsed')); });
+  builderFooterHeader.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' || e.key===' '){
+      e.preventDefault();
+      setBuilderFooterCollapsed(!builderFooter.classList.contains('collapsed'));
     }
   });
 }
@@ -4382,7 +3090,41 @@ function renderSetBar(){
   updateSetBarActive();
 }
 
-function openBuilder(){builder.classList.remove('hidden');renderSetBar();loadSetBarCollapsed();renderLibrary();renderDeckThumbs();updateBuildCount();}
+
+function setMobileBuilderView(mode='lib'){
+  if(!builderMain) return;
+  const view=(mode==='deck')?'deck':'lib';
+  builderMain.dataset.mobileView=view;
+  if(btnMobileShowLib){
+    const active=view==='lib';
+    btnMobileShowLib.classList.toggle('active', active);
+    btnMobileShowLib.setAttribute('aria-selected', active ? 'true' : 'false');
+  }
+  if(btnMobileShowDeck){
+    const active=view==='deck';
+    btnMobileShowDeck.classList.toggle('active', active);
+    btnMobileShowDeck.setAttribute('aria-selected', active ? 'true' : 'false');
+  }
+}
+function syncMobileBuilderUI(){
+  if(!mobileBuilderTabs || !builderMain) return;
+  const isMobileLandscape = window.matchMedia('(max-width: 768px) and (orientation: landscape)').matches;
+  mobileBuilderTabs.classList.toggle('hidden', !isMobileLandscape);
+  if(!isMobileLandscape){
+    builderMain.dataset.mobileView='';
+    return;
+  }
+  if(builderMain.dataset.mobileView!=='deck' && builderMain.dataset.mobileView!=='lib'){
+    setMobileBuilderView('lib');
+  }else{
+    setMobileBuilderView(builderMain.dataset.mobileView);
+  }
+}
+if(btnMobileShowLib) btnMobileShowLib.addEventListener('click', ()=>setMobileBuilderView('lib'));
+if(btnMobileShowDeck) btnMobileShowDeck.addEventListener('click', ()=>setMobileBuilderView('deck'));
+window.addEventListener('resize', syncMobileBuilderUI);
+
+function openBuilder(){builder.classList.remove('hidden');renderSetBar();loadSetBarCollapsed();loadBuilderFooterCollapsed();renderLibrary();renderDeckThumbs();updateBuildCount();syncMobileBuilderUI();}
 function closeBuilder(){builder.classList.add('hidden');}
 
 function renderLibrary(){
@@ -4432,11 +3174,67 @@ if(libGrade) libGrade.addEventListener('change',renderLibrary);
 
 function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
+// ===== Deck Builder: sort order (怪獣→交戦→戦略, 等級昇順, 色:赤→青→緑→白, カードNo昇順) =====
+const __BUILD_TYPE_RANK = {'怪獣':0,'交戦':1,'戦略':2};
+const __BUILD_COLOR_RANK = {'赤':0,'青':1,'緑':2,'白':3};
+
+function __buildNormId(id){ return String(id||'').replace(/ol$/i,''); }
+
+function __buildTypeOf(id, which){
+  if(which==='monster') return '怪獣';
+  const m = getMetaById(id) || null;
+  const t = String(m && m.type ? m.type : '');
+  if(t.includes('怪獣')) return '怪獣';
+  if(t.includes('交戦')) return '交戦';
+  if(t.includes('戦略')) return '戦略';
+  return t || '';
+}
+function __buildTypeRank(typeStr){
+  return (__BUILD_TYPE_RANK[typeStr] != null) ? __BUILD_TYPE_RANK[typeStr] : 9;
+}
+function __buildGradeNum(id){
+  const m = getMetaById(id) || null;
+  const g = (m && m.grade != null && m.grade !== '') ? Number(m.grade) : NaN;
+  return Number.isFinite(g) ? g : 999;
+}
+function __buildColorRank(id){
+  const m = getMetaById(id) || null;
+  const c = String(m && m.color ? m.color : '').trim();
+  return (__BUILD_COLOR_RANK[c] != null) ? __BUILD_COLOR_RANK[c] : 9;
+}
+function __buildCardNoNum(id){
+  const s = __buildNormId(id);
+  // "BP04-001" / "SD01-015" / "PR-12" などを想定
+  let mm = s.match(/-(\d+)(?!.*\d)/); // 末尾の数字塊（ハイフン区切り優先）
+  if(!mm) mm = s.match(/(\d+)(?!.*\d)/); // 念のため最後の数字塊
+  return mm ? parseInt(mm[1],10) : 999999;
+}
+function __buildSortEntries(which){
+  return (a,b)=>{
+    const ida=a[0], idb=b[0];
+    const ta = __buildTypeRank(__buildTypeOf(ida, which));
+    const tb = __buildTypeRank(__buildTypeOf(idb, which));
+    if(ta!==tb) return ta-tb;
+
+    const ga = __buildGradeNum(ida), gb = __buildGradeNum(idb);
+    if(ga!==gb) return ga-gb;
+
+    const ca = __buildColorRank(ida), cb = __buildColorRank(idb);
+    if(ca!==cb) return ca-cb;
+
+    const na = __buildCardNoNum(ida), nb = __buildCardNoNum(idb);
+    if(na!==nb) return na-nb;
+
+    // 最終安定化（同一Noなどのケース）
+    return __buildNormId(ida).localeCompare(__buildNormId(idb), 'ja');
+  };
+}
 function renderDeckThumbs(){
   gridMonster.innerHTML='';
   gridMain.innerHTML='';
   const buildSection=(obj,grid,which)=>{
-    Object.entries(obj).forEach(([id,num])=>{
+    const entries = Object.entries(obj).sort(__buildSortEntries(which));
+    entries.forEach(([id,num])=>{
       const info = CARD_DB.find(c=>c.id===id) || {srcGuess:WHITE_BACK,name:id,id};
       const wrap=document.createElement('div');
       wrap.className='deckThumb';
@@ -4477,6 +3275,8 @@ function renderDeckThumbs(){
 function updateBuildCount(){const m=sumObj(buildMain),k=sumObj(buildMon);countInfo.textContent=`メイン ${m}/${MAIN_LIMIT}　怪獣 ${k}/${MON_LIMIT}`;btnBuildStart.disabled=!(m===MAIN_LIMIT&&k===MON_LIMIT);}
 function sumObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:buildMon});};
+
+
 
 // ===== Hidden Command Codes (mobile-friendly) =====
 // デッキコード欄 / QR の文字列にコマンドを入れて起動できる
@@ -4571,6 +3371,8 @@ btnCodeLoad.onclick=()=>{
     alert('コードが不正です');
   }
 };
+
+
 
 // ===== Deck QR =====
 function normalizeDeckCodeFromText(t){
@@ -4802,7 +3604,7 @@ qrFileInput && (qrFileInput.onchange=async ()=>{
   applyImportedDeckCode(data);
 });
 btnBuildCancel.onclick=()=>{closeBuilder();startModal.style.display='flex';};
-btnBuildStart.onclick=()=>{if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)===MON_LIMIT)){alert('枚数が足りません');return;}closeBuilder();toolbar.classList.remove('hidden');applyDeckAndStart({main:buildMain,monster:buildMon});autoLoadBackImage();};
+btnBuildStart.onclick=()=>{if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)===MON_LIMIT)){alert('枚数が足りません');return;}closeBuilder();toolbar.classList.remove('hidden');setPlayModeUI(true);applyDeckAndStart({main:buildMain,monster:buildMon});autoLoadBackImage();};
 
 // ===== Solo (一人回し) =====
 let soloPickStep = 1; // 1: you(bottom) / 2: opp(top)
@@ -4875,8 +3677,8 @@ function forwardToActiveIframe(targetId, payload){
     const win = fr.contentWindow;
     if(win && win.document){
       if(targetId === 'deckReturnPos'){
-        const src = document.getElementById('deckReturnPos');
-        const dst = win.document.getElementById('deckReturnPos');
+        const src = document.getElementById(targetId);
+        const dst = win.document.getElementById(targetId);
         const v = (payload && typeof payload.value==='string') ? payload.value : (src ? src.value : '');
         if(dst){
           if(v) dst.value = v;
@@ -5036,7 +3838,7 @@ function wireSoloForwarding(){
     if(t.id === 'deckReturnPos'){
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      forwardToActiveIframe('deckReturnPos', {value: t.value});
+      forwardToActiveIframe(t.id, {value: t.value});
     }
   }, true);
 
@@ -5312,6 +4114,7 @@ function startSoloMode(){
   // hide main UI and open solo container
   try{ builder.classList.add('hidden'); }catch(e){}
   try{ toolbar.classList.remove('hidden'); }catch(e){}
+  setPlayModeUI(true);
   try{ document.body.classList.add('soloActive'); }catch(e){}
   // ソロ開始時はメタ（コイン）を初期化して親・両盤面で揃える
   try{ lastCoin=null; updateCoinUI(); }catch(e){}
@@ -6404,42 +5207,30 @@ let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushU
 
 })();
 
-
-</script>
-
-  <!-- solo deck select modal -->
-  <div id="soloDeckModal" class="hidden">
-    <div id="soloDeckPanel" role="dialog" aria-modal="true" aria-label="一人回し デッキ選択">
-      <div id="soloDeckHeader">
-        <h2>一人回し：デッキ選択</h2>
-        <button id="btnSoloClose" type="button" aria-label="閉じる">✕</button>
-      </div>
-      <div id="soloStepText">1/2：下側（自分）のデッキを選択</div>
-      <input id="soloDeckSearch" type="text" placeholder="デッキ名で検索..." />
-      <div id="soloDeckList"></div>
-      <div id="soloDeckFooter">
-        <div id="soloPickedInfo">未選択</div>
-        <div class="btnRow">
-          <button id="btnSoloBack" type="button" disabled>戻る</button>
-          <button id="btnSoloStart" type="button" class="primary" disabled>開始</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- solo container -->
-  <div id="soloContainer" class="hidden" aria-label="一人回しモード">
-    <div id="soloTopBar">
-      <div class="soloTitle">一人回しモード（▲上に相手盤面 / ▼下に自分盤面）</div>
-      <button id="btnSoloExit" type="button">終了</button>
-    </div>
-    <div id="soloScroll">
-      <div id="soloFrames">
-        <iframe id="soloFrameOpp" title="相手盤面"></iframe>
-        <iframe id="soloFrameYou" title="自分盤面"></iframe>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+// ===== Remake: React migration bridge (non-breaking) =====
+(function attachLegacyBridge(){
+  if(typeof window==='undefined') return;
+  const api = {
+    version: 'remake-1',
+    getStateSnapshot(){
+      return {
+        rageCount: (typeof rageCount!=='undefined') ? rageCount : null,
+        cardCount: (typeof state!=='undefined' && Array.isArray(state?.order)) ? state.order.length : null,
+        selectedIds: (typeof selection!=='undefined' && selection instanceof Set)
+          ? Array.from(selection)
+          : []
+      };
+    },
+    forceRender(){
+      try{
+        if(typeof renderAllCards==='function') renderAllCards();
+        if(typeof updateCounters==='function') updateCounters();
+        if(typeof updateDeckCounter==='function') updateDeckCounter();
+      }catch(e){
+        console.warn('legacy forceRender failed', e);
+      }
+    }
+  };
+  window.GCardLegacyAPI = api;
+  window.dispatchEvent(new CustomEvent('gcard:legacy-ready', { detail: { version: api.version } }));
+})();
