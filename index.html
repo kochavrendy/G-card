@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="G-CARD" />
-<title>G-CARD Directeor_v2.1</title>
+<title>G-CARD Director</title>
 <link rel="icon" type="image/png" href="./カードリスト/ファビコン.png" />
 <link rel="apple-touch-icon" href="./カードリスト/ファビコン.png" />
 <link rel="manifest" href="./manifest.webmanifest" />
@@ -70,6 +70,102 @@
       <h1>G-CARD Director</h1>
       <button id="btnStartBuild">デッキ構築モード</button>
       <button id="btnStartPlay">プレイモード</button>
+      <button id="btnStartTools">補助ツール</button>
+      <p id="startVersion" class="startVersion"></p>
+    </div>
+  </div>
+
+  <div id="toolsModal" class="hidden">
+    <div id="toolsPanel" role="dialog" aria-modal="true" aria-label="補助ツール">
+      <h2>補助ツール</h2>
+      <p class="toolsLead">使いたい補助機能を選んでください。</p>
+      <div class="toolsList">
+        <button id="btnToolThreatCalc" type="button">撃退力・脅威度 自動計算</button>
+        <button id="btnToolAreaCounter" type="button">エリア数表示ツール</button>
+      </div>
+      <button id="btnToolsBack" type="button">◀ モード選択に戻る</button>
+    </div>
+  </div>
+
+
+
+  <div id="areaCounterModal" class="hidden">
+    <div id="areaCounterPanel" role="dialog" aria-modal="true" aria-label="エリア数表示ツール">
+      <div class="acLandscapeOnly">
+        <button id="btnAreaCounterClose" class="acCloseBtn" type="button" aria-label="閉じる">✕</button>
+        <div class="acBoard">
+          <button id="acLeftNumberCircle" class="acNumberCircle" type="button" aria-label="左の数字を選択">1</button>
+          <button id="btnAreaCounterFlip" type="button">反転</button>
+          <button id="acRightNumberCircle" class="acNumberCircle" type="button" aria-label="右の数字を選択">1</button>
+        </div>
+        <div id="acNumberPicker" class="hidden" role="dialog" aria-label="数字選択">
+          <div class="acPickerPanel">
+            <div class="acPickerTitle">番号を選択</div>
+            <div class="acPickerGrid" role="group" aria-label="番号一覧">
+              <button type="button" class="acNumBtn" data-area-num="1">1</button>
+              <button type="button" class="acNumBtn" data-area-num="2">2</button>
+              <button type="button" class="acNumBtn" data-area-num="3">3</button>
+              <button type="button" class="acNumBtn" data-area-num="4">4</button>
+              <button type="button" class="acNumBtn" data-area-num="5">5</button>
+              <button type="button" class="acNumBtn" data-area-num="6">6</button>
+              <button type="button" class="acNumBtn" data-area-num="7">7</button>
+              <button type="button" class="acNumBtn" data-area-num="8">8</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acPortraitOnly">
+        <button id="btnAreaCounterClosePortrait" class="acCloseBtn" type="button" aria-label="閉じる">✕</button>
+        <p>このツールは横画面限定です。端末を横向きにしてください。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="threatCalcModal" class="hidden">
+    <div id="threatCalcPanel" role="dialog" aria-modal="true" aria-label="撃退力脅威度の自動計算">
+      <div class="tcHeader">
+        <h2>撃退力・脅威度 自動計算</h2>
+        <button id="btnThreatCalcClose" type="button">閉じる</button>
+      </div>
+      <p class="tcLead">カードを選ぶだけで、メタデータから素の数値を自動取得します。</p>
+      <div class="tcGrid">
+        <div class="tcPickerField">
+          <div class="tcFieldTitle">怪獣カード</div>
+          <button id="tcMonsterPick" class="tcPickBtn" type="button">怪獣カードを選ぶ</button>
+          <div class="tcChosenCard" id="tcMonsterChosen" role="button" tabindex="0" aria-label="怪獣カードを選択">
+            <img id="tcMonsterImg" class="tcThumb" src="" alt="怪獣カード画像プレビュー">
+            <div class="tcChosenMeta">
+              <div id="tcMonsterName" class="tcChosenName">未選択</div>
+              <div id="tcMonsterBase" class="tcBaseVal">素:0</div>
+            </div>
+          </div>
+        </div>
+        <label>怒りカウント<input id="tcRage" type="number" inputmode="numeric" value="0"></label>
+        <label>怪獣カウンター合計<input id="tcMonsterCounter" type="number" inputmode="numeric" value="0"></label>
+        <label>戦略ゾーンのカウンター合計<input id="tcStrategyCounter" type="number" inputmode="numeric" value="0"></label>
+      </div>
+
+      <div class="tcBattleList" id="tcBattleList"></div>
+
+      <div class="tcSummary">
+        <div class="tcItem"><span>脅威度</span><strong id="tcThreatResult">0</strong></div>
+        <div class="tcItem"><span>撃退力合計</span><strong id="tcRepelResult">0</strong></div>
+        <div class="tcItem"><span>差分（撃退力-脅威度）</span><strong id="tcDiffResult">0</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tcCardPicker" class="hidden">
+    <div id="tcCardPickerPanel" role="dialog" aria-modal="true" aria-label="カード選択">
+      <div class="tcPickerHeader">
+        <h3 id="tcPickerTitle">カード選択</h3>
+        <button id="tcPickerClose" type="button">閉じる</button>
+      </div>
+      <div class="tcPickerFilters">
+        <input id="tcPickerSearch" type="text" placeholder="カード名で検索">
+        <select id="tcPickerSet"></select>
+      </div>
+      <div id="tcPickerList"></div>
     </div>
   </div>
 
@@ -77,6 +173,7 @@
   <div id="builder" class="hidden">
     <div id="builderPanel">
       <h2>デッキ構築</h2>
+      <div id="buildToast" aria-live="polite"></div>
       <div id="builderMain">
         <div id="mobileBuilderTabs" class="hidden" role="tablist" aria-label="表示切り替え">
           <button id="btnMobileShowLib" type="button" role="tab" aria-selected="true">カードリスト</button>
@@ -134,6 +231,7 @@
             <div class="builderSep"></div>
             <button id="btnDeckSave" title="構築中のデッキを保存して一覧に登録">💾デッキセーブ</button>
             <button id="btnDeckLoad" title="保存済みデッキ一覧を開く">📚デッキロード</button>
+            <button id="btnDeckReset" title="現在のデッキを空にする">🗑️デッキリセット</button>
             <button id="btnDeckDownload" title="保存済みデッキ一覧(セーブデータ)をJSONでダウンロード">⬇セーブDL</button>
             <label class="btnLike" title="ダウンロードしたセーブデータ(JSON)をアップロードして取り込む">⬆セーブUP<input id="deckUploadInput" type="file" accept="application/json,.json"></label>
           </div>

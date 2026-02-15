@@ -10,6 +10,7 @@ const URL_PARAMS = new URLSearchParams(location.search);
 const IS_EMBED = URL_PARAMS.get('embed') === '1';
 const FLIP_LAYOUT = URL_PARAMS.get('flip') === '1';
 const IS_SOLO_ROOT = URL_PARAMS.get('solo_root') === '1';
+const APP_VERSION = 'v2.2.0';
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
 
@@ -97,6 +98,7 @@ function hydrateCardsFromMeta(){
 hydrateCardsFromMeta();
 
 const WHITE_BACK="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO3kqE0AAAAASUVORK5CYII=";
+const CARD_BACK_SRC=`${CARD_FOLDER}/裏面.png`;
 const MAX_DUP_PER_NAME=4,MAX_SAVE_BYTES=4_500_000;const MAIN_LIMIT=50,MON_LIMIT=4;
 let backSrc=WHITE_BACK;let rageCount=0;
 
@@ -108,15 +110,24 @@ const deckCounterEl=document.getElementById('deckCounter');
 const discardCounterEl=document.getElementById('discardCounter');
 const monsterCounterEl=document.getElementById('monsterCounter');
 const toolbar=document.getElementById('toolbar');
+const buildToast=document.getElementById('buildToast');
 // ===== Fixed UI size + auto scale =====
 let __uiScale = 1;
 let __lastStableUIScale = 1;
 let __lastStableStageLeft = 0;
 let __lastStableStageTop = 0;
+function syncAppViewportHeight(){
+  const vv = window.visualViewport;
+  const rawHeight = (vv && Number.isFinite(vv.height) && vv.height > 0) ? vv.height : window.innerHeight;
+  if(!Number.isFinite(rawHeight) || rawHeight <= 0) return;
+  document.documentElement.style.setProperty('--app-vh', `${Math.round(rawHeight)}px`);
+}
 function applyUIScale(){
   const rs = getComputedStyle(document.documentElement);
   const baseW = parseFloat(rs.getPropertyValue('--base-w')) || 2048;
   const baseH = parseFloat(rs.getPropertyValue('--base-h')) || 974;
+
+  syncAppViewportHeight();
 
   // ピンチズーム中は visual viewport が細かく変動し、
   // stage位置/スケールの再計算で盤面が飛ぶことがある。
@@ -157,6 +168,8 @@ function getPointerBoardPos(ev){
 }
 applyUIScale();
 window.addEventListener('resize', applyUIScale);
+window.addEventListener('orientationchange', ()=>setTimeout(applyUIScale, 0));
+window.addEventListener('pageshow', ()=>setTimeout(applyUIScale, 0));
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', applyUIScale);
   window.visualViewport.addEventListener('scroll', applyUIScale);
@@ -497,6 +510,21 @@ loadToolbarCollapsed();
 const startModal=document.getElementById('startModal');
 const btnStartBuild=document.getElementById('btnStartBuild');
 const btnStartPlay=document.getElementById('btnStartPlay');
+const btnStartTools=document.getElementById('btnStartTools');
+const startVersion=document.getElementById('startVersion');
+const toolsModal=document.getElementById('toolsModal');
+const btnToolsBack=document.getElementById('btnToolsBack');
+const btnToolThreatCalc=document.getElementById('btnToolThreatCalc');
+const btnToolAreaCounter=document.getElementById('btnToolAreaCounter');
+const threatCalcModal=document.getElementById('threatCalcModal');
+const btnThreatCalcClose=document.getElementById('btnThreatCalcClose');
+const areaCounterModal=document.getElementById('areaCounterModal');
+const btnAreaCounterClose=document.getElementById('btnAreaCounterClose');
+const btnAreaCounterClosePortrait=document.getElementById('btnAreaCounterClosePortrait');
+const btnAreaCounterFlip=document.getElementById('btnAreaCounterFlip');
+const acLeftNumberCircle=document.getElementById('acLeftNumberCircle');
+const acRightNumberCircle=document.getElementById('acRightNumberCircle');
+const acNumberPicker=document.getElementById('acNumberPicker');
 
 // apply flip layout class (for embed opponent board etc.)
 try{ if(FLIP_LAYOUT) document.body.classList.add('flipLayout'); }catch(e){}
@@ -586,6 +614,7 @@ const btnQrCopy=document.getElementById('btnQrCopy');
 // deck saves (builder)
 const btnDeckSave=document.getElementById('btnDeckSave');
 const btnDeckLoad=document.getElementById('btnDeckLoad');
+const btnDeckReset=document.getElementById('btnDeckReset');
 const btnDeckDownload=document.getElementById('btnDeckDownload');
 const deckUploadInput=document.getElementById('deckUploadInput');
 const deckMgr=document.getElementById('deckMgr');
@@ -2592,9 +2621,396 @@ function setPlayModeUI(active){
   try{ document.body.classList.toggle('playMode', !!active); }catch(e){}
 }
 
-btnStartBuild.onclick=()=>{startModal.style.display='none';openBuilder();};
-btnStartPlay.onclick=()=>{startModal.style.display='none';toolbar.classList.remove('hidden');setPlayModeUI(true);lastCoin=null;updateCoinUI();autoLoadBackImage();};
-function goBackToMode(){if(revealIsOpen()) cancelReveal(); toolbar.classList.add('hidden');setPlayModeUI(false);viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
+function initThreatCalcTool(){
+  const toolFallbackSrc = CARD_BACK_SRC;
+  const battleList=document.getElementById('tcBattleList');
+  const threatEl=document.getElementById('tcThreatResult');
+  const repelEl=document.getElementById('tcRepelResult');
+  const diffEl=document.getElementById('tcDiffResult');
+  const monsterImg=document.getElementById('tcMonsterImg');
+  const monsterNameEl=document.getElementById('tcMonsterName');
+  const monsterBaseEl=document.getElementById('tcMonsterBase');
+  const monsterPickBtn=document.getElementById('tcMonsterPick');
+  const rageEl=document.getElementById('tcRage');
+  const monsterCounterEl=document.getElementById('tcMonsterCounter');
+  const strategyCounterEl=document.getElementById('tcStrategyCounter');
+  const picker=document.getElementById('tcCardPicker');
+  const pickerTitle=document.getElementById('tcPickerTitle');
+  const pickerClose=document.getElementById('tcPickerClose');
+  const pickerSearch=document.getElementById('tcPickerSearch');
+  const pickerSet=document.getElementById('tcPickerSet');
+  const pickerList=document.getElementById('tcPickerList');
+  if(!battleList || !threatEl || !repelEl || !diffEl || !monsterPickBtn) return;
+
+  const cardInfoMap=new Map();
+  if(typeof CARD_DB!=='undefined' && Array.isArray(CARD_DB)){
+    CARD_DB.forEach((c)=>{
+      const id=String(c && c.id ? c.id : '').replace(/\.png$/i,'');
+      if(!id || cardInfoMap.has(id)) return;
+      const meta=(typeof getMetaById==='function') ? getMetaById(id) : (c && c.meta ? c.meta : null);
+      cardInfoMap.set(id, {
+        id,
+        name: String((meta && meta.name) || (c && c.name) || id),
+        type: String((meta && meta.type) || ''),
+        power: Number((meta && meta.power) || 0),
+        set: String((c && c.set) || ''),
+        src: (c && c.srcGuess) ? String(c.srcGuess) : `${CARD_FOLDER}/${id}.png`
+      });
+    });
+  }
+
+  const compareCardsByNumber=(a,b)=>{
+    const na = (typeof __buildCardNoNum==='function') ? __buildCardNoNum(a && a.id) : 999999;
+    const nb = (typeof __buildCardNoNum==='function') ? __buildCardNoNum(b && b.id) : 999999;
+    if(na!==nb) return na-nb;
+    return String(a && a.id || '').localeCompare(String(b && b.id || ''), 'ja');
+  };
+
+  const byType=(type)=>{
+    const rows=[];
+    cardInfoMap.forEach((info)=>{
+      if(!info || info.type!==type) return;
+      rows.push(info);
+    });
+    rows.sort(compareCardsByNumber);
+    return rows;
+  };
+
+  const monsterCards=byType('怪獣');
+  const battleCards=byType('交戦');
+  const getInfo=(id)=> id ? cardInfoMap.get(String(id).replace(/\.png$/i,'')) : null;
+  if(monsterImg){
+    monsterImg.src=toolFallbackSrc;
+    monsterImg.onerror=()=>{ monsterImg.src=WHITE_BACK; };
+  }
+
+  if(!battleList.dataset.ready){
+    const rows=[];
+    for(let i=1;i<=7;i++){
+      rows.push(`
+        <div class="tcBattleRow">
+          <div class="slotLabel">交戦${i}</div>
+          <button type="button" class="tcPickBtn" data-tc="battlePick" data-slot="${i-1}">交戦カードを選ぶ</button>
+          <img class="tcBattleThumb" data-tc="battleImg" src="${toolFallbackSrc}" alt="交戦カード画像プレビュー">
+          <div class="tcBaseVal" data-tc="battleBase">素:0</div>
+          <label>カウンター<input type="number" inputmode="numeric" data-tc="battleCounter" value="0"></label>
+        </div>
+      `);
+    }
+    battleList.innerHTML=rows.join('');
+    battleList.dataset.ready='1';
+  }
+
+  const picked={ monster:'', battles: Array(7).fill('') };
+
+  const renderSets=(cards)=>{
+    const uniq=new Set(cards.map(c=>c.set).filter(Boolean));
+    const ordered = (typeof getAvailableSetsOrder==='function')
+      ? getAvailableSetsOrder().filter(k=>uniq.has(k))
+      : Array.from(uniq).sort((a,b)=>a.localeCompare(b,'ja'));
+    pickerSet.innerHTML = ['<option value="">弾:すべて</option>']
+      .concat(ordered.map(set=>`<option value="${set}">${set}</option>`)).join('');
+  };
+
+  let pickerCtx = null;
+
+  function closePicker(){
+    if(!picker) return;
+    picker.classList.add('hidden');
+    pickerCtx = null;
+  }
+
+  function applyPickedCard(info){
+    if(!pickerCtx || !info) return;
+    if(pickerCtx.kind==='monster'){
+      picked.monster = info.id;
+      if(monsterImg) monsterImg.src = info.src || WHITE_BACK;
+      if(monsterNameEl) monsterNameEl.textContent = info.name || info.id;
+      if(monsterBaseEl) monsterBaseEl.textContent = `素:${__fmt(info.power||0)}`;
+      if(monsterPickBtn) monsterPickBtn.textContent = `怪獣: ${info.name}`;
+    }else if(pickerCtx.kind==='battle'){
+      const idx = pickerCtx.index|0;
+      if(idx>=0 && idx<picked.battles.length){
+        picked.battles[idx] = info.id;
+        const row = battleList.querySelector(`.tcBattleRow button[data-slot="${idx}"]`)?.closest('.tcBattleRow');
+        if(row){
+          const btn=row.querySelector('button[data-tc="battlePick"]');
+          const img=row.querySelector('img[data-tc="battleImg"]');
+          const base=row.querySelector('[data-tc="battleBase"]');
+          if(btn) btn.textContent = info.name;
+          if(img) img.src = info.src || WHITE_BACK;
+          if(base) base.textContent = `素:${__fmt(info.power||0)}`;
+        }
+      }
+    }
+    update();
+    closePicker();
+  }
+
+  function renderPickerCards(){
+    if(!pickerList || !pickerCtx) return;
+    const q = String(pickerSearch?.value||'').trim().toLowerCase();
+    const set = String(pickerSet?.value||'').trim();
+    const src = pickerCtx.kind==='monster' ? monsterCards : battleCards;
+    const filtered = src.filter(c=>{
+      if(set && c.set!==set) return false;
+      if(!q) return true;
+      const hay = `${c.name} ${c.id}`.toLowerCase();
+      return hay.includes(q);
+    });
+
+    if(!filtered.length){
+      pickerList.innerHTML = '<div style="opacity:.7;padding:8px;">該当カードがありません</div>';
+      return;
+    }
+
+    const groups = new Map();
+    filtered.forEach(c=>{
+      const k=c.set||'OTHER';
+      if(!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(c);
+    });
+
+    const order = (typeof getAvailableSetsOrder==='function')
+      ? getAvailableSetsOrder().filter(k=>groups.has(k))
+      : Array.from(groups.keys()).sort((a,b)=>a.localeCompare(b,'ja'));
+    pickerList.innerHTML = order.map(setKey=>{
+      const cards = groups.get(setKey)||[];
+      const thumbs = cards.map(c=>`<button class="tcPickThumb" type="button" data-card-id="${c.id}"><img src="${c.src}" alt="${c.name}" onerror="this.onerror=null;this.src='${WHITE_BACK}';"><span class="name">${c.name}</span></button>`).join('');
+      return `<section class="tcPickerGroup"><h4>${setKey}</h4><div class="tcPickerGrid">${thumbs}</div></section>`;
+    }).join('');
+
+    pickerList.querySelectorAll('.tcPickThumb[data-card-id]').forEach((btn)=>{
+      btn.onclick=()=>{
+        const info=getInfo(btn.dataset.cardId||'');
+        if(info) applyPickedCard(info);
+      };
+    });
+  }
+
+  function openPicker(kind, index=0){
+    if(!picker) return;
+    pickerCtx = { kind, index };
+    picker.classList.remove('hidden');
+    if(pickerTitle){
+      pickerTitle.textContent = kind==='monster' ? '怪獣カードを選択' : `交戦${index+1}のカードを選択`;
+    }
+    renderSets(kind==='monster' ? monsterCards : battleCards);
+    if(pickerSearch) pickerSearch.value='';
+    if(pickerSet) pickerSet.value='';
+    renderPickerCards();
+  }
+
+  const n=(el)=>{
+    const v=Number(el && el.value ? el.value : 0);
+    return Number.isFinite(v) ? v : 0;
+  };
+
+  const update=()=>{
+    const monsterInfo=getInfo(picked.monster);
+    const monsterBase=monsterInfo ? (Number.isFinite(monsterInfo.power) ? monsterInfo.power : 0) : 0;
+    if(monsterImg){
+      monsterImg.src=(monsterInfo && monsterInfo.src) ? monsterInfo.src : toolFallbackSrc;
+    }
+    if(monsterNameEl){
+      monsterNameEl.textContent = monsterInfo ? monsterInfo.name : '未選択';
+    }
+    if(monsterBaseEl){
+      monsterBaseEl.textContent = `素:${__fmt(monsterBase)}`;
+    }
+    if(monsterPickBtn){
+      monsterPickBtn.textContent = monsterInfo ? `怪獣: ${monsterInfo.name}` : '怪獣カードを選ぶ';
+    }
+
+    const threat=monsterBase + (n(rageEl)*5000) + n(monsterCounterEl);
+
+    let repel=n(strategyCounterEl);
+    const rows=battleList.querySelectorAll('.tcBattleRow');
+    rows.forEach((row, idx)=>{
+      const imgEl=row.querySelector('img[data-tc="battleImg"]');
+      const baseEl=row.querySelector('[data-tc="battleBase"]');
+      const counterEl=row.querySelector('input[data-tc="battleCounter"]');
+      const pickBtn=row.querySelector('button[data-tc="battlePick"]');
+      const info=getInfo(picked.battles[idx]);
+      const base=info ? (Number.isFinite(info.power) ? info.power : 0) : 0;
+      if(baseEl) baseEl.textContent=`素:${__fmt(base)}`;
+      if(imgEl) imgEl.src=(info && info.src) ? info.src : toolFallbackSrc;
+      if(pickBtn) pickBtn.textContent = info ? info.name : `交戦${idx+1}: カードを選ぶ`;
+      repel += base + n(counterEl);
+    });
+
+    const diff=repel-threat;
+    threatEl.textContent=__fmt(threat);
+    repelEl.textContent=__fmt(repel);
+    diffEl.textContent=__fmt(diff);
+  };
+
+  const monsterChosen=document.getElementById('tcMonsterChosen');
+  const openMonsterPicker=()=>openPicker('monster',0);
+  if(monsterPickBtn){ monsterPickBtn.onclick=openMonsterPicker; }
+  if(monsterChosen){
+    monsterChosen.onclick=openMonsterPicker;
+    monsterChosen.onkeydown=(e)=>{
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        openMonsterPicker();
+      }
+    };
+  }
+  battleList.querySelectorAll('button[data-tc="battlePick"]').forEach((btn)=>{
+    btn.onclick=()=>{
+      const idx = Number(btn.dataset.slot||0);
+      openPicker('battle', idx);
+    };
+  });
+  if(pickerClose) pickerClose.onclick=closePicker;
+  if(picker) picker.addEventListener('mousedown', (e)=>{ if(e.target===picker) closePicker(); });
+  if(pickerSearch) pickerSearch.oninput=renderPickerCards;
+  if(pickerSet) pickerSet.oninput=renderPickerCards;
+
+  [rageEl,monsterCounterEl,strategyCounterEl].forEach(el=>{ if(el) el.oninput=update; });
+  battleList.querySelectorAll('input').forEach(el=>{ el.oninput=update; });
+  battleList.querySelectorAll('img[data-tc="battleImg"]').forEach(img=>{ img.onerror=()=>{ img.src=WHITE_BACK; }; });
+
+  if(!initThreatCalcTool._escBound){
+    document.addEventListener('keydown',(e)=>{
+      if(e.key!=='Escape') return;
+      if(picker && !picker.classList.contains('hidden')){
+        e.preventDefault();
+        closePicker();
+      }
+    });
+    initThreatCalcTool._escBound = true;
+  }
+
+  update();
+}
+
+
+function openToolsModal(){
+  if(startModal) startModal.style.display='none';
+  if(toolsModal){
+    toolsModal.classList.remove('hidden');
+    toolsModal.style.display='flex';
+  }
+}
+function closeToolsModal(){
+  if(toolsModal){
+    toolsModal.classList.add('hidden');
+    toolsModal.style.removeProperty('display');
+  }
+}
+function openThreatCalcModal(){
+  if(startModal) startModal.style.display='none';
+  if(toolsModal){
+    toolsModal.classList.add('hidden');
+    toolsModal.style.removeProperty('display');
+  }
+  if(threatCalcModal){
+    threatCalcModal.classList.remove('hidden');
+    threatCalcModal.style.display='flex';
+  }
+  initThreatCalcTool();
+}
+function closeThreatCalcModal(){
+  if(threatCalcModal){
+    threatCalcModal.classList.add('hidden');
+    threatCalcModal.style.removeProperty('display');
+  }
+  const picker=document.getElementById('tcCardPicker');
+  if(picker) picker.classList.add('hidden');
+}
+
+let areaCounterLeftNumber=1;
+let areaCounterRightNumber=1;
+let areaCounterFlipped=false;
+let areaCounterPickingTarget=null;
+
+function initAreaCounterTool(){
+  if(!acLeftNumberCircle || !acRightNumberCircle) return;
+  const numBtns=[...document.querySelectorAll('.acNumBtn')];
+  const update=()=>{
+    acLeftNumberCircle.textContent=String(areaCounterLeftNumber);
+    acRightNumberCircle.textContent=String(areaCounterRightNumber);
+    acLeftNumberCircle.classList.toggle('isFlipped', !!areaCounterFlipped);
+    acRightNumberCircle.classList.toggle('isFlipped', !!areaCounterFlipped);
+  };
+  const openPicker=(target)=>{
+    areaCounterPickingTarget = (target==='right') ? 'right' : 'left';
+    if(acNumberPicker) acNumberPicker.classList.remove('hidden');
+  };
+  const closePicker=()=>{
+    if(acNumberPicker) acNumberPicker.classList.add('hidden');
+    areaCounterPickingTarget = null;
+  };
+
+  if(acLeftNumberCircle.dataset.bound!=='1'){
+    acLeftNumberCircle.dataset.bound='1';
+    acLeftNumberCircle.addEventListener('click',()=>openPicker('left'));
+  }
+  if(acRightNumberCircle.dataset.bound!=='1'){
+    acRightNumberCircle.dataset.bound='1';
+    acRightNumberCircle.addEventListener('click',()=>openPicker('right'));
+  }
+  numBtns.forEach((btn)=>{
+    if(btn.dataset.bound==='1') return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click',()=>{
+      const n=Math.min(8,Math.max(1, Number(btn.dataset.areaNum)||1));
+      if(areaCounterPickingTarget==='right') areaCounterRightNumber=n;
+      else areaCounterLeftNumber=n;
+      update();
+      closePicker();
+    });
+  });
+  if(btnAreaCounterFlip && btnAreaCounterFlip.dataset.bound!=='1'){
+    btnAreaCounterFlip.dataset.bound='1';
+    btnAreaCounterFlip.addEventListener('click',()=>{
+      areaCounterFlipped=!areaCounterFlipped;
+      update();
+    });
+  }
+  if(acNumberPicker && acNumberPicker.dataset.bound!=='1'){
+    acNumberPicker.dataset.bound='1';
+    acNumberPicker.addEventListener('click',(e)=>{
+      if(e.target===acNumberPicker) closePicker();
+    });
+  }
+
+  update();
+}
+
+function openAreaCounterModal(){
+  if(startModal) startModal.style.display='none';
+  if(toolsModal){
+    toolsModal.classList.add('hidden');
+    toolsModal.style.removeProperty('display');
+  }
+  if(areaCounterModal){
+    areaCounterModal.classList.remove('hidden');
+    areaCounterModal.style.display='flex';
+  }
+  initAreaCounterTool();
+}
+function closeAreaCounterModal(){
+  if(areaCounterModal){
+    areaCounterModal.classList.add('hidden');
+    areaCounterModal.style.removeProperty('display');
+  }
+  if(acNumberPicker) acNumberPicker.classList.add('hidden');
+  areaCounterPickingTarget=null;
+}
+
+btnStartBuild.onclick=()=>{closeToolsModal();closeThreatCalcModal();closeAreaCounterModal();startModal.style.display='none';openBuilder();};
+btnStartPlay.onclick=()=>{closeToolsModal();closeThreatCalcModal();closeAreaCounterModal();startModal.style.display='none';toolbar.classList.remove('hidden');setPlayModeUI(true);lastCoin=null;updateCoinUI();autoLoadBackImage();};
+if(btnStartTools) btnStartTools.onclick=()=>{ openToolsModal(); };
+if(btnToolsBack) btnToolsBack.onclick=()=>{ closeToolsModal(); if(startModal) startModal.style.display='flex'; };
+if(btnToolThreatCalc) btnToolThreatCalc.onclick=()=>{ openThreatCalcModal(); };
+if(btnToolAreaCounter) btnToolAreaCounter.onclick=()=>{ openAreaCounterModal(); };
+if(btnThreatCalcClose) btnThreatCalcClose.onclick=()=>{ goBackToMode(); };
+if(btnAreaCounterClose) btnAreaCounterClose.onclick=()=>{ goBackToMode(); };
+if(btnAreaCounterClosePortrait) btnAreaCounterClosePortrait.onclick=()=>{ goBackToMode(); };
+function goBackToMode(){if(revealIsOpen()) cancelReveal(); closeToolsModal(); closeThreatCalcModal(); closeAreaCounterModal(); toolbar.classList.add('hidden');setPlayModeUI(false);viewer.classList.add('hidden');preview.classList.add('hidden');builder.classList.add('hidden');startModal.style.display='flex';}
 
 
 // ===== embed instance (used by solo mode iframes) =====
@@ -2605,6 +3021,7 @@ if(IS_EMBED){
   setPlayModeUI(false);
   try{ if(btnBackToMode) btnBackToMode.style.display='none'; }catch(e){}
   try{ if(btnStartBuild) btnStartBuild.style.display='none'; }catch(e){}
+  try{ if(btnStartTools) btnStartTools.style.display='none'; }catch(e){}
   // keep toolbars in embedded instances, but hide spectator button (not needed)
   try{ if(btnOpenSpectator) btnOpenSpectator.style.display='none'; }catch(e){}
   // reset meta UI
@@ -2696,11 +3113,53 @@ function autoLoadBackImage(){
   img.src = path;
 }
 
+
+let __buildToastTimer = null;
+function getCardLabelById(id){
+  const card = CARD_DB.find(c=>c.id===id);
+  return (card && (card.name || card.id)) ? (card.name || card.id) : String(id||'');
+}
+function showBuildToast(message){
+  if(!buildToast) return;
+  buildToast.textContent = message;
+  buildToast.classList.add('show');
+  if(__buildToastTimer) clearTimeout(__buildToastTimer);
+  __buildToastTimer = setTimeout(()=>{
+    buildToast.classList.remove('show');
+  }, 1800);
+}
+
 // ===== Deck Builder =====
 let buildMain={},buildMon={};
 // --- Deck Save/Load (構築モード) ---
 const DECKS_KEY='go_decks_v1';
 let activeDeckId=null;
+let activeDeckSnapshot='';
+
+function deckFingerprint(deck){
+  const normalize=(obj)=>Object.keys(obj||{}).sort().map(k=>`${k}:${obj[k]||0}`).join('|');
+  return `M:${normalize(deck?.main||{})}#K:${normalize(deck?.monster||{})}`;
+}
+function syncActiveDeckSnapshot(){
+  if(!activeDeckId){ activeDeckSnapshot=''; return; }
+  activeDeckSnapshot = deckFingerprint(currentDeckObj());
+}
+function isActiveDeckDirty(){
+  if(!activeDeckId || !activeDeckSnapshot) return false;
+  return deckFingerprint(currentDeckObj()) !== activeDeckSnapshot;
+}
+function askSaveBeforeDestructiveChange(message){
+  const mCnt=sumObj(buildMain), kCnt=sumObj(buildMon);
+  if(mCnt===0 && kCnt===0) return true;
+  if(confirm(`${message}\n\nOK: セーブする / キャンセル: 次へ`)){
+    const before = deckFingerprint(currentDeckObj());
+    saveDeckPrompt();
+    const after = deckFingerprint(currentDeckObj());
+    if(before===after && isActiveDeckDirty()) return false;
+    return true;
+  }
+  return confirm('保存せずに続行しますか？');
+}
 
 function safeJSONParse(s,fallback){
   try{ const v=JSON.parse(s); return (v===null||v===undefined)?fallback:v; }catch(e){ return fallback; }
@@ -2739,12 +3198,13 @@ function fmtJP(iso){
   }catch(e){ return ''; }
 }
 
-function applyDeckToBuilder(deck){
+function applyDeckToBuilder(deck, opts={}){
   buildMain = Object.assign({}, deck?.main||{});
   buildMon  = Object.assign({}, deck?.monster||{});
   renderDeckThumbs();
   updateBuildCount();
   try{ deckCodeBox.value = encodeDeck({main:buildMain, monster:buildMon}); }catch(e){}
+  if(opts && opts.syncSnapshot) syncActiveDeckSnapshot();
 }
 
 function saveDeckPrompt(){
@@ -2773,6 +3233,7 @@ function saveDeckPrompt(){
     sameName.updatedAt = now;
     activeDeckId = sameName.id;
     setDeckSaves(decks);
+    syncActiveDeckSnapshot();
     alert('上書き保存しました');
     return;
   }
@@ -2785,6 +3246,7 @@ function saveDeckPrompt(){
       cur.deck = cloneDeckObj(deck);
       cur.updatedAt = now;
       setDeckSaves(decks);
+      syncActiveDeckSnapshot();
       alert('更新保存しました');
       return;
     }
@@ -2794,6 +3256,7 @@ function saveDeckPrompt(){
   decks.unshift(entry);
   activeDeckId = entry.id;
   setDeckSaves(decks);
+  syncActiveDeckSnapshot();
   alert('保存しました（デッキ一覧に追加）');
 }
 
@@ -2894,6 +3357,17 @@ async function importDeckSavesFile(file){
 // wiring
 btnDeckSave && (btnDeckSave.onclick = ()=>saveDeckPrompt());
 btnDeckLoad && (btnDeckLoad.onclick = ()=>openDeckMgr());
+btnDeckReset && (btnDeckReset.onclick = ()=>{
+  const ok = askSaveBeforeDestructiveChange('現在のデッキをリセットします。リセット前にセーブしますか？');
+  if(!ok) return;
+  buildMain={};
+  buildMon={};
+  activeDeckId=null;
+  activeDeckSnapshot='';
+  renderDeckThumbs();
+  updateBuildCount();
+  try{ deckCodeBox.value=''; }catch(e){}
+});
 btnDeckDownload && (btnDeckDownload.onclick = ()=>downloadDeckSaves());
 btnDeckMgrClose && (btnDeckMgrClose.onclick = ()=>closeDeckMgr());
 btnDeckMgrDownload && (btnDeckMgrDownload.onclick = ()=>downloadDeckSaves());
@@ -2909,8 +3383,12 @@ deckMgrList && deckMgrList.addEventListener('click', (e)=>{
   const d = decks.find(x=>String(x.id)===String(id));
   if(act==='load'){
     if(!d){ alert('デッキが見つかりません'); renderDeckMgr(); return; }
+    if(activeDeckId && activeDeckId!==d.id && isActiveDeckDirty()){
+      const ok = askSaveBeforeDestructiveChange('現在のロード済みデッキが変更されています。別のデッキをロードする前にセーブしますか？');
+      if(!ok) return;
+    }
     activeDeckId = d.id;
-    applyDeckToBuilder(d.deck);
+    applyDeckToBuilder(d.deck, {syncSnapshot:true});
     closeDeckMgr();
     return;
   }
@@ -2934,7 +3412,7 @@ deckMgrList && deckMgrList.addEventListener('click', (e)=>{
     if(!confirm(`「${d.name||'(no name)'}」を削除しますか？`)) return;
     const next = decks.filter(x=>x.id!==d.id);
     setDeckSaves(next);
-    if(activeDeckId===d.id) activeDeckId=null;
+    if(activeDeckId===d.id){ activeDeckId=null; activeDeckSnapshot=''; }
     renderDeckMgr();
   }
 });
@@ -3108,9 +3586,9 @@ function setMobileBuilderView(mode='lib'){
 }
 function syncMobileBuilderUI(){
   if(!mobileBuilderTabs || !builderMain) return;
-  const isMobileLandscape = window.matchMedia('(max-width: 768px) and (orientation: landscape)').matches;
-  mobileBuilderTabs.classList.toggle('hidden', !isMobileLandscape);
-  if(!isMobileLandscape){
+  const isMobile = window.matchMedia('(max-width: 768px), (display-mode: standalone) and (orientation: portrait), (orientation: portrait) and (pointer: coarse) and (max-width: 1024px)').matches;
+  mobileBuilderTabs.classList.toggle('hidden', !isMobile);
+  if(!isMobile){
     builderMain.dataset.mobileView='';
     return;
   }
@@ -3123,6 +3601,11 @@ function syncMobileBuilderUI(){
 if(btnMobileShowLib) btnMobileShowLib.addEventListener('click', ()=>setMobileBuilderView('lib'));
 if(btnMobileShowDeck) btnMobileShowDeck.addEventListener('click', ()=>setMobileBuilderView('deck'));
 window.addEventListener('resize', syncMobileBuilderUI);
+
+try{
+  if(startVersion) startVersion.textContent = `ver ${APP_VERSION}`;
+  document.title = `G-CARD Director ${APP_VERSION}`;
+}catch(e){}
 
 function openBuilder(){builder.classList.remove('hidden');renderSetBar();loadSetBarCollapsed();loadBuilderFooterCollapsed();renderLibrary();renderDeckThumbs();updateBuildCount();syncMobileBuilderUI();}
 function closeBuilder(){builder.classList.add('hidden');}
@@ -3172,7 +3655,7 @@ if(libColor) libColor.addEventListener('change',renderLibrary);
 if(libType) libType.addEventListener('change',renderLibrary);
 if(libGrade) libGrade.addEventListener('change',renderLibrary);
 
-function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();}
+function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();const deckName=(which==='monster')?'怪獣デッキ':'メインデッキ';showBuildToast(`${deckName}に「${getCardLabelById(id)}」を追加`);}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
 // ===== Deck Builder: sort order (怪獣→交戦→戦略, 等級昇順, 色:赤→青→緑→白, カードNo昇順) =====
 const __BUILD_TYPE_RANK = {'怪獣':0,'交戦':1,'戦略':2};
