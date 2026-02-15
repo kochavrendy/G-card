@@ -100,7 +100,7 @@
   align-items:center;
   justify-items:center;
   justify-content:center;
-  gap:clamp(12px, 2.4vw, 32px);
+  gap:clamp(100px, 8vw, 32px);
   padding:40px 26px;
 }
 .acNumberCircle{
