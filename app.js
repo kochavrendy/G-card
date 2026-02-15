@@ -10,7 +10,7 @@ const URL_PARAMS = new URLSearchParams(location.search);
 const IS_EMBED = URL_PARAMS.get('embed') === '1';
 const FLIP_LAYOUT = URL_PARAMS.get('flip') === '1';
 const IS_SOLO_ROOT = URL_PARAMS.get('solo_root') === '1';
-const APP_VERSION = 'v2.2.0';
+const APP_VERSION = 'v2.3.0';
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
 
