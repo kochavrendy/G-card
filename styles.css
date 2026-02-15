@@ -73,7 +73,8 @@
   color:#fff;
   overflow:hidden;
   background-image:url('./カードリスト/eria.jpg');
-  background-size:cover;
+  background-size:contain;
+  background-repeat:no-repeat;
   background-position:center;
 }
 .acLandscapeOnly{height:100%;display:block;}
@@ -105,7 +106,7 @@
   min-width:min(34vw,520px);
   min-height:min(38vh,420px);
   display:flex;align-items:center;justify-content:center;
-  font-size:clamp(220px,10vw,460px);
+  font-size:10vw;
   font-weight:900;
   color:#fff;
   text-shadow:0 0 16px rgba(0,0,0,.95), 0 2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000;
@@ -153,7 +154,7 @@
 }
 @media (max-width: 1100px){
   .acBoard{grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);gap:16px;padding:24px 18px;}
-  .acNumberCircle{min-width:min(28vw,320px);min-height:min(30vh,280px);font-size:clamp(150px,24vw,280px);}
+  .acNumberCircle{min-width:min(28vw,320px);min-height:min(30vh,280px);font-size:10vw;}
   #btnAreaCounterFlip{font-size:32px;padding:18px 20px;}
 }
 
