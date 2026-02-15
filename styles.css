@@ -96,17 +96,18 @@
 .acBoard{
   height:100%;
   display:grid;
-  grid-template-columns:minmax(260px,1fr) auto minmax(260px,1fr);
+  grid-template-columns:auto auto auto;
   align-items:center;
   justify-items:center;
-  gap:28px;
+  justify-content:center;
+  gap:clamp(12px, 2.4vw, 32px);
   padding:40px 26px;
 }
 .acNumberCircle{
-  min-width:min(34vw,520px);
-  min-height:min(38vh,420px);
+  width:clamp(210px, 31vmin, 410px);
+  height:clamp(210px, 31vmin, 410px);
   display:flex;align-items:center;justify-content:center;
-  font-size:10vw;
+  font-size:clamp(110px, 14vmin, 180px);
   font-weight:900;
   color:#fff;
   text-shadow:0 0 16px rgba(0,0,0,.95), 0 2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000;
@@ -153,8 +154,8 @@
   .acPortraitOnly{display:flex;}
 }
 @media (max-width: 1100px){
-  .acBoard{grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);gap:16px;padding:24px 18px;}
-  .acNumberCircle{min-width:min(28vw,320px);min-height:min(30vh,280px);font-size:10vw;}
+  .acBoard{grid-template-columns:auto auto auto;gap:clamp(8px, 2vw, 18px);padding:24px 18px;}
+  .acNumberCircle{width:clamp(150px, 26vmin, 280px);height:clamp(150px, 26vmin, 280px);font-size:clamp(74px, 12vmin, 124px);}
   #btnAreaCounterFlip{font-size:32px;padding:18px 20px;}
 }
 
