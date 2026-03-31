@@ -3379,6 +3379,32 @@ function downloadDeckListCsv(){
   triggerBlobDownload(blob, `go_deck_list_${ts}.csv`);
 }
 
+function downloadCurrentDeckCsv(){
+  const nowIso = new Date().toISOString();
+  const saves = getDeckSaves();
+  const loaded = activeDeckId ? saves.find(d=>d && d.id===activeDeckId) : null;
+  const deckEntry = loaded ? {
+    name: loaded.name || '(no name)',
+    updatedAt: loaded.updatedAt || loaded.createdAt || nowIso,
+    deck: cloneDeckObj(loaded.deck || {}),
+  } : {
+    name: '(現在のデッキ)',
+    updatedAt: nowIso,
+    deck: currentDeckObj(),
+  };
+
+  const header = ['デッキ名','区分','カードID','カード名','枚数','更新日時(ISO)'];
+  const rows = [header, ...buildDeckListCsvRows(deckEntry)];
+  if(rows.length===1){
+    rows.push([deckEntry.name, '-', '-', '-', '0', deckEntry.updatedAt]);
+  }
+
+  const csv = '\uFEFF' + rows.map(cols=>cols.map(toCsvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const ts = (()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;})();
+  triggerBlobDownload(blob, `go_deck_current_${ts}.csv`);
+}
+
 function mergeDecks(existing, incoming){
   const byId = new Map();
   existing.forEach(d=>{ if(d && d.id) byId.set(d.id, d); });
@@ -3430,7 +3456,7 @@ btnDeckReset && (btnDeckReset.onclick = ()=>{
   try{ deckCodeBox.value=''; }catch(e){}
 });
 btnDeckDownload && (btnDeckDownload.onclick = ()=>downloadDeckSaves());
-btnDeckCsvDownload && (btnDeckCsvDownload.onclick = ()=>downloadDeckListCsv());
+btnDeckCsvDownload && (btnDeckCsvDownload.onclick = ()=>downloadCurrentDeckCsv());
 btnDeckMgrClose && (btnDeckMgrClose.onclick = ()=>closeDeckMgr());
 btnDeckMgrDownload && (btnDeckMgrDownload.onclick = ()=>downloadDeckSaves());
 btnDeckMgrCsvDownload && (btnDeckMgrCsvDownload.onclick = ()=>downloadDeckListCsv());
