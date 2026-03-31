@@ -616,6 +616,7 @@ const btnDeckSave=document.getElementById('btnDeckSave');
 const btnDeckLoad=document.getElementById('btnDeckLoad');
 const btnDeckReset=document.getElementById('btnDeckReset');
 const btnDeckDownload=document.getElementById('btnDeckDownload');
+const btnDeckCsvDownload=document.getElementById('btnDeckCsvDownload');
 const deckUploadInput=document.getElementById('deckUploadInput');
 const deckMgr=document.getElementById('deckMgr');
 
@@ -639,6 +640,7 @@ const deckMgrList=document.getElementById('deckMgrList');
 const deckMgrCount=document.getElementById('deckMgrCount');
 const btnDeckMgrClose=document.getElementById('btnDeckMgrClose');
 const btnDeckMgrDownload=document.getElementById('btnDeckMgrDownload');
+const btnDeckMgrCsvDownload=document.getElementById('btnDeckMgrCsvDownload');
 
 
 // stack (area overlap)
@@ -3318,6 +3320,64 @@ function downloadDeckSaves(){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
 }
 
+function toCsvCell(v){
+  const s = String(v ?? '');
+  if(/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function buildDeckListCsvRows(deckEntry){
+  const rowList = [];
+  const deckName = String(deckEntry?.name || '(no name)');
+  const updatedAt = String(deckEntry?.updatedAt || deckEntry?.createdAt || '');
+  const sections = [
+    { label:'怪獣デッキ', key:'monster' },
+    { label:'メインデッキ', key:'main' },
+  ];
+
+  sections.forEach((sec)=>{
+    const obj = deckEntry?.deck?.[sec.key] || {};
+    const ids = Object.keys(obj).filter(id=>(Number(obj[id])||0) > 0).sort((a,b)=>a.localeCompare(b,'ja'));
+    ids.forEach((id)=>{
+      const count = Number(obj[id]) || 0;
+      rowList.push([
+        deckName,
+        sec.label,
+        id,
+        getCardLabelById(id),
+        count,
+        updatedAt,
+      ]);
+    });
+  });
+  return rowList;
+}
+
+function downloadDeckListCsv(){
+  const decks = getDeckSaves().slice().sort((a,b)=>{
+    const ta = Date.parse(a.updatedAt||a.createdAt||0) || 0;
+    const tb = Date.parse(b.updatedAt||b.createdAt||0) || 0;
+    return tb-ta;
+  });
+  const header = ['デッキ名','区分','カードID','カード名','枚数','更新日時(ISO)'];
+  const rows = [header];
+  decks.forEach((d)=>rows.push(...buildDeckListCsvRows(d)));
+
+  if(rows.length===1){
+    rows.push(['(データなし)','-','-','-','0','']);
+  }
+
+  const csv = '\uFEFF' + rows.map(cols=>cols.map(toCsvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  const ts = (()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;})();
+  a.download = `go_deck_list_${ts}.csv`;
+  a.href = URL.createObjectURL(blob);
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
+}
+
 function mergeDecks(existing, incoming){
   const byId = new Map();
   existing.forEach(d=>{ if(d && d.id) byId.set(d.id, d); });
@@ -3369,8 +3429,10 @@ btnDeckReset && (btnDeckReset.onclick = ()=>{
   try{ deckCodeBox.value=''; }catch(e){}
 });
 btnDeckDownload && (btnDeckDownload.onclick = ()=>downloadDeckSaves());
+btnDeckCsvDownload && (btnDeckCsvDownload.onclick = ()=>downloadDeckListCsv());
 btnDeckMgrClose && (btnDeckMgrClose.onclick = ()=>closeDeckMgr());
 btnDeckMgrDownload && (btnDeckMgrDownload.onclick = ()=>downloadDeckSaves());
+btnDeckMgrCsvDownload && (btnDeckMgrCsvDownload.onclick = ()=>downloadDeckListCsv());
 deckMgrSearch && deckMgrSearch.addEventListener('input', renderDeckMgr);
 
 deckMgr && deckMgr.addEventListener('mousedown', (e)=>{ if(e.target===deckMgr) closeDeckMgr(); });
