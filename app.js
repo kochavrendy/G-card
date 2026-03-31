@@ -3311,13 +3311,19 @@ function downloadDeckSaves(){
   const decks = getDeckSaves();
   const payload = { version: 1, exportedAt: new Date().toISOString(), decks };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
   const ts = (()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;})();
-  a.download = `go_deck_saves_${ts}.json`;
-  a.href = URL.createObjectURL(blob);
+  triggerBlobDownload(blob, `go_deck_saves_${ts}.json`);
+}
+
+function triggerBlobDownload(blob, fileName){
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.href = url;
   document.body.appendChild(a);
   a.click();
-  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
+  // 一部ブラウザで URL を即 revoke すると保存処理が失敗することがあるため、少し遅延させる
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
 }
 
 function toCsvCell(v){
@@ -3369,13 +3375,8 @@ function downloadDeckListCsv(){
 
   const csv = '\uFEFF' + rows.map(cols=>cols.map(toCsvCell).join(',')).join('\r\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
   const ts = (()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;})();
-  a.download = `go_deck_list_${ts}.csv`;
-  a.href = URL.createObjectURL(blob);
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
+  triggerBlobDownload(blob, `go_deck_list_${ts}.csv`);
 }
 
 function mergeDecks(existing, incoming){
