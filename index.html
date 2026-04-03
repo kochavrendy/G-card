@@ -22,21 +22,21 @@
     <!-- 裏面画像ボタン削除（入力は保持） -->
     <input id="backInput" type="file" accept="image/*">
     <button id="btnToolbarCollapse" type="button" aria-expanded="true" title="ツールバーを折りたたみ/展開">▾ ツールバー</button>
-    <button id="btnFlip">選択→表裏反転</button>
-    <button id="btnRemove" style="background:#8b0000;">消滅</button>
-    <button id="btnToFront">最前面</button>
-    <button id="btnToBack">最後面</button>
-    <button id="btnUndo">↩︎Undo</button>
-    <button id="btnSave">💾保存</button>
-    <button id="btnLoad">📥読込</button>
-    <button id="btnOpenSpectator" style="background:#2a8;">📺共有用(手札非表示)</button>
-<button id="btnTurnStart" style="background:#0057b7;">ターンスタート</button>
-    <button id="btnPreview">拡大表示</button>
-    <button id="btnToken">トークン</button>
-        <button id="btnCounter" title="カウンターを載せる（+1000/+3000/+5000/+10000）">➕カウンター</button>
-<button id="btnCoin" title="コイントス（表/裏ランダム）">🪙コイントス</button>
-<button id="btnCalc" title="簡単な計算機を開く/閉じる">🧮計算機</button>
-    <button id="btnShortcuts" title="ショートカット一覧を表示">⌨️ショートカット</button>
+    <button id="btnFlip" aria-label="選択カードを表裏反転">選択→表裏反転</button>
+    <button id="btnRemove" style="background:#8b0000;" aria-label="選択カードを消滅（完全削除）">消滅</button>
+    <button id="btnToFront" aria-label="選択カードを最前面へ">最前面</button>
+    <button id="btnToBack" aria-label="選択カードを最後面へ">最後面</button>
+    <button id="btnUndo" aria-label="ひとつ前の状態に戻す (Undo)">↩︎Undo</button>
+    <button id="btnSave" aria-label="ゲーム状態を保存">💾保存</button>
+    <button id="btnLoad" aria-label="保存したゲーム状態を読み込む">📥読込</button>
+    <button id="btnOpenSpectator" style="background:#2a8;" aria-label="共有用（観戦）ウィンドウを開く">📺共有用(手札非表示)</button>
+    <button id="btnTurnStart" style="background:#0057b7;" aria-label="ターンスタートを宣言">ターンスタート</button>
+    <button id="btnPreview" aria-label="選択カードを拡大表示">拡大表示</button>
+    <button id="btnToken" aria-label="トークンを生成">トークン</button>
+    <button id="btnCounter" title="カウンターを載せる（+1000/+3000/+5000/+10000）" aria-label="カウンターを選択して載せる">➕カウンター</button>
+    <button id="btnCoin" title="コイントス（表/裏ランダム）" aria-label="コイントス">🪙コイントス</button>
+    <button id="btnCalc" title="簡単な計算機を開く/閉じる" aria-label="計算機を開く/閉じる">🧮計算機</button>
+    <button id="btnShortcuts" title="ショートカット一覧を表示" aria-label="ショートカット一覧を表示">⌨️ショートカット</button>
 
     <label>戻す位置
       <select id="deckReturnPos">
@@ -198,9 +198,23 @@
 
           <input id="libFilter" placeholder="名前 / 特徴 / テキストで検索…" />
            <div id="libMetaBar">
-             <select id="libColor"><option value="">色:すべて</option><option value="赤">赤</option><option value="青">青</option><option value="緑">緑</option><option value="白">白</option></select>
-             <select id="libType"><option value="">種別:すべて</option><option value="怪獣">怪獣</option><option value="交戦">交戦</option><option value="戦略">戦略</option></select>
-             <select id="libGrade"><option value="">等級:すべて</option></select>
+             <div class="filterGroup" id="libColorGroup" role="group" aria-label="色フィルタ">
+               <span class="filterLabel">色:</span>
+               <button type="button" class="filterBtn" data-filter="color" data-value="赤">赤</button>
+               <button type="button" class="filterBtn" data-filter="color" data-value="青">青</button>
+               <button type="button" class="filterBtn" data-filter="color" data-value="緑">緑</button>
+               <button type="button" class="filterBtn" data-filter="color" data-value="白">白</button>
+             </div>
+             <div class="filterGroup" id="libTypeGroup" role="group" aria-label="種別フィルタ">
+               <span class="filterLabel">種別:</span>
+               <button type="button" class="filterBtn" data-filter="type" data-value="怪獣">怪獣</button>
+               <button type="button" class="filterBtn" data-filter="type" data-value="交戦">交戦</button>
+               <button type="button" class="filterBtn" data-filter="type" data-value="戦略">戦略</button>
+             </div>
+             <div class="filterGroup" id="libGradeGroup" role="group" aria-label="等級フィルタ">
+               <span class="filterLabel">等級:</span>
+               <!-- dynamically built by rebuildLibGradeOptions() -->
+             </div>
            </div>
           <div id="libList"></div>
         </div>
@@ -302,7 +316,7 @@
     <div id="previewPanel">
        <div id="previewLeft"><img id="previewImg" src="" alt="preview"></div>
        <div id="previewInfo" aria-label="カード情報"></div>
-       <button id="previewClose">×</button>
+       <button id="previewClose" aria-label="閉じる">×</button>
      </div>
   </div>
 
@@ -338,7 +352,7 @@
   
   <!-- stack / overlap manager -->
   <div id="stack" class="hidden">
-    <div id="stackPanel">
+    <div id="stackPanel" role="dialog" aria-modal="true" aria-labelledby="stackTitle">
       <h2 id="stackTitle">重なり</h2>
       <div id="stackHelp">上（手前）ほど盤面で上に表示されます。クリックで選択、ボタンで順番を変更できます。<br>束をまとめて移動：<b>「束を丸ごと移動」</b> か <b>Alt+ドラッグ</b></div>
       <div id="stackList"></div>
@@ -405,8 +419,6 @@
           </table>
           <div class="scNote">※共有用（観戦）ウィンドウは手札/サーチ非表示のため、盤面操作ショートカットも無効です。</div>
         </div>
-          </table>
-        </div>
       </div>
     </div>
   </div>
@@ -425,7 +437,7 @@
       <div id="calcRow">
         <button id="btnCalcEval" type="button">= 計算</button>
         <button id="btnCalcCopy" type="button">結果コピー</button>
-        <button id="btnCalcBack" type="button">⌫</button>
+        <button id="btnCalcBack" type="button" aria-label="1文字削除">⌫</button>
       </div>
       <div id="calcResult"><div class="val">0</div><div class="hint">Enterで計算</div></div>
       <div id="calcErr" class="calcErr hidden"></div>
@@ -438,6 +450,13 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="card_meta.js"></script>
 <script src="app.js"></script>
+<script src="app-2pick.js"></script>
+<script src="app-legacy-bridge.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
 
   <!-- solo deck select modal -->
   <div id="soloDeckModal" class="hidden">
