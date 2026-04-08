@@ -3339,6 +3339,111 @@ function toCsvCell(v){
   return s;
 }
 
+function deckIdSortKey(id){
+  const s = String(id || '').toUpperCase();
+  const order = ['SD01','SD02','BP01','BP02','BP03','FC01','PR-0'];
+  const idx = order.findIndex(prefix=>s.startsWith(prefix));
+  return [idx === -1 ? 999 : idx, s];
+}
+function sortDeckIdsByRequestedOrder(ids){
+  return ids.slice().sort((a,b)=>{
+    const ka = deckIdSortKey(a);
+    const kb = deckIdSortKey(b);
+    if(ka[0] !== kb[0]) return ka[0] - kb[0];
+    return ka[1].localeCompare(kb[1], 'ja');
+  });
+}
+function safeMetaText(v, fallback=''){
+  const s = String(v ?? '').trim();
+  if(!s || s === 'なし') return fallback;
+  return s;
+}
+function gradeToRoman(grade){
+  const map = ['', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ'];
+  const n = Number(grade) || 0;
+  return map[n] || String(grade ?? '');
+}
+function buildCurrentDeckMarkdownRows(deckEntry){
+  const lines = [];
+  const deckName = String(deckEntry?.name || '(現在のデッキ)');
+  const monsterObj = deckEntry?.deck?.monster || {};
+  const mainObj = deckEntry?.deck?.main || {};
+  const monsterIds = sortDeckIdsByRequestedOrder(Object.keys(monsterObj).filter(id=>(Number(monsterObj[id])||0) > 0));
+  const mainIds = sortDeckIdsByRequestedOrder(Object.keys(mainObj).filter(id=>(Number(mainObj[id])||0) > 0));
+
+  const monstersByGrade = new Map();
+  monsterIds.forEach((id)=>{
+    const meta = getMetaById(id) || {};
+    const grade = Number(meta.grade) || 0;
+    if(!monstersByGrade.has(grade)){
+      monstersByGrade.set(grade, {id, count:Number(monsterObj[id])||0, meta});
+    }
+  });
+
+  lines.push(`# デッキリスト: ${deckName}`);
+  lines.push('---');
+  lines.push('');
+  lines.push('## 怪獣デッキ（4枚固定）');
+  lines.push('');
+  lines.push('| No. | カード名 | 等 | 色 | A | 脅威度 | 特徴 | テキスト |');
+  lines.push('|-----|----------|----|----|----|--------|------|------|');
+  [1,2,3,4].forEach((grade)=>{
+    const item = monstersByGrade.get(grade);
+    const id = item?.id || '';
+    const meta = item?.meta || {};
+    const count = item?.count || 0;
+    const name = id ? `${meta.name || getCardLabelById(id)}${count>1?` ×${count}`:''}` : '';
+    lines.push(`| ${id} | ${name} | ${gradeToRoman(grade)} | ${meta.color || ''} | ${meta.advance ?? ''} | ${meta.power ?? ''} | ${safeMetaText(meta.features_raw)} | ${safeMetaText(meta.text)} |`);
+  });
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  const mainCards = mainIds.map((id)=>{
+    const count = Number(mainObj[id]) || 0;
+    const meta = getMetaById(id) || {};
+    const type = String(meta.type || '');
+    return { id, count, meta, type };
+  });
+  const battleCards = mainCards.filter(c=>c.type.includes('交戦'));
+  const strategyCards = mainCards.filter(c=>c.type.includes('戦略'));
+  const mainMonsterCards = mainCards.filter(c=>c.type.includes('怪獣'));
+  const a2Total = mainCards.reduce((sum, c)=>sum + ((Number(c.meta.advance)===2) ? c.count : 0), 0);
+
+  lines.push(`## メインデッキ（50枚）※A2合計: ${a2Total}枚`);
+  lines.push('');
+  lines.push('> カードNo.順（SD01→SD02→BP01→BP02→BP03→FC01→PR-0）に並べるとカードリストと対応しやすい');
+  lines.push('');
+
+  const appendMainSection = (title, cards, includePower)=>{
+    const total = cards.reduce((sum,c)=>sum+c.count,0);
+    lines.push(`### ${title}（${total}枚）`);
+    lines.push('');
+    if(includePower){
+      lines.push('| 枚 | No. | カード名 | 等 | 色 | A | 撃退力 | 特徴 | テキスト |');
+      lines.push('|----|-----|----------|----|----|----|--------|------|------|');
+    }else{
+      lines.push('| 枚 | No. | カード名 | 等 | 色 | A | 特徴 | テキスト |');
+      lines.push('|----|-----|----------|----|----|----|------|------|');
+    }
+    cards.forEach(({id,count,meta})=>{
+      const base = `| ${count} | ${id} | ${meta.name || getCardLabelById(id)} | ${gradeToRoman(meta.grade)} | ${meta.color || ''} | ${meta.advance ?? ''} |`;
+      if(includePower){
+        lines.push(`${base} ${meta.power ?? ''} | ${safeMetaText(meta.features_raw)} | ${safeMetaText(meta.text)} |`);
+      }else{
+        lines.push(`${base} ${safeMetaText(meta.features_raw)} | ${safeMetaText(meta.text)} |`);
+      }
+    });
+    lines.push('');
+  };
+
+  appendMainSection('交戦カード', battleCards, true);
+  appendMainSection('戦略カード', strategyCards, false);
+  appendMainSection('怪獣カード・メイン投入', mainMonsterCards, true);
+  lines.push('---');
+  return lines;
+}
+
 function buildDeckListCsvRows(deckEntry){
   const rowList = [];
   const deckName = String(deckEntry?.name || '(no name)');
@@ -3400,13 +3505,8 @@ function downloadCurrentDeckCsv(){
     deck: currentDeckObj(),
   };
 
-  const header = ['デッキ名','区分','カードID','カード名','枚数','更新日時(ISO)'];
-  const rows = [header, ...buildDeckListCsvRows(deckEntry)];
-  if(rows.length===1){
-    rows.push([deckEntry.name, '-', '-', '-', '0', deckEntry.updatedAt]);
-  }
-
-  const csv = '\uFEFF' + rows.map(cols=>cols.map(toCsvCell).join(',')).join('\r\n');
+  const markdownRows = buildCurrentDeckMarkdownRows(deckEntry);
+  const csv = '\uFEFF' + markdownRows.join('\r\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const ts = (()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;})();
   triggerBlobDownload(blob, `go_deck_current_${ts}.csv`);
@@ -5177,4 +5277,3 @@ let __wrapPushUndo=false;try{if(!__wrapPushUndo){const __pushUndo=pushUndo;pushU
     });
   }
 })();
-
