@@ -1710,3 +1710,35 @@ body.playMode #toolbar label{
   #builderMain[data-mobile-view='deck'] #libList{ display:none; }
   #builderFooter textarea{ min-width:200px; }
 }
+
+#strategyLifeCounter{
+  position:absolute;
+  z-index:16;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 6px;
+  border-radius:10px;
+  background:rgba(12,12,12,.78);
+  border:1px solid rgba(255,255,255,.22);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+}
+#strategyLifeCounter.hidden{display:none;}
+#strategyLifeCounter .slcBtn{
+  width:20px;
+  height:20px;
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:6px;
+  background:#2d2d2d;
+  color:#fff;
+  line-height:1;
+  cursor:pointer;
+  padding:0;
+}
+#strategyLifeCounter .slcBtn:hover{background:#444;}
+#strategyLifeCounter .slcValue{
+  min-width:20px;
+  text-align:center;
+}

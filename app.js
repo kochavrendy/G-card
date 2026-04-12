@@ -101,6 +101,7 @@ const WHITE_BACK="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1
 const CARD_BACK_SRC=`${CARD_FOLDER}/裏面.png`;
 const MAX_DUP_PER_NAME=4,MAX_SAVE_BYTES=4_500_000;const MAIN_LIMIT=50,MON_LIMIT=4;
 let backSrc=WHITE_BACK;let rageCount=0;
+let strategyLifeCount=0;
 
 // DOM refs
 const board=document.getElementById('board');
@@ -109,6 +110,7 @@ const backInput=document.getElementById('backInput');
 const deckCounterEl=document.getElementById('deckCounter');
 const discardCounterEl=document.getElementById('discardCounter');
 const monsterCounterEl=document.getElementById('monsterCounter');
+let strategyLifeCounterEl=null;
 const toolbar=document.getElementById('toolbar');
 const buildToast=document.getElementById('buildToast');
 // ===== Fixed UI size + auto scale =====
@@ -1316,7 +1318,18 @@ function createZones(){
   const dz=zones.find(z=>z.id==='deckMain');deckCounterEl.style.left=(dz.x*bw+4)+'px';deckCounterEl.style.top=(dz.y*bh+4)+'px';
   const cz=zones.find(z=>z.id==='discard');discardCounterEl.style.left=(cz.x*bw+4)+'px';discardCounterEl.style.top=(cz.y*bh+4)+'px';
   const mz=zones.find(z=>z.id==='monster');monsterCounterEl.style.left=(mz.x*bw+4)+'px';monsterCounterEl.style.top=(mz.y*bh+4)+'px';
+  const s1=zones.find(z=>z.id==='strategy1');
+  if(s1){
+    if(!strategyLifeCounterEl){
+      strategyLifeCounterEl=document.createElement('div');
+      strategyLifeCounterEl.id='strategyLifeCounter';
+      board.appendChild(strategyLifeCounterEl);
+    }
+    strategyLifeCounterEl.style.left=Math.round((s1.x+s1.w-0.01)*bw)+'px';
+    strategyLifeCounterEl.style.top=Math.round((s1.y+0.01)*bh)+'px';
+  }
   buildZoneControls();buildAreaControls();
+  updateStrategyLifeCounterUI();
 }
 
 function buildZoneControls(){
@@ -1397,6 +1410,43 @@ function moveZoneCards(fromId,toId){
 }
 
 function updateRageDisplay(){const el=document.getElementById('rageCounter');if(el)el.textContent=rageCount;}
+function isBP04089(card){
+  if(!card) return false;
+  const key=String((card.metaId||card.origName||'')).replace(/\.png$/i,'');
+  if(!key) return false;
+  const vars=normalizeIdVariants(key);
+  return vars.includes('BP04-089');
+}
+function hasBP04089InStrategyZone(){
+  const ids=Object.keys(state.cards||{});
+  return ids.some(id=>{
+    const c=state.cards[id];
+    if(!c) return false;
+    if(c.zone!=='strategy1' && c.zone!=='strategy2') return false;
+    return isBP04089(c);
+  });
+}
+function updateStrategyLifeCounterUI(){
+  if(!strategyLifeCounterEl) return;
+  const shouldShow=hasBP04089InStrategyZone();
+  if(!shouldShow){
+    strategyLifeCount=0;
+    strategyLifeCounterEl.classList.add('hidden');
+    strategyLifeCounterEl.innerHTML='';
+    return;
+  }
+  strategyLifeCounterEl.classList.remove('hidden');
+  strategyLifeCounterEl.innerHTML=`
+    <span class="slcLabel">命</span>
+    <button type="button" class="slcBtn" data-act="minus">−</button>
+    <span class="slcValue">${strategyLifeCount}</span>
+    <button type="button" class="slcBtn" data-act="plus">＋</button>
+  `;
+  const minus=strategyLifeCounterEl.querySelector('[data-act="minus"]');
+  const plus=strategyLifeCounterEl.querySelector('[data-act="plus"]');
+  if(minus) minus.onclick=()=>{ strategyLifeCount--; updateStrategyLifeCounterUI(); pushUndo(); };
+  if(plus) plus.onclick=()=>{ strategyLifeCount++; updateStrategyLifeCounterUI(); pushUndo(); };
+}
 
 // ===== Play HUD (monster + total repel) =====
 let __playHud=null,__mhImg=null,__mhName=null,__mhArea=null,__mhStack=null,__mhGrade=null,__mhRage=null,__mhThreat=null,__rhValue=null;
@@ -2421,7 +2471,7 @@ function viewerMoveToHand(){if(!viewerSelection.size){alert('カードを選択�
 function viewerMoveToDiscard(){if(viewerMode!=='deck')return;if(!viewerSelection.size){alert('カードを選択してください');return;}viewerSelection.forEach(id=>{const idx=deckPool.indexOf(id);if(idx!==-1)deckPool.splice(idx,1);const c=state.cards[id];c.zone='discard';c.faceDown=true;hideIfPooled(c);if(!discardPool.includes(id))discardPool.push(id);renderCard(c);});updateCounters();pushUndo();closeViewer();}
 
 // counters & pools
-function updateCounters(){deckCounterEl.textContent=`山札:${deckPool.length}枚`;discardCounterEl.textContent=`捨て札:${discardPool.length}枚`;monsterCounterEl.textContent=`怪獣:${monsterPool.length}枚`;}
+function updateCounters(){deckCounterEl.textContent=`山札:${deckPool.length}枚`;discardCounterEl.textContent=`捨て札:${discardPool.length}枚`;monsterCounterEl.textContent=`怪獣:${monsterPool.length}枚`;updateStrategyLifeCounterUI();}
 function shuffleDeck(){for(let i=deckPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deckPool[i],deckPool[j]]=[deckPool[j],deckPool[i]];}deckPool.forEach(id=>{const c=state.cards[id];c.zone='deckMain';c.faceDown=true;hideIfPooled(c);});updateCounters();
   // シャッフルフィードバック
   try{deckCounterEl.classList.remove('shuffle-flash');void deckCounterEl.offsetWidth;deckCounterEl.classList.add('shuffle-flash');}catch(e){}
@@ -2572,7 +2622,7 @@ function undo(){
   state.undoStack.pop();
   loadFromJSON(state.undoStack[state.undoStack.length-1],false);
 } 
-function lightState(){const {cards,order}=state;return {cards,order,deckPool,discardPool,monsterPool,dupCountByName,backSrc,rageCount,lastCoin};}
+function lightState(){const {cards,order}=state;return {cards,order,deckPool,discardPool,monsterPool,dupCountByName,backSrc,rageCount,lastCoin,strategyLifeCount};}
 function saveLocal(){try{const json=JSON.stringify(lightState());const bytes=new Blob([json]).size;if(bytes>MAX_SAVE_BYTES){alert(`保存データが大きすぎます (約${(bytes/1024).toFixed(1)}KB)`);return;}localStorage.setItem('go_state',json);alert('保存しました');}catch(e){alert('保存中エラー:'+e.message);}}
 function loadLocal(){try{const json=localStorage.getItem('go_state');if(!json){alert('データがありません');return;}loadFromJSON(json,true);}catch(e){alert('読込中エラー:'+e.message);}}
 function loadFromJSON(json,push=true){
@@ -2595,6 +2645,7 @@ state.order=p.order||Object.keys(state.cards);
   Object.assign(dupCountByName,p.dupCountByName||{});
   backSrc=p.backSrc||WHITE_BACK;
   rageCount=p.rageCount||0;
+  strategyLifeCount=Number.isFinite(Number(p.strategyLifeCount))?Number(p.strategyLifeCount):0;
   // phase/coin meta
 try{ lastCoin = (Object.prototype.hasOwnProperty.call(p,'lastCoin')) ? p.lastCoin : null; }catch(e){ lastCoin = null; }
 
