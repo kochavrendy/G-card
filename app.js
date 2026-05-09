@@ -59,7 +59,7 @@ const IDS = [
   ...rangeIds('BP03', 1, 80, { suffix: '' }),
   ...rangeIds('FC01', 1, 6, { suffix: '' }), 
   ...rangeIds('PR', 1, 14, { suffix: '' }), 
-  ...rangeIds('BP04', 1, 90, { suffix: '' }), 
+  ...rangeIds('BP04', 1, 89, { suffix: '' }),
 ];
 
 const CARD_DB = IDS.map(id => ({
