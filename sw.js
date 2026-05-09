@@ -1,5 +1,5 @@
 /* G-CARD Director Service Worker */
-const CACHE_NAME = 'gcard-director-v1';
+const CACHE_NAME = 'gcard-director-v2';
 
 // 起動時にキャッシュするコアアセット
 const PRECACHE_ASSETS = [
@@ -35,6 +35,31 @@ self.addEventListener('fetch', e => {
   // APIリクエスト・外部CDN（QRcodeライブラリ等）はSWをスルー
   const url = new URL(e.request.url);
   if (url.pathname.includes('/api/') || url.origin !== self.location.origin) return;
+
+  // HTML/JS/CSSなどの中核ファイルは network-first にして、更新済みのメタ情報を優先する
+  const pathname = url.pathname;
+  const isCoreAsset = e.request.mode === 'navigate'
+    || pathname.endsWith('/index.html')
+    || pathname.endsWith('/app.js')
+    || pathname.endsWith('/app-2pick.js')
+    || pathname.endsWith('/app-legacy-bridge.js')
+    || pathname.endsWith('/card_meta.js')
+    || pathname.endsWith('/styles.css')
+    || pathname.endsWith('/manifest.webmanifest')
+    || pathname.endsWith('/sw.js');
+
+  if (isCoreAsset) {
+    e.respondWith(
+      fetch(e.request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(cached => {
