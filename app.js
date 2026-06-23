@@ -3393,7 +3393,7 @@ function toCsvCell(v){
 
 function deckIdSortKey(id){
   const s = String(id || '').toUpperCase();
-  const order = ['SD01','SD02','BP01','BP02','BP03','FC01','PR-0'];
+  const order = ['SD01','SD02','BP01','BP02','BP03','FC01','SC01','PR-0'];
   const idx = order.findIndex(prefix=>s.startsWith(prefix));
   return [idx === -1 ? 999 : idx, s];
 }
