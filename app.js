@@ -45,6 +45,13 @@ function getSetKeyFromId(id){
     return 'FC' + n;
   }
 
+  // SC は 2桁に正規化
+  m = s.match(/^SC(\d{1,2})/);
+  if(m){
+    const n = String(parseInt(m[1],10)).padStart(2,'0');
+    return 'SC' + n;
+  }
+
   if(s.startsWith('PR')) return 'PR';
   return 'OTHER';
 }
