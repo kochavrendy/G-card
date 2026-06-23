@@ -3393,7 +3393,7 @@ function toCsvCell(v){
 
 function deckIdSortKey(id){
   const s = String(id || '').toUpperCase();
-  const order = ['SD01','SD02','BP01','BP02','BP03','FC01','SC01','PR-0'];
+  const order = ['SD01','SD02','BP01','BP02','BP03','FC01','SC01','PR-1'];
   const idx = order.findIndex(prefix=>s.startsWith(prefix));
   return [idx === -1 ? 999 : idx, s];
 }
@@ -3683,7 +3683,7 @@ let libSetFilter='__ALL__'; // '__ALL__' = 全表示
 
 function getAvailableSets(){
   const s = new Set(CARD_DB.map(c=>c.set).filter(x=>x && x!=='OTHER'));
-  const baseOrder=['SD1','SD2','BP01','BP02','BP03','BP04','FC01','PR'];
+  const baseOrder=['SD1','SD2','BP01','BP02','BP03','BP04','FC01','SC01','PR'];
   const rest=[...s].filter(k=>!baseOrder.includes(k)).sort((a,b)=>a.localeCompare(b,'ja'));
   return [...baseOrder.filter(k=>s.has(k)), ...rest];
 }
@@ -3778,6 +3778,7 @@ function renderSetBar(){
       if(/^BP\d{2}$/.test(key)) tries.push(`${CARD_FOLDER}/BP${parseInt(key.slice(2),10)}.png`);
       if(/^BP\d$/.test(key)) tries.push(`${CARD_FOLDER}/BP0${key.slice(2)}.png`);
       if(/^FC\d{2}$/.test(key)) tries.push(`${CARD_FOLDER}/FC${parseInt(key.slice(2),10)}.png`);
+      if(/^SC\d{2}$/.test(key)) tries.push(`${CARD_FOLDER}/SC${parseInt(key.slice(2),10)}.png`);
 
       let i=0;
       const tryNext=()=>{
