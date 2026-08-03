@@ -14,6 +14,14 @@
         'QR機能削除',
       ],
     },
+    {
+      date: '2026-08-04',
+      version: 'v2.4.1',
+      title: 'Deck Log接続修正',
+      items: [
+        'GitHub Pages版のブシナビ／Deck Logコード読込をVercel APIへ接続',
+      ],
+    },
   ];
 
   function renderStartNews() {
