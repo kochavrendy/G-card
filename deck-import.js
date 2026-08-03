@@ -171,6 +171,12 @@
       error.cards = [...new Set(unknown)];
       throw error;
     }
+    const placement = validateDeckPlacements({ main, monster }, cardMeta);
+    if (placement.invalidMonster.length) {
+      const error = new Error('deck_monster_type_invalid');
+      error.cards = placement.invalidMonster;
+      throw error;
+    }
 
     return {
       main,
@@ -289,6 +295,19 @@
       unknown,
       invalid,
       violations,
+    };
+  }
+
+  function validateDeckPlacements(deck, cardMeta) {
+    const invalidMonster = [];
+    for (const id of Object.keys((deck && deck.monster) || {})) {
+      const meta = cardMeta && cardMeta[id];
+      if (!meta || String(meta.type || '').trim() === '怪獣') continue;
+      invalidMonster.push(String(meta.card_number || meta.base_id || id));
+    }
+    return {
+      valid: invalidMonster.length === 0,
+      invalidMonster: [...new Set(invalidMonster)],
     };
   }
 
@@ -429,5 +448,6 @@
     importDecklogPayload,
     normalizeCustomDeckCode,
     validateDeckCopyLimits,
+    validateDeckPlacements,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

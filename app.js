@@ -3300,6 +3300,12 @@ function assertDeckCopyLimits(deck){
   if(result.invalid.length){
     const error=new Error('deck_count_invalid');error.cards=result.invalid;throw error;
   }
+  if(typeof deckImport.validateDeckPlacements==='function'){
+    const placement=deckImport.validateDeckPlacements(deck,CARD_META);
+    if(placement.invalidMonster.length){
+      const error=new Error('deck_monster_type_invalid');error.cards=placement.invalidMonster;throw error;
+    }
+  }
   if(result.violations.length){
     const hasOfficialRestriction=result.violations.some(item=>item.restriction==='restricted'||item.restriction==='choice_restricted');
     const error=new Error(hasOfficialRestriction?'deck_official_restriction_violation':'deck_copy_limit_exceeded');
@@ -3313,6 +3319,7 @@ function deckValidationMessage(error){
   const messages={
     deck_card_unknown:'Dataに未登録のカードが含まれています',
     deck_count_invalid:'不正な枚数のカードが含まれています',
+    deck_monster_type_invalid:'怪獣デッキには怪獣カードだけを入れられます',
     deck_copy_limit_exceeded:'通常・パラレルなどを合計した同一カードの上限を超えています',
     deck_official_restriction_violation:'公式の殿堂入り・コンビ殿堂の使用制限に違反しています',
   };
@@ -4000,8 +4007,12 @@ function renderLibrary(){
     }
     const btns=document.createElement('div');btns.className='libBtns';
     const bM=document.createElement('button');bM.textContent='＋メ';bM.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'main',1);};
-    const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
-    btns.append(bM,bK);div.appendChild(btns);
+    btns.appendChild(bM);
+    if(meta && meta.type==='怪獣'){
+      const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
+      btns.appendChild(bK);
+    }
+    div.appendChild(btns);
     div.onclick=()=>{openPreviewByCardId(card.id);};
     libList.appendChild(div);
   });
@@ -4027,6 +4038,10 @@ document.getElementById('libMetaBar')?.addEventListener('click',e=>{
 
 function addToBuild(id,which,count){
   const target=which==='monster'?buildMon:buildMain;
+  if(which==='monster' && (!CARD_META[id] || CARD_META[id].type!=='怪獣')){
+    alert('怪獣デッキには怪獣カードだけを入れられます');
+    return;
+  }
   if(deckImport && typeof deckImport.getDeckCopyStatus==='function'){
     const combined={...buildMain};
     for(const [deckId,deckCount] of Object.entries(buildMon)){
@@ -4320,6 +4335,7 @@ btnCodeLoad.onclick=async()=>{
       deck_code_too_large:'デッキコードが大きすぎます',
       deck_card_unknown:'Dataに未登録のカードが含まれています',
       deck_count_invalid:'不正な枚数のカードが含まれています',
+      deck_monster_type_invalid:'怪獣デッキには怪獣カードだけを入れられます',
       deck_copy_limit_exceeded:'通常・パラレルなどを合計した同一カードの上限を超えています',
       deck_official_restriction_violation:'公式の殿堂入り・コンビ殿堂の使用制限に違反しています',
       upstream_timeout:'Deck Logへの接続がタイムアウトしました',

@@ -73,6 +73,42 @@ test('rejects the whole import when any card is unknown', async () => {
   );
 });
 
+test('monster deck accepts only monster cards while main may contain them', async () => {
+  const { api, cardMeta } = await loadGlobals();
+  const monster = Object.values(cardMeta).find(
+    (card) => card.type === '怪獣' && card.is_canonical,
+  );
+  const strategy = Object.values(cardMeta).find(
+    (card) => card.type === '戦略' && card.is_canonical,
+  );
+  assert.ok(monster && strategy);
+
+  assert.equal(
+    api.validateDeckPlacements(
+      { main: { [monster.id]: 1, [strategy.id]: 1 }, monster: { [monster.id]: 1 } },
+      cardMeta,
+    ).valid,
+    true,
+  );
+  const invalid = api.validateDeckPlacements(
+    { main: {}, monster: { [strategy.id]: 1 } },
+    cardMeta,
+  );
+  assert.equal(invalid.valid, false);
+  assert.deepEqual(Array.from(invalid.invalidMonster), [strategy.card_number]);
+
+  assert.throws(
+    () => api.importDecklogPayload(
+      {
+        main: [],
+        monster: [{ cardNumber: strategy.card_number, count: 1, image: strategy.picture }],
+      },
+      cardMeta,
+    ),
+    (error) => error.message === 'deck_monster_type_invalid',
+  );
+});
+
 test('rejects an upstream row whose image and card number disagree', async () => {
   const { api, cardMeta } = await loadGlobals();
 
