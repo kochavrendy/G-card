@@ -63,12 +63,21 @@
   .thumbName{position:absolute;bottom:2px;right:4px;background:#000a;color:#fff;font-size:11px;padding:1px 4px;border-radius:3px;}
   #viewerBtns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;}#viewerBtns button{background:#444;border:none;color:#fff;padding:6px 12px;border-radius:5px;font-size:13px;cursor:pointer;}#viewerBtns button:hover{background:#666;}
   /* start modal */
-  #startModal{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;}
-  #startBox{background:#222;color:#eee;padding:24px 32px;border-radius:12px;box-shadow:0 0 20px #000;min-width:320px;text-align:center;}
+  #startModal{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;}
+  #startBox{background:#222;color:#eee;padding:24px 32px;border-radius:12px;box-shadow:0 0 20px #000;min-width:320px;width:min(92vw,520px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;text-align:center;}
   #startBox h1{margin:0 0 16px;font-size:22px;}
   #startBox button{margin:6px 0;padding:10px 16px;font-size:15px;background:#444;border:1px solid #666;border-radius:6px;color:#fff;cursor:pointer;width:100%;}
   #startBox button:hover{background:#666;}
 #startVersion{margin:10px 0 0;font-size:12px;opacity:.78;letter-spacing:.04em;}
+  .startNews{margin:14px 0 0;padding:12px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.25);text-align:left;}
+  .startNews h2{margin:0 0 8px;font-size:15px;letter-spacing:.03em;}
+  .startNewsList{max-height:220px;max-height:min(28dvh,220px);overflow-y:auto;overscroll-behavior:contain;padding-right:4px;scrollbar-gutter:stable;}
+  .startNewsEntry + .startNewsEntry{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);}
+  .startNewsMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#b9c4d1;font-size:12px;}
+  .startNewsVersion{padding:2px 7px;border:1px solid rgba(255,255,255,.13);border-radius:999px;background:rgba(255,255,255,.07);color:#eef5ff;white-space:nowrap;}
+  .startNewsEntry h3{margin:7px 0 5px;font-size:14px;color:#fff;}
+  .startNewsItems{margin:0;padding-left:1.25em;color:#d8dee8;font-size:13px;line-height:1.5;}
+  .startNewsItems li + li{margin-top:3px;}
 
 #toolsModal.hidden,#threatCalcModal.hidden,#areaCounterModal.hidden{display:none;}
 #toolsModal,#threatCalcModal,#areaCounterModal{position:fixed;inset:0;z-index:4550;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;}
@@ -396,6 +405,10 @@
 #libList{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px;background:#1113;border:1px solid #444;border-radius:4px;}
   .libCard{width:120px;cursor:pointer;position:relative;}
   .libCard img{width:100%;border-radius:6px;box-shadow:0 2px 4px #000a;}
+  .libCard.parallelCard img{outline:2px solid rgba(255,210,74,.9);box-shadow:0 0 14px rgba(255,195,40,.38),0 2px 4px #000a;}
+  .libCardBadges{position:absolute;top:4px;left:4px;right:4px;display:flex;flex-wrap:wrap;gap:3px;pointer-events:none;}
+  .libCardBadges span{padding:2px 5px;border-radius:999px;background:rgba(5,5,8,.86);border:1px solid rgba(255,255,255,.34);color:#fff;font-size:10px;font-weight:800;line-height:1.25;text-shadow:0 1px 2px #000;}
+  .parallelCard .libCardBadges span:first-child{background:rgba(137,91,0,.92);border-color:rgba(255,222,113,.92);}
   .libBtns{position:absolute;bottom:4px;left:4px;display:flex;gap:4px;}
   .libBtns button{background:#000b;color:#fff;border:1px solid #666;font-size:11px;padding:2px 4px;border-radius:4px;cursor:pointer;}
   #deckScroll{flex:1;overflow:auto;border:1px solid #444;border-radius:4px;padding:6px;background:#1113;display:flex;flex-direction:column;gap:12px;}
@@ -485,6 +498,8 @@
   }
   #previewInfo .pvTitle{font-size:24px;font-weight:900;margin:0 0 10px 0;}
   #previewInfo .pvSub{font-size:16px;opacity:.86;margin:0 0 16px 0;line-height:1.45;}
+  #previewInfo .pvBadges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;}
+  #previewInfo .pvBadge{display:inline-flex;padding:4px 9px;border-radius:999px;background:rgba(255,202,55,.18);border:1px solid rgba(255,215,103,.62);color:#ffe39a;font-size:13px;font-weight:800;}
   #previewInfo .pvRow{margin:10px 0;font-size:17px;line-height:1.55;}
   #previewInfo .pvKey{opacity:.78;margin-right:6px;font-weight:800;}
 #previewInfo .pvRowMeta{display:flex;flex-wrap:wrap;gap:14px 18px;}
@@ -1168,22 +1183,6 @@ body.flipLayout .zone[data-zone-id="slot5"] .areaUI{
     transform:scale(var(--soloOverviewScale, .5));
     transform-origin:center center;
   }
-
-
-  /* ===== Deck QR ===== */
-  #qrModal{position:fixed;inset:0;z-index:5350;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
-  #qrPanel{width:min(900px,96vw);max-height:92vh;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;}
-  .qrHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
-  .qrHeader h2{margin:0;font-size:18px;}
-  .qrHeader button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12px;}
-  .qrBody{padding:12px 14px;display:flex;flex-direction:column;gap:10px;align-items:center;}
-  #qrCanvas{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
-  #qrImg{max-width:92vw;height:auto;background:#fff;border-radius:12px;image-rendering:pixelated;}
-  #qrText{width:100%;height:84px;resize:none;background:#000;border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:12px;padding:8px 10px;font-size:12px;}
-  .qrHint{font-size:12px;opacity:.8;text-align:center;}
-  .qrBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
-  .qrBtns button{background:#444;border:1px solid #666;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;}
-
 /* ===== Fixed UI size + auto scale (2025-12-26) =====
    目的：端末差で盤面/ボタンがギチギチにならないよう、
    「基準解像度で固定して描画 → 画面が小さい時だけ全体を等倍縮小」します。
@@ -1600,9 +1599,17 @@ body.playMode #toolbar label{
   #toolbar{ font-size:12px; }
   #toolbar button,#toolbar label{ font-size:11px; padding:5px 7px; }
   #startBox{ min-width:280px; width:92vw; padding:18px; }
+  .startNews{ padding:10px; }
+  .startNewsList{ max-height:150px; max-height:min(26dvh,150px); }
   #builderFooter{ gap:8px; }
   .libCard{ width:min(42vw, 160px); }
   .deckThumb{ width:min(30vw, 112px); }
+}
+
+@media (max-height: 520px){
+  #startModal{ align-items:flex-start; padding:10px; }
+  #startBox{ max-height:calc(100vh - 20px); max-height:calc(100dvh - 20px); margin:auto 0; }
+  .startNewsList{ max-height:110px; }
 }
 
 @media (max-width: 768px) and (orientation: portrait),

@@ -71,6 +71,10 @@
       <button id="btnStartBuild">デッキ構築モード</button>
       <button id="btnStartPlay">プレイモード</button>
       <button id="btnStartTools">補助ツール</button>
+      <section id="startNews" class="startNews" aria-labelledby="startNewsTitle">
+        <h2 id="startNewsTitle">お知らせ</h2>
+        <div id="startNewsList" class="startNewsList"></div>
+      </section>
       <p id="startVersion" class="startVersion"></p>
     </div>
   </div>
@@ -215,6 +219,12 @@
                <span class="filterLabel">等級:</span>
                <!-- dynamically built by rebuildLibGradeOptions() -->
              </div>
+             <div class="filterGroup" id="libPrintGroup" role="group" aria-label="カード表現フィルタ">
+               <span class="filterLabel">表現:</span>
+               <button type="button" class="filterBtn" data-filter="print" data-value="normal">通常</button>
+               <button type="button" class="filterBtn" data-filter="print" data-value="parallel">パラレル</button>
+               <button type="button" class="filterBtn" data-filter="print" data-value="alternate">別イラスト</button>
+             </div>
            </div>
           <div id="libList"></div>
         </div>
@@ -232,13 +242,10 @@
           <button id="btnBuilderFooterToggle" type="button" class="builderFooterToggle" aria-label="デッキ構築の下部メニューを折りたたみ/展開">▾</button>
         </div>
         <div id="builderFooterBody">
-          <textarea id="deckCodeBox" placeholder="ここにデッキコードを貼る / 生成されたコードが出る"></textarea>
+          <textarea id="deckCodeBox" placeholder="G-cardコード / Deck Log・ブシナビのデッキコード"></textarea>
           <div class="builderBtnCol">
             <button id="btnCodeLoad">コード読込</button>
             <button id="btnCodeGen">コード生成</button>
-            <button id="btnQrGen" title="現在のデッキをQRで共有">QR生成</button>
-            <button id="btnQrFile" title="QR画像（スクショ等）からデッキを取り込む">画像QR読込</button>
-            <input id="qrFileInput" type="file" accept="image/*" class="hidden" />
             <button id="btnBuildStart">このデッキで開始</button>
             <button id="btnBuildSolo" title="一人回し（2デッキ選択）">一人回し</button>
             <button id="btnBuildCancel">キャンセル</button>
@@ -254,27 +261,6 @@
       </div>
     </div>
   </div>
-
-  <!-- deck QR -->
-  <div id="qrModal" class="hidden">
-    <div id="qrPanel" role="dialog" aria-modal="true" aria-label="デッキQR">
-      <div class="qrHeader">
-        <h2>デッキQR</h2>
-        <button id="btnQrClose" type="button">閉じる</button>
-      </div>
-      <div class="qrBody">
-        <canvas id="qrCanvas" width="320" height="320"></canvas>
-        <img id="qrImg" width="320" height="320" alt="QR" style="display:none;" />
-        <div class="qrHint">スマホで読み取ってデッキを取り込めます</div>
-        <textarea id="qrText" readonly></textarea>
-        <div class="qrBtns">
-          <button id="btnQrCopy" type="button">コードをコピー</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  
 
   <!-- deck manager -->
   <div id="deckMgr" class="hidden">
@@ -446,9 +432,9 @@
   </div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="news.js"></script>
 <script src="card_meta.js"></script>
+<script src="deck-import.js"></script>
 <script src="app.js"></script>
 <script src="app-2pick.js"></script>
 <script src="app-legacy-bridge.js"></script>

@@ -10,7 +10,7 @@ const URL_PARAMS = new URLSearchParams(location.search);
 const IS_EMBED = URL_PARAMS.get('embed') === '1';
 const FLIP_LAYOUT = URL_PARAMS.get('flip') === '1';
 const IS_SOLO_ROOT = URL_PARAMS.get('solo_root') === '1';
-const APP_VERSION = 'v2.3.0';
+const APP_VERSION = 'v2.4.0';
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
 
@@ -56,7 +56,7 @@ function getSetKeyFromId(id){
   return 'OTHER';
 }
 
-const IDS = [
+const LEGACY_V2_IDS = [
   ...rangeIds('SD01', 1, 15, { suffix: 'ol' }),
   ...rangeIds('SD02', 1, 15, { suffix: 'ol' }),
   ...rangeIds('BP01', 1, 80, { suffix: 'ol' }),
@@ -70,16 +70,11 @@ const IDS = [
   ...rangeIds('SC01', 1, 6, { suffix: '' }),
 ];
 
-const CARD_DB = IDS.map(id => ({
-  id,
-  name: id,
-  set: getSetKeyFromId(id),
-  deck: 'main',
-  srcGuess: `${CARD_FOLDER}/${id}.png`,
-}));
-
 // ===== Card Meta (from card_meta.js) =====
 const CARD_META = (typeof window!=='undefined' && window.CARD_META) ? window.CARD_META : {};
+const CARD_META_BY_SOURCE_ID = new Map(
+  Object.values(CARD_META).filter(Boolean).map(meta=>[String(meta.source_id||''),meta]),
+);
 function normalizeIdVariants(id){
   const s=String(id||'');
   const v=[s];
@@ -89,10 +84,39 @@ function normalizeIdVariants(id){
   return [...new Set(v)];
 }
 function getMetaById(id){
+  const sourceMatch=CARD_META_BY_SOURCE_ID.get(String(id||''));
+  if(sourceMatch) return sourceMatch;
   const vars=normalizeIdVariants(id);
   for(const k of vars){ if(CARD_META && CARD_META[k]) return CARD_META[k]; }
   return null;
 }
+
+// Existing v2 codes store indexes. Never reorder or remove LEGACY_V2_IDS.
+// Data-backed records (including parallel prints) are appended and new codes
+// use stable card IDs through v3 instead of catalog indexes.
+const IDS = [
+  ...LEGACY_V2_IDS.filter(id=>{
+    const meta=getMetaById(id);
+    return meta && meta.deck_eligible !== false;
+  }),
+  ...Object.keys(CARD_META).filter(id=>{
+    if(LEGACY_V2_IDS.includes(id)) return false;
+    return CARD_META[id] && CARD_META[id].deck_eligible !== false;
+  }),
+];
+const CARD_DB = IDS.map(id => {
+  const meta = getMetaById(id);
+  return {
+    id,
+    name: (meta && meta.name) || id,
+    set: (meta && meta.set) || getSetKeyFromId(id),
+    deck: (meta && meta.type === '怪獣') ? 'monster' : 'main',
+    rulesId: (meta && meta.base_id) || String(id).replace(/ol$/i,''),
+    srcGuess: (meta && meta.image_url) || `${CARD_FOLDER}/${id}.png`,
+    fallbackSrc: (meta && meta.fallback_image_url) || '',
+    meta,
+  };
+});
 function hydrateCardsFromMeta(){
   try{
     CARD_DB.forEach(c=>{
@@ -557,6 +581,7 @@ const libFilter=document.getElementById('libFilter');
 const libColorSelected = new Set();
 const libTypeSelected  = new Set();
 const libGradeSelected = new Set();
+const libPrintSelected = new Set();
 // ===== libGrade options (auto from meta) - トグルボタンで生成 =====
 function rebuildLibGradeOptions(){
   try{
@@ -617,6 +642,7 @@ const countInfo=document.getElementById('countInfo');
 const deckCodeBox=document.getElementById('deckCodeBox');
 const btnCodeLoad=document.getElementById('btnCodeLoad');
 const btnCodeGen=document.getElementById('btnCodeGen');
+const deckImport=(typeof window!=='undefined' && window.GCardDeckImport) ? window.GCardDeckImport : null;
 const btnBuildStart=document.getElementById('btnBuildStart');
 const btnBuildSolo=document.getElementById('btnBuildSolo');
 const btnBuildCancel=document.getElementById('btnBuildCancel');
@@ -624,15 +650,6 @@ const builderFooter=document.getElementById('builderFooter');
 const builderFooterHeader=document.getElementById('builderFooterHeader');
 const btnBuilderFooterToggle=document.getElementById('btnBuilderFooterToggle');
 
-const btnQrGen=document.getElementById('btnQrGen');
-const btnQrFile=document.getElementById('btnQrFile');
-const qrFileInput=document.getElementById('qrFileInput');
-const qrModal=document.getElementById('qrModal');
-const qrPanel=document.getElementById('qrPanel');
-const qrCanvas=document.getElementById('qrCanvas');
-const qrText=document.getElementById('qrText');
-const btnQrClose=document.getElementById('btnQrClose');
-const btnQrCopy=document.getElementById('btnQrCopy');
 // deck saves (builder)
 const btnDeckSave=document.getElementById('btnDeckSave');
 const btnDeckLoad=document.getElementById('btnDeckLoad');
@@ -2327,22 +2344,31 @@ function colorToHtml(colorRaw){
 
 function buildPreviewInfoHtml(card, meta){
   const idRaw = String(card && card.id ? card.id : '');
-  const idDisp = idRaw.replace(/ol$/i,'');
+  const idDisp = String(meta && meta.card_number ? meta.card_number : idRaw.replace(/ol$/i,''));
   const id = escHtml(idDisp);
-  const set = escHtml(card && card.set ? card.set : '');
+  const set = escHtml(meta && meta.set ? meta.set : (card && card.set ? card.set : ''));
   const name = escHtml(meta && meta.name ? meta.name : (card && card.name ? card.name : id));
-  const colorRaw = (meta && meta.color ? meta.color : '—');
-  const colorHtml = colorToHtml(colorRaw);
+  const colors = meta && Array.isArray(meta.colors) && meta.colors.length
+    ? meta.colors
+    : [meta && meta.color ? meta.color : '—'];
+  const colorHtml = colors.map(colorToHtml).join('<span aria-hidden="true">・</span>');
   const type  = escHtml(meta && meta.type  ? meta.type  : '—');
-  const grade = escHtml(meta && meta.grade != null ? meta.grade : '—');
+  const grade = escHtml(meta && meta.grade_display ? meta.grade_display : (meta && meta.grade != null ? meta.grade : '—'));
   const advRaw = (meta && meta.advance != null ? meta.advance : null);
   const advHtml = advanceToHtml(advRaw);
-  const power = escHtml(meta && meta.power != null ? meta.power : '—');
+  const power = escHtml(meta && meta.power_display ? meta.power_display : (meta && meta.power != null ? meta.power : '—'));
+  const powerLabel = escHtml(meta && meta.power_label ? meta.power_label : '脅威度/撃退力');
   const feats = (meta && Array.isArray(meta.features)) ? meta.features : [];
   const txt   = meta && meta.text ? meta.text : '';
 
   let html = `<div class="pvTitle">${name}</div>`;
   html += `<div class="pvSub">${id}${set ? ` / ${set}` : ''}${meta ? '' : ' / （メタ未登録）'}</div>`;
+  if(meta){
+    const badges=[meta.variant_label, meta.rarity].filter(Boolean);
+    if(badges.length){
+      html += `<div class="pvBadges">${badges.map(value=>`<span class="pvBadge">${escHtml(value)}</span>`).join('')}</div>`;
+    }
+  }
   html += `<div class="pvRow pvRowMeta">`
     + `<span class="pvItem"><span class="pvKey">色</span><span class="pvVal">${colorHtml}</span></span>`
     + `<span class="pvItem"><span class="pvKey">種別</span><span class="pvVal">${type}</span></span>`
@@ -2350,7 +2376,7 @@ function buildPreviewInfoHtml(card, meta){
   html += `<div class="pvRow pvRowMeta">`
     + `<span class="pvItem"><span class="pvKey">等級</span><span class="pvVal">${grade}</span></span>`
     + `<span class="pvItem"><span class="pvKey">進攻</span><span class="pvVal">${advHtml}</span></span>`
-    + `<span class="pvItem"><span class="pvKey">脅威度/撃退力</span><span class="pvVal">${power}</span></span>`
+    + `<span class="pvItem"><span class="pvKey">${powerLabel}</span><span class="pvVal">${power}</span></span>`
     + `</div>`;
 
   if(feats.length){
@@ -2384,6 +2410,10 @@ function openPreviewByCardId(cardId){
   const card = CARD_DB.find(c=>c.id===cardId) || {id:cardId,name:cardId,set:getSetKeyFromId(cardId),srcGuess:WHITE_BACK};
   const meta = getMetaById(cardId);
   previewImg.src = card.srcGuess || WHITE_BACK;
+  previewImg.onerror=()=>{
+    if(card.fallbackSrc && previewImg.src!==card.fallbackSrc){ previewImg.src=card.fallbackSrc; return; }
+    previewImg.onerror=null;previewImg.src=WHITE_BACK;
+  };
   if(previewInfo) previewInfo.innerHTML = buildPreviewInfoHtml(card, meta);
 
   if(previewInfo) applyInlineIcons(previewInfo);
@@ -2394,6 +2424,7 @@ function openPreview(){
   if(!selection.size){alert('カードを選択してください');return;}
   const id=[...selection][selection.size-1];
   const c=state.cards[id];
+  previewImg.onerror=()=>{previewImg.onerror=null;previewImg.src=WHITE_BACK;};
   previewImg.src=c.front;
   const metaKey = String((c.metaId||c.origName||'')).replace(/\.png$/i,'');
   const meta = getMetaById(metaKey);
@@ -3254,6 +3285,51 @@ function cloneDeckObj(obj){
 }
 function currentDeckObj(){ return {main:Object.assign({},buildMain), monster:Object.assign({},buildMon)}; }
 
+function assertDeckCopyLimits(deck){
+  if(!deckImport || typeof deckImport.validateDeckCopyLimits!=='function') return true;
+  const combined={};
+  for(const key of ['main','monster']){
+    for(const [id,count] of Object.entries((deck && deck[key])||{})){
+      combined[id]=Number(combined[id]||0)+Number(count);
+    }
+  }
+  const result=deckImport.validateDeckCopyLimits(combined,CARD_META,MAX_DUP_PER_NAME);
+  if(result.unknown.length){
+    const error=new Error('deck_card_unknown');error.cards=result.unknown;throw error;
+  }
+  if(result.invalid.length){
+    const error=new Error('deck_count_invalid');error.cards=result.invalid;throw error;
+  }
+  if(typeof deckImport.validateDeckPlacements==='function'){
+    const placement=deckImport.validateDeckPlacements(deck,CARD_META);
+    if(placement.invalidMonster.length){
+      const error=new Error('deck_monster_type_invalid');error.cards=placement.invalidMonster;throw error;
+    }
+  }
+  if(result.violations.length){
+    const hasOfficialRestriction=result.violations.some(item=>item.restriction==='restricted'||item.restriction==='choice_restricted');
+    const error=new Error(hasOfficialRestriction?'deck_official_restriction_violation':'deck_copy_limit_exceeded');
+    error.cards=result.violations.map(item=>`${item.baseId} (${item.total}/${item.limit})`);
+    throw error;
+  }
+  return true;
+}
+
+function deckValidationMessage(error){
+  const messages={
+    deck_card_unknown:'Dataに未登録のカードが含まれています',
+    deck_count_invalid:'不正な枚数のカードが含まれています',
+    deck_monster_type_invalid:'怪獣デッキには怪獣カードだけを入れられます',
+    deck_copy_limit_exceeded:'通常・パラレルなどを合計した同一カードの上限を超えています',
+    deck_official_restriction_violation:'公式の殿堂入り・コンビ殿堂の使用制限に違反しています',
+  };
+  let message=messages[error && error.message] || 'デッキデータが不正です';
+  if(error && Array.isArray(error.cards) && error.cards.length){
+    message+=`\n対象: ${error.cards.slice(0,8).join(', ')}`;
+  }
+  return message;
+}
+
 function fmtJP(iso){
   try{
     const d=new Date(iso);
@@ -3267,12 +3343,15 @@ function fmtJP(iso){
 }
 
 function applyDeckToBuilder(deck, opts={}){
+  try{ assertDeckCopyLimits(deck); }
+  catch(error){ alert(deckValidationMessage(error)); return false; }
   buildMain = Object.assign({}, deck?.main||{});
   buildMon  = Object.assign({}, deck?.monster||{});
   renderDeckThumbs();
   updateBuildCount();
   try{ deckCodeBox.value = encodeDeck({main:buildMain, monster:buildMon}); }catch(e){}
   if(opts && opts.syncSnapshot) syncActiveDeckSnapshot();
+  return true;
 }
 
 function saveDeckPrompt(){
@@ -3642,8 +3721,12 @@ deckMgrList && deckMgrList.addEventListener('click', (e)=>{
       const ok = askSaveBeforeDestructiveChange('現在のロード済みデッキが変更されています。別のデッキをロードする前にセーブしますか？');
       if(!ok) return;
     }
+    const previousActiveDeckId=activeDeckId;
     activeDeckId = d.id;
-    applyDeckToBuilder(d.deck, {syncSnapshot:true});
+    if(!applyDeckToBuilder(d.deck, {syncSnapshot:true})){
+      activeDeckId=previousActiveDeckId;
+      return;
+    }
     closeDeckMgr();
     return;
   }
@@ -3690,7 +3773,7 @@ let libSetFilter='__ALL__'; // '__ALL__' = 全表示
 
 function getAvailableSets(){
   const s = new Set(CARD_DB.map(c=>c.set).filter(x=>x && x!=='OTHER'));
-  const baseOrder=['SD1','SD2','BP01','BP02','BP03','BP04','FC01','SC01','PR'];
+  const baseOrder=['SD01','SD02','SDS01','BP01','BP02','BP03','BP04','FC01','SC01','PR'];
   const rest=[...s].filter(k=>!baseOrder.includes(k)).sort((a,b)=>a.localeCompare(b,'ja'));
   return [...baseOrder.filter(k=>s.has(k)), ...rest];
 }
@@ -3874,14 +3957,22 @@ function renderLibrary(){
   const colorF = libColorSelected;
   const typeF  = libTypeSelected;
   const gradeF = libGradeSelected;
+  const printF = libPrintSelected;
 
   CARD_DB.forEach(card=>{
     if(setKey!=='__ALL__' && card.set!==setKey) return;
 
     const meta = getMetaById(card.id) || null;
-    if(colorF.size && (!meta || !colorF.has(String(meta.color||'')))) return;
+    const metaColors=meta && Array.isArray(meta.colors) && meta.colors.length
+      ? meta.colors.map(String)
+      : [String((meta && meta.color)||'')];
+    if(colorF.size && !metaColors.some(color=>colorF.has(color))) return;
     if(typeF.size  && (!meta || !typeF.has(String(meta.type||'')))) return;
     if(gradeF.size && (!meta || !gradeF.has(String(meta.grade??'')))) return;
+    const printKind = meta && meta.is_parallel
+      ? 'parallel'
+      : (meta && meta.is_canonical === false ? 'alternate' : 'normal');
+    if(printF.size && !printF.has(printKind)) return;
 
     const hay = (function(){
       const parts=[
@@ -3890,6 +3981,9 @@ function renderLibrary(){
         meta && meta.name,
         meta && meta.color,
         meta && meta.type,
+        meta && meta.card_number,
+        meta && meta.rarity,
+        meta && meta.variant_label,
         meta && meta.features_raw,
         meta && meta.text
       ].filter(Boolean).map(x=>String(x));
@@ -3898,11 +3992,27 @@ function renderLibrary(){
     if(q && !hay.includes(q)) return;
 
     const div=document.createElement('div');div.className='libCard';div.dataset.id=card.id;
-    const img=document.createElement('img');img.loading='lazy';img.src=card.srcGuess;img.onerror=()=>{img.src=WHITE_BACK;};div.appendChild(img);
+    if(meta && meta.is_parallel) div.classList.add('parallelCard');
+    const img=document.createElement('img');img.loading='lazy';img.src=card.srcGuess;
+    img.onerror=()=>{
+      if(card.fallbackSrc && img.src!==card.fallbackSrc){ img.src=card.fallbackSrc; return; }
+      img.onerror=null;img.src=WHITE_BACK;
+    };
+    div.appendChild(img);
+    if(meta){
+      const badge=document.createElement('div');badge.className='libCardBadges';
+      if(meta.variant_label){ const item=document.createElement('span');item.textContent=meta.variant_label;badge.appendChild(item); }
+      if(meta.rarity){ const item=document.createElement('span');item.textContent=meta.rarity;badge.appendChild(item); }
+      div.appendChild(badge);
+    }
     const btns=document.createElement('div');btns.className='libBtns';
     const bM=document.createElement('button');bM.textContent='＋メ';bM.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'main',1);};
-    const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
-    btns.append(bM,bK);div.appendChild(btns);
+    btns.appendChild(bM);
+    if(meta && meta.type==='怪獣'){
+      const bK=document.createElement('button');bK.textContent='＋怪';bK.onclick=(e)=>{e.stopPropagation();addToBuild(card.id,'monster',1);};
+      btns.appendChild(bK);
+    }
+    div.appendChild(btns);
     div.onclick=()=>{openPreviewByCardId(card.id);};
     libList.appendChild(div);
   });
@@ -3918,6 +4028,7 @@ document.getElementById('libMetaBar')?.addEventListener('click',e=>{
   if(filter==='color') set=libColorSelected;
   else if(filter==='type') set=libTypeSelected;
   else if(filter==='grade') set=libGradeSelected;
+  else if(filter==='print') set=libPrintSelected;
   else return;
   if(set.has(value)) set.delete(value);
   else set.add(value);
@@ -3925,13 +4036,43 @@ document.getElementById('libMetaBar')?.addEventListener('click',e=>{
   renderLibrary();
 });
 
-function addToBuild(id,which,count){const target=which==='monster'?buildMon:buildMain;target[id]=(target[id]||0)+count;renderDeckThumbs();updateBuildCount();const deckName=(which==='monster')?'怪獣デッキ':'メインデッキ';showBuildToast(`${deckName}に「${getCardLabelById(id)}」を追加`);}
+function addToBuild(id,which,count){
+  const target=which==='monster'?buildMon:buildMain;
+  if(which==='monster' && (!CARD_META[id] || CARD_META[id].type!=='怪獣')){
+    alert('怪獣デッキには怪獣カードだけを入れられます');
+    return;
+  }
+  if(deckImport && typeof deckImport.getDeckCopyStatus==='function'){
+    const combined={...buildMain};
+    for(const [deckId,deckCount] of Object.entries(buildMon)){
+      combined[deckId]=Number(combined[deckId]||0)+Number(deckCount);
+    }
+    const copyStatus=deckImport.getDeckCopyStatus(combined,id,count,CARD_META,MAX_DUP_PER_NAME);
+    if(!copyStatus.allowed){
+      if(copyStatus.reason==='choice_restricted'){
+        alert(`${copyStatus.baseId} は ${copyStatus.conflictingBaseIds.join(' / ')} と同じデッキには採用できません（コンビ殿堂）`);
+      }else if(copyStatus.reason==='restricted'){
+        alert(`${copyStatus.baseId} は通常・パラレルなどを合計して1枚までです（殿堂入り）`);
+      }else{
+        alert(`${copyStatus.baseId} は通常・パラレルなどの表現を合計して上限${copyStatus.limit}枚です`);
+      }
+      return;
+    }
+  }
+  target[id]=(target[id]||0)+count;
+  renderDeckThumbs();updateBuildCount();
+  const deckName=(which==='monster')?'怪獣デッキ':'メインデッキ';
+  showBuildToast(`${deckName}に「${getCardLabelById(id)}」を追加`);
+}
 function decFromBuild(id,which){const target=which==='monster'?buildMon:buildMain;if(!target[id])return;target[id]--;if(target[id]<=0)delete target[id];renderDeckThumbs();updateBuildCount();}
 // ===== Deck Builder: sort order (怪獣→交戦→戦略, 等級昇順, 色:赤→青→緑→白, カードNo昇順) =====
 const __BUILD_TYPE_RANK = {'怪獣':0,'交戦':1,'戦略':2};
 const __BUILD_COLOR_RANK = {'赤':0,'青':1,'緑':2,'白':3};
 
-function __buildNormId(id){ return String(id||'').replace(/ol$/i,''); }
+function __buildNormId(id){
+  const meta=getMetaById(id);
+  return String((meta && meta.base_id) || id || '').replace(/ol$/i,'').replace(/~.*$/,'');
+}
 
 function __buildTypeOf(id, which){
   if(which==='monster') return '怪獣';
@@ -3995,7 +4136,10 @@ function renderDeckThumbs(){
 
       const img=document.createElement('img');
       img.src=info.srcGuess;
-      img.onerror=()=>{img.src = maskReveal ? revealBack : WHITE_BACK;};
+      img.onerror=()=>{
+        if(info.fallbackSrc && img.src!==info.fallbackSrc){ img.src=info.fallbackSrc; return; }
+        img.onerror=null;img.src = maskReveal ? revealBack : WHITE_BACK;
+      };
       wrap.appendChild(img);
 
       const cnt=document.createElement('div');
@@ -4032,7 +4176,7 @@ btnCodeGen.onclick=()=>{deckCodeBox.value=encodeDeck({main:buildMain,monster:bui
 
 
 // ===== Hidden Command Codes (mobile-friendly) =====
-// デッキコード欄 / QR の文字列にコマンドを入れて起動できる
+// デッキコード欄の文字列にコマンドを入れて起動できる
 // 例: "v2:cmd:2pick" / "cmd:2pick" / "2pick" / "g2pick"
 function __is2PickCommand(str){
   if(!str) return false;
@@ -4099,265 +4243,131 @@ function makeDebugRandomDeck(){
   const monster={}; for(const id of monPick){ monster[id]=(monster[id]||0)+1; }
   return {main, monster};
 }
-btnCodeLoad.onclick=()=>{
-  try{
-    const raw = deckCodeBox.value.trim();
-    // Mobile-friendly hidden command: paste a command-like "deck code" to launch 2Pick
-    // e.g. v2:cmd:2pick
-    if(__tryLaunch2PickFromCode(raw)) return;
-    if(raw && raw.toLowerCase()==='kochavrendy'){
-      const obj = makeDebugRandomDeck();
-      buildMain=obj.main||{};
-      buildMon=obj.monster||{};
-      renderDeckThumbs();
-      updateBuildCount();
-      alert('デバッグ用：ランダムデッキを生成しました');
-      return;
-    }
-    const obj=decodeDeck(raw);
+let __deckCodeLoadSeq=0;
+btnCodeLoad.onclick=async()=>{
+  const seq=++__deckCodeLoadSeq;
+  const raw=deckCodeBox.value.trim();
+  // Mobile-friendly hidden command: paste a command-like "deck code" to launch 2Pick
+  // e.g. v2:cmd:2pick
+  if(__tryLaunch2PickFromCode(raw)) return;
+  if(raw && raw.toLowerCase()==='kochavrendy'){
+    const obj=makeDebugRandomDeck();
     buildMain=obj.main||{};
     buildMon=obj.monster||{};
     renderDeckThumbs();
     updateBuildCount();
-    alert('読込完了');
+    alert('デバッグ用：ランダムデッキを生成しました');
+    return;
+  }
+
+  const previousLabel=btnCodeLoad.textContent;
+  try{
+    const customCode=deckImport ? deckImport.normalizeCustomDeckCode(raw) : raw;
+    if(/^v[123]:/i.test(customCode)){
+      const obj=decodeDeck(customCode);
+      assertDeckCopyLimits(obj);
+      buildMain=obj.main;
+      buildMon=obj.monster;
+      renderDeckThumbs();
+      updateBuildCount();
+      alert('G-cardデッキコードを読み込みました');
+      return;
+    }
+
+    if(!deckImport) throw new Error('deck_import_unavailable');
+    const decklogCode=deckImport.extractDecklogCode(raw);
+    if(!decklogCode) throw new Error('decklog_code_invalid');
+
+    btnCodeLoad.disabled=true;
+    btnCodeLoad.textContent='読込中…';
+    const requestController=new AbortController();
+    const requestTimeout=setTimeout(()=>requestController.abort(),15_000);
+    let response;
+    let payload=null;
+    try{
+      response=await fetch(`/api/decklog/${encodeURIComponent(decklogCode)}`,{
+        headers:{Accept:'application/json'},
+        cache:'no-store',
+        signal:requestController.signal,
+      });
+      try{ payload=await response.json(); }catch(e){
+        if(e && e.name==='AbortError') throw e;
+      }
+    }catch(e){
+      if(e && e.name==='AbortError') throw new Error('upstream_timeout');
+      throw new Error('upstream_unavailable');
+    }finally{
+      clearTimeout(requestTimeout);
+    }
+    if(!response.ok){
+      const error=new Error((payload && payload.error) || 'decklog_request_failed');
+      error.status=response.status;
+      throw error;
+    }
+    const imported=deckImport.importDecklogPayload(payload,CARD_META);
+    if(imported.mainCount!==MAIN_LIMIT || imported.monsterCount!==MON_LIMIT){
+      const error=new Error('decklog_deck_size_invalid');
+      error.mainCount=imported.mainCount;
+      error.monsterCount=imported.monsterCount;
+      throw error;
+    }
+    assertDeckCopyLimits(imported);
+    if(seq!==__deckCodeLoadSeq) return;
+
+    // Assign only after every row and both deck sizes have been validated.
+    buildMain=imported.main;
+    buildMon=imported.monster;
+    renderDeckThumbs();
+    updateBuildCount();
+    const title=imported.title ? `「${imported.title}」` : decklogCode;
+    alert(`Deck Log／ブシナビ ${title} を読み込みました`);
   }catch(e){
-    alert('コードが不正です');
+    if(seq!==__deckCodeLoadSeq) return;
+    const messages={
+      decklog_code_invalid:'Deck Log／ブシナビのデッキコードを確認してください',
+      deck_not_found:'指定されたデッキコードは見つかりませんでした',
+      wrong_game_title:'ゴジラ カードゲーム以外のデッキコードです',
+      decklog_response_invalid:'Deck Logの応答形式を読み取れませんでした',
+      decklog_count_invalid:'Deck Logに不正な枚数のカードがあります',
+      decklog_card_unknown:'Dataに未登録のカードがあるため読み込めませんでした',
+      decklog_card_mismatch:'Deck Logのカード番号と画像が一致しないため読み込めませんでした',
+      decklog_deck_size_invalid:'デッキ枚数がメイン50枚・怪獣4枚ではありません',
+      deck_code_too_large:'デッキコードが大きすぎます',
+      deck_card_unknown:'Dataに未登録のカードが含まれています',
+      deck_count_invalid:'不正な枚数のカードが含まれています',
+      deck_monster_type_invalid:'怪獣デッキには怪獣カードだけを入れられます',
+      deck_copy_limit_exceeded:'通常・パラレルなどを合計した同一カードの上限を超えています',
+      deck_official_restriction_violation:'公式の殿堂入り・コンビ殿堂の使用制限に違反しています',
+      upstream_timeout:'Deck Logへの接続がタイムアウトしました',
+      upstream_unavailable:'Deck Logへ接続できませんでした',
+      upstream_payload_invalid:'Deck Logの応答を読み取れませんでした',
+      deck_import_unavailable:'コード読込機能を初期化できませんでした',
+    };
+    let message=messages[e && e.message] || 'コードが不正です';
+    if(e && Array.isArray(e.cards) && e.cards.length){
+      message+=`\n対象: ${e.cards.slice(0,8).join(', ')}`;
+    }
+    if(e && e.message==='decklog_deck_size_invalid'){
+      message+=`\nメイン ${e.mainCount}枚／怪獣 ${e.monsterCount}枚`;
+    }
+    alert(message);
+  }finally{
+    if(seq===__deckCodeLoadSeq){
+      btnCodeLoad.disabled=false;
+      btnCodeLoad.textContent=previousLabel;
+    }
   }
 };
 
 
 
-// ===== Deck QR =====
-function normalizeDeckCodeFromText(t){
-  if(!t) return '';
-  const s = String(t).trim();
-  // accept v1 / v2 directly, or extract from longer text (e.g. pasted logs)
-  if(s.startsWith('v1:') || s.startsWith('v2:')) return s;
-  const i1 = s.indexOf('v1:');
-  const i2 = s.indexOf('v2:');
-  let i = -1;
-  if(i1>=0 && i2>=0) i = Math.min(i1,i2);
-  else i = (i1>=0 ? i1 : i2);
-  if(i>=0) return s.slice(i).trim();
-  return s;
-}
-
-let __qrCodeLibPromise = null;
-function __loadScriptOnce(src){
-  return new Promise((resolve,reject)=>{
-    // already loaded?
-    const exists = Array.from(document.scripts||[]).some(s=>s.src===src);
-    if(exists) return resolve(true);
-    const s=document.createElement('script');
-    s.src=src;
-    s.async=true;
-    s.onload=()=>resolve(true);
-    s.onerror=()=>reject(new Error('load failed: '+src));
-    document.head.appendChild(s);
-  });
-}
-async function __ensureQRCodeLib(){
-  if(window.QRCode && QRCode.toCanvas) return true;
-  if(__qrCodeLibPromise) return __qrCodeLibPromise;
-  const urls=[
-    'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js',
-    'https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js'
-  ];
-  __qrCodeLibPromise=(async ()=>{
-    for(const u of urls){
-      try{
-        await __loadScriptOnce(u);
-        if(window.QRCode && QRCode.toCanvas) return true;
-      }catch(e){ /* try next */ }
-    }
-    return false;
-  })();
-  return __qrCodeLibPromise;
-}
-
-function __showQrFallbackImage(code){
-  if(!qrCanvas) return;
-  const img = document.getElementById('qrImg');
-  // Hide canvas, show img
-  qrCanvas.style.display='none';
-  if(img){
-    img.style.display='block';
-    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&ecc=M&margin=1&data=' + encodeURIComponent(code);
-    img.onerror = ()=>{
-      // If even this fails, show a clear message on canvas
-      try{
-        qrCanvas.style.display='block';
-        img.style.display='none';
-        const ctx=qrCanvas.getContext('2d');
-        ctx.clearRect(0,0,qrCanvas.width,qrCanvas.height);
-        ctx.fillStyle='#fff';ctx.fillRect(0,0,qrCanvas.width,qrCanvas.height);
-        ctx.fillStyle='#000';ctx.font='14px sans-serif';
-        ctx.fillText('QR生成に失敗しました',10,30);
-        ctx.fillText('通信環境を確認してください',10,55);
-      }catch(e){}
-    };
-  }
-}
-
-
-function __qrRenderCssSize(){
-  // Big enough for dense deck codes; keep within viewport
-  const vw = Math.max(320, Math.floor(window.innerWidth * 0.86));
-  const vh = Math.max(320, Math.floor(window.innerHeight * 0.70));
-  // Aim for a square that fits comfortably in the modal
-  return Math.max(360, Math.min(760, vw, vh));
-}
-function __qrRenderWidthPx(){
-  const css = __qrRenderCssSize();
-  const dpr = window.devicePixelRatio || 1;
-  return Math.max(360, Math.floor(css * dpr));
-}
-function __prepQrCanvasSize(){
-  if(!qrCanvas) return;
-  const css = __qrRenderCssSize();
-  const px  = __qrRenderWidthPx();
-  qrCanvas.width = px;
-  qrCanvas.height = px;
-  qrCanvas.style.width = css + 'px';
-  qrCanvas.style.height = css + 'px';
-}
-
-async function openQrModalWithCode(code){
-  if(!qrModal||!qrCanvas||!qrText) return;
-  const c=normalizeDeckCodeFromText(code);
-  qrText.value=c;
-
-  qrModal.classList.remove('hidden');
-  __prepQrCanvasSize();
-
-  // render QR (prefer local lib; fallback to external image)
-  try{
-    const ok = await __ensureQRCodeLib();
-    const img = document.getElementById('qrImg');
-    if(ok && window.QRCode && QRCode.toCanvas){
-      // show canvas, hide img
-      qrCanvas.style.display='block';
-      if(img) img.style.display='none';
-      QRCode.toCanvas(qrCanvas, c, {errorCorrectionLevel:'L', margin:4, width:__qrRenderWidthPx()}, (err)=>{
-        if(err) console.warn(err);
-      });
-      return;
-    }
-    // fallback image service
-    __showQrFallbackImage(c);
-  }catch(e){
-    console.warn(e);
-    __showQrFallbackImage(c);
-  }
-}
-
-function closeQrModal(){ qrModal && qrModal.classList.add('hidden'); }
-btnQrClose && (btnQrClose.onclick=closeQrModal);
-qrModal && qrModal.addEventListener('click', e=>{ if(e.target===qrModal) closeQrModal(); });
-
-btnQrCopy && (btnQrCopy.onclick=async ()=>{
-  try{
-    await navigator.clipboard.writeText(qrText.value||'');
-    alert('コピーしました');
-  }catch(e){
-    // fallback
-    try{
-      qrText.focus(); qrText.select();
-      document.execCommand('copy');
-      alert('コピーしました');
-    }catch(e2){ alert('コピーに失敗しました'); }
-  }
-});
-
-async function decodeQrFromImageFile(file){
-  if(!file) return null;
-  if(typeof jsQR==='undefined') return null;
-
-  const MAX_SIDE = 1400; // 大きすぎる画像は縮小して高速化
-  let source = null;
-  let objectUrl = null;
-
-  // createImageBitmapが使えるならEXIF向きも反映されやすい
-  try{
-    if('createImageBitmap' in window){
-      source = await createImageBitmap(file, { imageOrientation:'from-image' });
-    }
-  }catch(e){ /* fallback below */ }
-
-  if(!source){
-    objectUrl = URL.createObjectURL(file);
-    source = await new Promise((resolve, reject)=>{
-      const img = new Image();
-      img.onload = ()=> resolve(img);
-      img.onerror = reject;
-      img.src = objectUrl;
-    });
-  }
-
-  const w0 = source.width || source.videoWidth || source.naturalWidth;
-  const h0 = source.height || source.videoHeight || source.naturalHeight;
-  if(!w0 || !h0) return null;
-
-  const scale = Math.min(1, MAX_SIDE / Math.max(w0, h0));
-  const w = Math.max(1, Math.round(w0 * scale));
-  const h = Math.max(1, Math.round(h0 * scale));
-
-  const cvs = document.createElement('canvas');
-  cvs.width = w; cvs.height = h;
-  const ctx = cvs.getContext('2d', { willReadFrequently:true });
-  ctx.drawImage(source, 0, 0, w, h);
-
-  // object URL cleanup
-  if(objectUrl) URL.revokeObjectURL(objectUrl);
-
-  const imgData = ctx.getImageData(0,0,w,h);
-  const res = jsQR(imgData.data, w, h, { inversionAttempts:'attemptBoth' });
-  return res ? res.data : null;
-}
-
-function applyImportedDeckCode(raw){
-  try{
-    // allow QR / pasted text to act as a hidden command
-    if(__tryLaunch2PickFromCode(raw)) return;
-    const code = normalizeDeckCodeFromText(raw);
-    deckCodeBox.value = code;
-    const obj = decodeDeck(code);
-    buildMain = obj.main || {};
-    buildMon  = obj.monster || {};
-    renderDeckThumbs();
-    updateBuildCount();
-    alert('読込完了');
-  }catch(e){
-    alert('QRが不正です');
-  }
-}
-
-// Buttons: generate / file
-btnQrGen && (btnQrGen.onclick=()=>{
-  const code=encodeDeck({main:buildMain,monster:buildMon});
-  deckCodeBox.value=code;
-  openQrModalWithCode(code);
-});
-
-
-btnQrFile && (btnQrFile.onclick=()=>{
-  if(!qrFileInput){ alert('画像読込が利用できません'); return; }
-  qrFileInput.value='';
-  qrFileInput.click();
-});
-
-qrFileInput && (qrFileInput.onchange=async ()=>{
-  const file = qrFileInput.files && qrFileInput.files[0];
-  if(!file) return;
-  const data = await decodeQrFromImageFile(file);
-  if(!data){
-    alert('画像からQRを読み取れませんでした（解像度/ピント/余白を確認）');
-    return;
-  }
-  applyImportedDeckCode(data);
-});
 btnBuildCancel.onclick=()=>{closeBuilder();startModal.style.display='flex';};
-btnBuildStart.onclick=()=>{if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)===MON_LIMIT)){alert('枚数が足りません');return;}closeBuilder();toolbar.classList.remove('hidden');setPlayModeUI(true);applyDeckAndStart({main:buildMain,monster:buildMon});autoLoadBackImage();};
+btnBuildStart.onclick=()=>{
+  try{assertDeckCopyLimits({main:buildMain,monster:buildMon});}
+  catch(error){alert(deckValidationMessage(error));return;}
+  if(!(sumObj(buildMain)===MAIN_LIMIT&&sumObj(buildMon)===MON_LIMIT)){alert('枚数が足りません');return;}
+  closeBuilder();toolbar.classList.remove('hidden');setPlayModeUI(true);applyDeckAndStart({main:buildMain,monster:buildMon});autoLoadBackImage();
+};
 
 // ===== Solo (一人回し) =====
 let soloPickStep = 1; // 1: you(bottom) / 2: opp(top)
@@ -4946,56 +4956,35 @@ btnBuildSolo && (btnBuildSolo.onclick = ()=>{ openSoloDeckModal(); });
 // DOM末尾にsolo UIがあるので、ロード後に念のため配線
 window.addEventListener('DOMContentLoaded', ensureSoloWired);
 
-function encodeDeck(obj){
-  // v2: compact (index+count), much shorter than v1(JSON->base64)
-  try{
-    const main = obj?.main || {};
-    const monster = obj?.monster || {};
-    const encMap = (mp)=>{
-      const pairs=[];
-      for(const [id,c] of Object.entries(mp)){
-        const n = Number(c)||0;
-        if(n<=0) continue;
-        const idx = IDS.indexOf(id);
-        if(idx<0) continue;
-        pairs.push([idx, n]);
-      }
-      pairs.sort((a,b)=>a[0]-b[0]);
-      return pairs.map(([i,n])=> i.toString(36)+'.'+n.toString(36)).join(',');
-    };
-    return 'v2:'+encMap(main)+'|'+encMap(monster);
-  }catch(e){
-    // fallback: legacy v1
-    return 'v1:'+btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+function __resolveDeckId(id){
+  const direct=String(id||'').trim();
+  if(!direct) return '';
+  if(CARD_DB.some(card=>card.id===direct)) return direct;
+  const meta=getMetaById(direct);
+  if(meta && meta.deck_eligible!==false && CARD_DB.some(card=>card.id===meta.id)) return meta.id;
+  return '';
+}
+let __deckCodec=null;
+function __getDeckCodec(){
+  if(!__deckCodec){
+    if(!deckImport || typeof deckImport.createDeckCodec!=='function') throw new Error('deck_import_unavailable');
+    __deckCodec=deckImport.createDeckCodec({
+      legacyIds:LEGACY_V2_IDS,
+      activeIds:CARD_DB.map(card=>card.id),
+      resolveId:__resolveDeckId,
+      serializeId:(id)=>{
+        const meta=getMetaById(id);
+        return (meta && meta.source_id) || id;
+      },
+    });
   }
+  return __deckCodec;
+}
+function encodeDeck(obj){
+  return __getDeckCodec().encode(obj);
 }
 function decodeDeck(code){
-  if(!code) throw new Error('empty');
-  if(code.startsWith('v2:')){
-    const body = code.slice(3);
-    const [mStr='', monStr=''] = body.split('|');
-    const decMap = (s)=>{
-      const mp={};
-      if(!s) return mp;
-      const parts = s.split(',');
-      for(const p of parts){
-        if(!p) continue;
-        const [i36,c36] = p.split('.');
-        const idx = parseInt(i36,36);
-        const n = parseInt(c36,36);
-        const id = IDS[idx];
-        if(!id || !isFinite(n) || n<=0) continue;
-        mp[id]=n;
-      }
-      return mp;
-    };
-    return { main: decMap(mStr), monster: decMap(monStr) };
-  }
-  if(code.startsWith('v1:')){
-    const json = decodeURIComponent(escape(atob(code.slice(3))));
-    return JSON.parse(json);
-  }
-  throw new Error('ver');
+  return __getDeckCodec().decode(code);
 }
 function applyDeckAndStart(obj){ // ←ここで怪獣デッキ順を反転
   Object.values(state.cards).forEach(c=>{const el=document.getElementById(c.id);if(el)el.remove();});
