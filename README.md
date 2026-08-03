@@ -15,6 +15,7 @@
 - `card_meta.js`: `Data/cards.json` から生成するアプリ用カードメタデータ
 - `deck-import.js`: G-card／Deck Log／ブシナビのコード解釈
 - `news.js`: 起動画面のお知らせ（古い順で末尾に追記）
+- `api/decklog/`: Deck Logを安全に取得するVercel Functions API
 
 ## カードDataの更新
 
@@ -34,6 +35,9 @@ node --test tests/*.test.mjs
 - Deck Logのコード、共有URL、または「ブシナビ コード: XXXX」をコード欄へ貼り付けて読み込めます。
 - 外部コードはサーバー側APIを経由し、全カード、メイン50枚・怪獣4枚、怪獣デッキのカード種別、通常版とパラレル版を合算した枚数上限を検証してから一括反映します。
 - 2026年4月1日施行の公式使用制限（`BP01-077` の1枚制限、`BP02-003` と `BP03-035` のコンビ殿堂）も読込・編集・プレイ開始時に検証します。
+
+GitHub Pages版は `https://g-card-decklog-api-kochavrendy.vercel.app/api/decklog/{code}` を利用します。APIは `https://kochavrendy.github.io` からのブラウザアクセスだけにCORSを許可します。
+VercelにはAPIだけを配備し、`.vercelignore`でGitHub Pages用の静的ファイル・カード画像・テストデータをアップロード対象から除外します。
 
 ## お知らせの追記
 

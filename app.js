@@ -10,7 +10,10 @@ const URL_PARAMS = new URLSearchParams(location.search);
 const IS_EMBED = URL_PARAMS.get('embed') === '1';
 const FLIP_LAYOUT = URL_PARAMS.get('flip') === '1';
 const IS_SOLO_ROOT = URL_PARAMS.get('solo_root') === '1';
-const APP_VERSION = 'v2.4.0';
+const APP_VERSION = 'v2.4.1';
+const DECKLOG_API_BASE = String(
+  window.GCARD_CONFIG?.decklogApiBase || '/api/decklog'
+).trim().replace(/\/+$/, '');
 // ====== 画像DB作成 ======
 const CARD_FOLDER = 'カードリスト';
 
@@ -4285,7 +4288,7 @@ btnCodeLoad.onclick=async()=>{
     let response;
     let payload=null;
     try{
-      response=await fetch(`/api/decklog/${encodeURIComponent(decklogCode)}`,{
+      response=await fetch(`${DECKLOG_API_BASE}/${encodeURIComponent(decklogCode)}`,{
         headers:{Accept:'application/json'},
         cache:'no-store',
         signal:requestController.signal,

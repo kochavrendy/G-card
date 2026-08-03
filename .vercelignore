@@ -1,0 +1,16 @@
+.github/
+Data/
+scripts/
+tests/
+カードリスト/
+README.md
+app-2pick.js
+app-legacy-bridge.js
+app.js
+card_meta.js
+deck-import.js
+index.html
+manifest.webmanifest
+news.js
+styles.css
+sw.js
