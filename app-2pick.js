@@ -163,6 +163,8 @@
         const m = c.meta || __metaOf(c.id);
         if(!m) return; // ここが重要：metaがないカードは一切提示しない
         if(__isTokenMeta(m)) return;
+        // 印刷違いで抽選確率や同名上限が変わらないよう、論理カードごとの代表だけを使う。
+        if(m.is_canonical===false) return;
 
         if(String(m.type||'')==='怪獣'){
           const g=Number(m.grade||0);

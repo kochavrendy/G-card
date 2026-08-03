@@ -1,0 +1,935 @@
+{
+  "schema_version": 1,
+  "downloader_version": "1.0.0",
+  "language": "ja",
+  "source_cardlist_url": "https://godzilla-cardgame.com/cardlist/",
+  "source_list_api_url": "https://godzilla-cardgame.com/manage/card-list-user/list",
+  "source_detail_api_url": "https://godzilla-cardgame.com/manage/card-list-user/detail/",
+  "source_image_base_url": "https://godzilla-cardgame.com/wordpress/wp-content/images/cardlist/",
+  "robots_url": "https://godzilla-cardgame.com/robots.txt",
+  "started_at": "2026-07-19T08:53:02.020Z",
+  "completed_at": "2026-07-19T08:53:17.568Z",
+  "api_list_total": 968,
+  "selected_total": 968,
+  "api_non_parallel_total": 437,
+  "api_parallel_total": 531,
+  "detail_successful": 968,
+  "detail_failed": 0,
+  "partial_run": false,
+  "request_delay_ms": 1000,
+  "intended_grain": "1 row per published card image / rarity variant",
+  "candidate_primary_key": "id",
+  "unique_ids": 968,
+  "unique_pictures": 968,
+  "distinct_card_numbers": 906,
+  "duplicate_card_number_groups": 58,
+  "duplicate_card_number_rows": 120,
+  "duplicate_card_number_examples": [
+    {
+      "card_number": "BP01-001+",
+      "count": 2,
+      "ids": [
+        53,
+        1128
+      ],
+      "pictures": [
+        "BP01/BP01-001_2.png",
+        "PR/BP01-001_1.png"
+      ]
+    },
+    {
+      "card_number": "BP01-008+",
+      "count": 2,
+      "ids": [
+        67,
+        1322
+      ],
+      "pictures": [
+        "BP01/BP01-008_2.png",
+        "BP04/BP01-008_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-014+",
+      "count": 2,
+      "ids": [
+        79,
+        1364
+      ],
+      "pictures": [
+        "BP01/BP01-014_2.png",
+        "PR/BP01-014_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-017+",
+      "count": 2,
+      "ids": [
+        85,
+        1358
+      ],
+      "pictures": [
+        "BP01/BP01-017_2.png",
+        "PR/BP01-017_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-020+",
+      "count": 2,
+      "ids": [
+        91,
+        911
+      ],
+      "pictures": [
+        "BP01/BP01-020_2.png",
+        "PR/BP01-020_3.png"
+      ]
+    },
+    {
+      "card_number": "BP01-026+",
+      "count": 2,
+      "ids": [
+        103,
+        1365
+      ],
+      "pictures": [
+        "BP01/BP01-026_2.png",
+        "PR/BP01-026_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-027+",
+      "count": 2,
+      "ids": [
+        105,
+        912
+      ],
+      "pictures": [
+        "BP01/BP01-027_2.png",
+        "PR/BP01-027_3.png"
+      ]
+    },
+    {
+      "card_number": "BP01-031+",
+      "count": 2,
+      "ids": [
+        113,
+        1384
+      ],
+      "pictures": [
+        "BP01/BP01-031_2.png",
+        "PR/BP01-031_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-036+",
+      "count": 2,
+      "ids": [
+        123,
+        1385
+      ],
+      "pictures": [
+        "BP01/BP01-036_2.png",
+        "PR/BP01-036_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-037",
+      "count": 2,
+      "ids": [
+        124,
+        15
+      ],
+      "pictures": [
+        "BP01/BP01-037ol.png",
+        "PR/BP01-037ol.png"
+      ]
+    },
+    {
+      "card_number": "BP01-038+",
+      "count": 2,
+      "ids": [
+        127,
+        1132
+      ],
+      "pictures": [
+        "BP01/BP01-038_2.png",
+        "PR/BP01-038_1.png"
+      ]
+    },
+    {
+      "card_number": "BP01-039+",
+      "count": 2,
+      "ids": [
+        129,
+        1416
+      ],
+      "pictures": [
+        "BP01/BP01-039_2.png",
+        "PR/BP01-039_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-040+",
+      "count": 2,
+      "ids": [
+        131,
+        1133
+      ],
+      "pictures": [
+        "BP01/BP01-040_2.png",
+        "PR/BP01-040_1.png"
+      ]
+    },
+    {
+      "card_number": "BP01-048+",
+      "count": 2,
+      "ids": [
+        147,
+        1386
+      ],
+      "pictures": [
+        "BP01/BP01-048_2.png",
+        "PR/BP01-048_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-056+",
+      "count": 2,
+      "ids": [
+        163,
+        1363
+      ],
+      "pictures": [
+        "BP01/BP01-056_2.png",
+        "PR/BP01-056_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-057+",
+      "count": 2,
+      "ids": [
+        165,
+        914
+      ],
+      "pictures": [
+        "BP01/BP01-057_2.png",
+        "PR/BP01-057_3.png"
+      ]
+    },
+    {
+      "card_number": "BP01-064+",
+      "count": 2,
+      "ids": [
+        179,
+        1357
+      ],
+      "pictures": [
+        "BP01/BP01-064_2.png",
+        "PR/BP01-064_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-072+",
+      "count": 2,
+      "ids": [
+        195,
+        1366
+      ],
+      "pictures": [
+        "BP01/BP01-072_2.png",
+        "PR/BP01-072_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-078",
+      "count": 2,
+      "ids": [
+        206,
+        1139
+      ],
+      "pictures": [
+        "BP01/BP01-078ol.png",
+        "PR/BP01-078.png"
+      ]
+    },
+    {
+      "card_number": "BP02-001+",
+      "count": 2,
+      "ids": [
+        792,
+        1387
+      ],
+      "pictures": [
+        "BP02/BP02-001_2.png",
+        "PR/BP02-001_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-003+",
+      "count": 2,
+      "ids": [
+        794,
+        1388
+      ],
+      "pictures": [
+        "BP02/BP02-003_2.png",
+        "PR/BP02-003_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-007+",
+      "count": 2,
+      "ids": [
+        798,
+        1130
+      ],
+      "pictures": [
+        "BP02/BP02-007_2.png",
+        "PR/BP02-007_1.png"
+      ]
+    },
+    {
+      "card_number": "BP02-016+",
+      "count": 2,
+      "ids": [
+        807,
+        1359
+      ],
+      "pictures": [
+        "BP02/BP02-016_2.png",
+        "PR/BP02-016_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-022+",
+      "count": 2,
+      "ids": [
+        812,
+        1131
+      ],
+      "pictures": [
+        "BP02/BP02-022_2.png",
+        "PR/BP02-022_1.png"
+      ]
+    },
+    {
+      "card_number": "BP02-032+",
+      "count": 2,
+      "ids": [
+        822,
+        1389
+      ],
+      "pictures": [
+        "BP02/BP02-032_2.png",
+        "PR/BP02-032_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-035+",
+      "count": 2,
+      "ids": [
+        825,
+        1390
+      ],
+      "pictures": [
+        "BP02/BP02-035_2.png",
+        "PR/BP02-035_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-036+",
+      "count": 2,
+      "ids": [
+        826,
+        1391
+      ],
+      "pictures": [
+        "BP02/BP02-036_2.png",
+        "PR/BP02-036_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-043+",
+      "count": 2,
+      "ids": [
+        833,
+        1392
+      ],
+      "pictures": [
+        "BP02/BP02-043_2.png",
+        "PR/BP02-043_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-048+",
+      "count": 2,
+      "ids": [
+        838,
+        1393
+      ],
+      "pictures": [
+        "BP02/BP02-048_2.png",
+        "PR/BP02-048_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-049+",
+      "count": 2,
+      "ids": [
+        839,
+        1394
+      ],
+      "pictures": [
+        "BP02/BP02-049_2.png",
+        "PR/BP02-049_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-053+",
+      "count": 2,
+      "ids": [
+        843,
+        1395
+      ],
+      "pictures": [
+        "BP02/BP02-053_2.png",
+        "PR/BP02-053_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-054+",
+      "count": 2,
+      "ids": [
+        844,
+        1396
+      ],
+      "pictures": [
+        "BP02/BP02-054_2.png",
+        "PR/BP02-054_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-062+",
+      "count": 2,
+      "ids": [
+        852,
+        915
+      ],
+      "pictures": [
+        "BP02/BP02-062_2.png",
+        "PR/BP02-062_3.png"
+      ]
+    },
+    {
+      "card_number": "BP02-064+",
+      "count": 2,
+      "ids": [
+        854,
+        916
+      ],
+      "pictures": [
+        "BP02/BP02-064_2.png",
+        "PR/BP02-064_3.png"
+      ]
+    },
+    {
+      "card_number": "BP02-065+",
+      "count": 2,
+      "ids": [
+        855,
+        1397
+      ],
+      "pictures": [
+        "BP02/BP02-065_2.png",
+        "PR/BP02-065_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-070+",
+      "count": 2,
+      "ids": [
+        860,
+        1381
+      ],
+      "pictures": [
+        "BP02/BP02-070_2.png",
+        "PR/BP02-070_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-T02+",
+      "count": 2,
+      "ids": [
+        874,
+        1398
+      ],
+      "pictures": [
+        "BP02/BP02-T02_2.png",
+        "PR/BP02-T02_2.png"
+      ]
+    },
+    {
+      "card_number": "BP02-T03+",
+      "count": 2,
+      "ids": [
+        1399,
+        875
+      ],
+      "pictures": [
+        "PR/BP02-T03_2.png",
+        "BP02/BP02-T03_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-002+",
+      "count": 2,
+      "ids": [
+        1000,
+        1400
+      ],
+      "pictures": [
+        "BP03/BP03-002_2.png",
+        "PR/BP03-002_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-004+",
+      "count": 2,
+      "ids": [
+        1002,
+        1401
+      ],
+      "pictures": [
+        "BP03/BP03-004_2.png",
+        "PR/BP03-004_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-019+",
+      "count": 2,
+      "ids": [
+        1017,
+        1402
+      ],
+      "pictures": [
+        "BP03/BP03-019_2.png",
+        "PR/BP03-019_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-025+",
+      "count": 2,
+      "ids": [
+        1023,
+        1403
+      ],
+      "pictures": [
+        "BP03/BP03-025_2.png",
+        "PR/BP03-025_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-026+",
+      "count": 2,
+      "ids": [
+        1024,
+        1404
+      ],
+      "pictures": [
+        "BP03/BP03-026_2.png",
+        "PR/BP03-026_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-028+",
+      "count": 2,
+      "ids": [
+        1026,
+        1405
+      ],
+      "pictures": [
+        "BP03/BP03-028_2.png",
+        "PR/BP03-028_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-033+",
+      "count": 2,
+      "ids": [
+        1031,
+        1406
+      ],
+      "pictures": [
+        "BP03/BP03-033_2.png",
+        "PR/BP03-033_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-049+",
+      "count": 2,
+      "ids": [
+        1047,
+        1407
+      ],
+      "pictures": [
+        "BP03/BP03-049_2.png",
+        "PR/BP03-049_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-056+",
+      "count": 2,
+      "ids": [
+        1054,
+        1360
+      ],
+      "pictures": [
+        "BP03/BP03-056_2.png",
+        "PR/BP03-056_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-058+",
+      "count": 2,
+      "ids": [
+        1361,
+        1056
+      ],
+      "pictures": [
+        "PR/BP03-058_2.png",
+        "BP03/BP03-058_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-069+",
+      "count": 2,
+      "ids": [
+        1067,
+        1408
+      ],
+      "pictures": [
+        "BP03/BP03-069_2.png",
+        "PR/BP03-069_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-074+",
+      "count": 2,
+      "ids": [
+        1409,
+        1072
+      ],
+      "pictures": [
+        "PR/BP03-074_2.png",
+        "BP03/BP03-074_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-075+",
+      "count": 2,
+      "ids": [
+        1073,
+        1410
+      ],
+      "pictures": [
+        "BP03/BP03-075_2.png",
+        "PR/BP03-075_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-076+",
+      "count": 2,
+      "ids": [
+        1411,
+        1074
+      ],
+      "pictures": [
+        "PR/BP03-076_2.png",
+        "BP03/BP03-076_2.png"
+      ]
+    },
+    {
+      "card_number": "BP03-079+",
+      "count": 2,
+      "ids": [
+        1077,
+        1412
+      ],
+      "pictures": [
+        "BP03/BP03-079_2.png",
+        "PR/BP03-079_2.png"
+      ]
+    },
+    {
+      "card_number": "BP04-016+",
+      "count": 2,
+      "ids": [
+        1127,
+        1246
+      ],
+      "pictures": [
+        "PR/BP04-016_1.png",
+        "BP04/BP04-016_2.png"
+      ]
+    },
+    {
+      "card_number": "PR-004",
+      "count": 6,
+      "ids": [
+        4,
+        33,
+        51,
+        895,
+        902,
+        1323
+      ],
+      "pictures": [
+        "PR/PR-004ol.png",
+        "SD02/PR-004ol.png",
+        "SD01/PR-004ol.png",
+        "PR/PR-004_3.png",
+        "FC01/PR-004_FC.png",
+        "BP04/PR-004.png"
+      ]
+    },
+    {
+      "card_number": "PR-005",
+      "count": 2,
+      "ids": [
+        5,
+        1230
+      ],
+      "pictures": [
+        "PR/PR-005ol.png",
+        "BP04/PR-005.png"
+      ]
+    },
+    {
+      "card_number": "PR-005+",
+      "count": 2,
+      "ids": [
+        1320,
+        905
+      ],
+      "pictures": [
+        "BP04/PR-005_2.png",
+        "PR/PR-005_2.png"
+      ]
+    },
+    {
+      "card_number": "SD01-005+",
+      "count": 2,
+      "ids": [
+        7,
+        1129
+      ],
+      "pictures": [
+        "PR/SD01-005_2.png",
+        "PR/SD01-005_1.png"
+      ]
+    }
+  ],
+  "required_field_missing": {
+    "id": 0,
+    "card_number": 0,
+    "picture": 0,
+    "card_kind": 0,
+    "expansion": 0
+  },
+  "expected_sparse_fields": {
+    "card_name": 135,
+    "rarity": 39,
+    "effect_text": 159,
+    "grade": 134,
+    "stat_value": 298,
+    "traits": 293,
+    "copyright_source": 119
+  },
+  "counts_by_card_kind": {
+    "怪獣": 322,
+    "交戦": 356,
+    "戦略": 155,
+    "怒り": 135
+  },
+  "counts_by_rarity": {
+    "(空欄)": 39,
+    "ACSP": 1,
+    "C": 146,
+    "CGP": 3,
+    "FC": 7,
+    "P": 215,
+    "PP": 37,
+    "PR": 28,
+    "PRP": 35,
+    "PRPP": 8,
+    "PRSP": 48,
+    "PRSSP": 4,
+    "PRSSSP": 1,
+    "R": 77,
+    "RP": 37,
+    "SD": 32,
+    "SP": 117,
+    "SR": 47,
+    "SSP": 11,
+    "SSPT": 1,
+    "SSSP": 3,
+    "T": 5,
+    "UC": 66
+  },
+  "counts_by_color": {
+    "(空欄)": 134,
+    "青": 251,
+    "青/緑": 15,
+    "赤": 271,
+    "赤/青": 14,
+    "赤/青/緑": 12,
+    "白": 77,
+    "緑": 179,
+    "緑/赤": 15
+  },
+  "counts_by_expansion": {
+    "BP01": 183,
+    "BP02": 193,
+    "BP03": 191,
+    "BP04": 214,
+    "FC01": 8,
+    "PR": 123,
+    "SC01": 12,
+    "SD01": 21,
+    "SD02": 21,
+    "SDS01": 2
+  },
+  "missing_card_name_by_kind": {
+    "怒り": 135
+  },
+  "missing_rarity_by_kind": {
+    "怒り": 39
+  },
+  "official_parallel_counts": {
+    "non_parallel": 437,
+    "parallel": 531
+  },
+  "parallel_suffix_disagreement_count": 9,
+  "parallel_suffix_disagreement_examples": [
+    {
+      "id": 1139,
+      "card_number": "BP01-078",
+      "rarity": "PR",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 895,
+      "card_number": "PR-004",
+      "rarity": "PR",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 902,
+      "card_number": "PR-004",
+      "rarity": "FC",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 1323,
+      "card_number": "PR-004",
+      "rarity": "PR",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 891,
+      "card_number": "Rage-03",
+      "rarity": "CGP",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 892,
+      "card_number": "Rage-04",
+      "rarity": "CGP",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 893,
+      "card_number": "Rage-05",
+      "rarity": "CGP",
+      "official_is_parallel": true,
+      "number_has_parallel_suffix": false
+    },
+    {
+      "id": 1413,
+      "card_number": "Rage-GZ16-2+",
+      "rarity": "PR",
+      "official_is_parallel": false,
+      "number_has_parallel_suffix": true
+    },
+    {
+      "id": 1414,
+      "card_number": "Rage-GZ16-2++",
+      "rarity": "PRPP",
+      "official_is_parallel": false,
+      "number_has_parallel_suffix": true
+    }
+  ],
+  "rage_unexpected_game_fields_count": 1,
+  "rage_unexpected_game_fields_examples": [
+    {
+      "id": 5,
+      "card_number": "PR-005",
+      "card_name": "",
+      "card_kind": "怒り",
+      "color": "赤",
+      "grade": "1",
+      "effect_text": "あなたの怪獣カードと同じ縦列にいる相手の交戦カードをすべて⁅破壊＠⁆する。",
+      "picture": "PR/PR-005ol.png"
+    }
+  ],
+  "search_field_inference_count": 1,
+  "search_field_inference_examples": [
+    {
+      "id": 5,
+      "card_number": "PR-005",
+      "raw_card_name": "",
+      "search_card_name": "噛みつき",
+      "raw_card_kind": "怒り",
+      "search_card_kind": "戦略",
+      "source_ids": [
+        1230
+      ],
+      "reason": "Same exact card number and effect text; sibling has non-empty name and non-rage card kind."
+    }
+  ],
+  "list_detail_mismatch_counts": {},
+  "list_detail_mismatch_total": 0,
+  "mismatch_examples": [],
+  "faq_count": 1705,
+  "faq_link_count": 1722,
+  "faq_conflict_count": 0,
+  "faq_conflict_examples": [],
+  "expansion_count": 10,
+  "expansion_conflict_count": 0,
+  "expansion_conflict_examples": [],
+  "feature_row_count": 939,
+  "relation_link_count": 0,
+  "text_icon_count": 61,
+  "local_image_coverage": {
+    "found": 968,
+    "missing": 0,
+    "total_bytes": 209522201,
+    "missing_examples": []
+  },
+  "detail_failures": [],
+  "notes": [
+    "共通項目はカード一覧APIを検索用の優先値とし、詳細APIとの差分をdata_qualityに保持しています。",
+    "card_numberはレアリティ違い等で重複するため主キーにできません。idまたはpictureを使用してください。",
+    "is_parallelはカード番号末尾やレアリティから推測せず、公式一覧APIのparallel=1（パラレル除外）とのID差分で判定しています。",
+    "rarity空欄は欠損とは限らず、主にレアリティ表記のない怒りカードです。rarity_keyではNO_RARITYに正規化しています。",
+    "power_raw/stat_rawは公式詳細画面と同じくtreat_1とtreat_2の連結値です。数値はtreat_1、接尾辞はtreat_2から分離し、怪獣はthreat、交戦はcounter_powerにも格納します。",
+    "公式APIで怒りカードなのにゲーム項目を持つレコードは警告し、同一番号・同一本文の一意な非怒りレコードがある場合だけsearch_card_name/search_card_kindへ保守的な補正値を設定します。raw項目は変更しません。"
+  ]
+}
