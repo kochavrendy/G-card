@@ -7,23 +7,23 @@
   "source_detail_api_url": "https://godzilla-cardgame.com/manage/card-list-user/detail/",
   "source_image_base_url": "https://godzilla-cardgame.com/wordpress/wp-content/images/cardlist/",
   "robots_url": "https://godzilla-cardgame.com/robots.txt",
-  "started_at": "2026-07-19T08:53:02.020Z",
-  "completed_at": "2026-07-19T08:53:17.568Z",
-  "api_list_total": 968,
-  "selected_total": 968,
-  "api_non_parallel_total": 437,
-  "api_parallel_total": 531,
-  "detail_successful": 968,
+  "started_at": "2026-09-07T20:40:25.618Z",
+  "completed_at": "2026-09-07T20:40:46.079Z",
+  "api_list_total": 973,
+  "selected_total": 973,
+  "api_non_parallel_total": 441,
+  "api_parallel_total": 532,
+  "detail_successful": 973,
   "detail_failed": 0,
   "partial_run": false,
   "request_delay_ms": 1000,
   "intended_grain": "1 row per published card image / rarity variant",
   "candidate_primary_key": "id",
-  "unique_ids": 968,
-  "unique_pictures": 968,
-  "distinct_card_numbers": 906,
-  "duplicate_card_number_groups": 58,
-  "duplicate_card_number_rows": 120,
+  "unique_ids": 973,
+  "unique_pictures": 973,
+  "distinct_card_numbers": 910,
+  "duplicate_card_number_groups": 59,
+  "duplicate_card_number_rows": 122,
   "duplicate_card_number_examples": [
     {
       "card_number": "BP01-001+",
@@ -239,6 +239,18 @@
       "pictures": [
         "BP01/BP01-072_2.png",
         "PR/BP01-072_2.png"
+      ]
+    },
+    {
+      "card_number": "BP01-073+",
+      "count": 2,
+      "ids": [
+        197,
+        1421
+      ],
+      "pictures": [
+        "BP01/BP01-073_2.png",
+        "PR/BP01-073_2.png"
       ]
     },
     {
@@ -738,19 +750,19 @@
     "expansion": 0
   },
   "expected_sparse_fields": {
-    "card_name": 135,
+    "card_name": 134,
     "rarity": 39,
     "effect_text": 159,
     "grade": 134,
-    "stat_value": 298,
+    "stat_value": 300,
     "traits": 293,
     "copyright_source": 119
   },
   "counts_by_card_kind": {
-    "怪獣": 322,
-    "交戦": 356,
-    "戦略": 155,
-    "怒り": 135
+    "怪獣": 323,
+    "交戦": 358,
+    "戦略": 158,
+    "怒り": 134
   },
   "counts_by_rarity": {
     "(空欄)": 39,
@@ -760,10 +772,10 @@
     "FC": 7,
     "P": 215,
     "PP": 37,
-    "PR": 28,
+    "PR": 32,
     "PRP": 35,
     "PRPP": 8,
-    "PRSP": 48,
+    "PRSP": 49,
     "PRSSP": 4,
     "PRSSSP": 1,
     "R": 77,
@@ -779,13 +791,13 @@
   },
   "counts_by_color": {
     "(空欄)": 134,
-    "青": 251,
+    "青": 253,
     "青/緑": 15,
     "赤": 271,
     "赤/青": 14,
     "赤/青/緑": 12,
-    "白": 77,
-    "緑": 179,
+    "白": 79,
+    "緑": 180,
     "緑/赤": 15
   },
   "counts_by_expansion": {
@@ -794,21 +806,21 @@
     "BP03": 191,
     "BP04": 214,
     "FC01": 8,
-    "PR": 123,
+    "PR": 128,
     "SC01": 12,
     "SD01": 21,
     "SD02": 21,
     "SDS01": 2
   },
   "missing_card_name_by_kind": {
-    "怒り": 135
+    "怒り": 134
   },
   "missing_rarity_by_kind": {
     "怒り": 39
   },
   "official_parallel_counts": {
-    "non_parallel": 437,
-    "parallel": 531
+    "non_parallel": 441,
+    "parallel": 532
   },
   "parallel_suffix_disagreement_count": 9,
   "parallel_suffix_disagreement_examples": [
@@ -876,37 +888,33 @@
       "number_has_parallel_suffix": true
     }
   ],
-  "rage_unexpected_game_fields_count": 1,
-  "rage_unexpected_game_fields_examples": [
+  "rage_unexpected_game_fields_count": 0,
+  "rage_unexpected_game_fields_examples": [],
+  "search_field_inference_count": 0,
+  "search_field_inference_examples": [],
+  "list_detail_mismatch_counts": {
+    "card_kind": 1,
+    "card_name": 1
+  },
+  "list_detail_mismatch_total": 2,
+  "mismatch_examples": [
     {
       "id": 5,
       "card_number": "PR-005",
-      "card_name": "",
-      "card_kind": "怒り",
-      "color": "赤",
-      "grade": "1",
-      "effect_text": "あなたの怪獣カードと同じ縦列にいる相手の交戦カードをすべて⁅破壊＠⁆する。",
-      "picture": "PR/PR-005ol.png"
-    }
-  ],
-  "search_field_inference_count": 1,
-  "search_field_inference_examples": [
+      "card_kind": "戦略",
+      "field": "card_name",
+      "list_value": "噛みつき",
+      "detail_value": ""
+    },
     {
       "id": 5,
       "card_number": "PR-005",
-      "raw_card_name": "",
-      "search_card_name": "噛みつき",
-      "raw_card_kind": "怒り",
-      "search_card_kind": "戦略",
-      "source_ids": [
-        1230
-      ],
-      "reason": "Same exact card number and effect text; sibling has non-empty name and non-rage card kind."
+      "card_kind": "戦略",
+      "field": "card_kind",
+      "list_value": "戦略",
+      "detail_value": "怒り"
     }
   ],
-  "list_detail_mismatch_counts": {},
-  "list_detail_mismatch_total": 0,
-  "mismatch_examples": [],
   "faq_count": 1705,
   "faq_link_count": 1722,
   "faq_conflict_count": 0,
@@ -914,14 +922,17 @@
   "expansion_count": 10,
   "expansion_conflict_count": 0,
   "expansion_conflict_examples": [],
-  "feature_row_count": 939,
+  "feature_row_count": 947,
   "relation_link_count": 0,
   "text_icon_count": 61,
   "local_image_coverage": {
-    "found": 968,
+    "found": 973,
     "missing": 0,
-    "total_bytes": 209522201,
-    "missing_examples": []
+    "total_bytes": 210315963,
+    "missing_examples": [],
+    "verification_root": "godzilla-card-images-jp-2026-07-19/godzilla-card-images/images",
+    "verified_at": "2026-09-08",
+    "method": "Resolve each picture against the active GCG image collection after downloading the five new images."
   },
   "detail_failures": [],
   "notes": [

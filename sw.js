@@ -1,5 +1,5 @@
 /* G-CARD Director Service Worker */
-const CACHE_NAME = 'gcard-director-v4';
+const CACHE_NAME = 'gcard-director-v5';
 
 // 起動時にキャッシュするコアアセット
 const PRECACHE_ASSETS = [

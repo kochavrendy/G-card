@@ -20,8 +20,8 @@ test('Data snapshot is complete and has collision-safe source keys', async () =>
 
   assert.equal(payload.metadata.partial_run, false);
   assert.equal(payload.metadata.detail_failed, 0);
-  assert.equal(payload.metadata.detail_successful, 968);
-  assert.equal(cards.length, 968);
+  assert.equal(payload.metadata.detail_successful, 973);
+  assert.equal(cards.length, 973);
   assert.equal(new Set(cards.map((card) => card.id)).size, cards.length);
   assert.equal(new Set(cards.map((card) => card.source_id)).size, cards.length);
   assert.equal(new Set(cards.map((card) => card.picture)).size, cards.length);
@@ -31,12 +31,12 @@ test('generated catalog is backed by the complete Data snapshot', async () => {
   const { CARD_META, GCARD_DATA_INFO } = await loadGeneratedCatalog();
   const cards = Object.values(CARD_META);
 
-  assert.equal(GCARD_DATA_INFO.source_record_count, 968);
-  assert.equal(cards.length, 834);
-  assert.equal(new Set(cards.map((card) => card.base_id)).size, 389);
-  assert.equal(cards.filter((card) => card.is_parallel).length, 441);
-  assert.equal(cards.filter((card) => card.deck_eligible).length, 821);
-  assert.equal(new Set(cards.filter((card) => card.deck_eligible).map((card) => card.base_id)).size, 384);
+  assert.equal(GCARD_DATA_INFO.source_record_count, 973);
+  assert.equal(cards.length, 839);
+  assert.equal(new Set(cards.map((card) => card.base_id)).size, 393);
+  assert.equal(cards.filter((card) => card.is_parallel).length, 442);
+  assert.equal(cards.filter((card) => card.deck_eligible).length, 826);
+  assert.equal(new Set(cards.filter((card) => card.deck_eligible).map((card) => card.base_id)).size, 388);
   assert.equal(cards.filter((card) => card.features.includes('トークン')).length, 13);
   assert.equal(new Set(cards.filter((card) => card.features.includes('トークン')).map((card) => card.base_id)).size, 5);
 });
