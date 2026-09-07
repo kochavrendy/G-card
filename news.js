@@ -22,6 +22,15 @@
         'GitHub Pages版のブシナビ／Deck Logコード読込をVercel APIへ接続',
       ],
     },
+    {
+      date: '2026-09-08',
+      version: 'v2.4.2',
+      title: '新カード追加',
+      items: [
+        'PR-017〜020をカード一覧・デッキ構築・一人回しに追加',
+        'BP01-073「ゴジラ・ザ・ライド グレートクラッシュ」の追加イラストに対応',
+      ],
+    },
   ];
 
   function renderStartNews() {
